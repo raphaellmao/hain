@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- App-Icon „Hain“: blühender Baum auf dunklem Grün.
+       Vollflächig, Motiv im inneren 80-%-Kreis (sicher für „maskable“). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4b8c59" />
+      <stop offset="1" stop-color="#2b5a37" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)" />
+  <ellipse cx="256" cy="402" rx="118" ry="17" fill="#1f4429" opacity="0.55" />
+  <!-- Stamm und Äste -->
+  <path d="M238 404C248 360 249 322 245 290L267 290C264 322 266 360 276 404Z" fill="#6e4c36" />
+  <path d="M252 300C236 272 214 258 190 250M260 296C278 268 302 254 328 248" stroke="#6e4c36" stroke-width="14" stroke-linecap="round" fill="none" />
+  <!-- Krone -->
+  <circle cx="178" cy="236" r="66" fill="#6fae60" />
+  <circle cx="336" cy="232" r="68" fill="#6fae60" />
+  <circle cx="256" cy="252" r="68" fill="#76b566" />
+  <circle cx="256" cy="194" r="92" fill="#86c574" />
+  <circle cx="206" cy="172" r="56" fill="#9ad385" />
+  <circle cx="306" cy="166" r="58" fill="#94cf80" />
+  <circle cx="250" cy="138" r="42" fill="#a8dc92" />
+  <!-- Blüten -->
+  <g fill="#f2775c">
+    <circle cx="210" cy="164" r="12" />
+    <circle cx="304" cy="146" r="12" />
+    <circle cx="262" cy="214" r="12" />
+    <circle cx="344" cy="226" r="12" />
+    <circle cx="180" cy="238" r="12" />
+    <circle cx="288" cy="264" r="11" />
+    <circle cx="232" cy="270" r="10" />
+  </g>
+  <g fill="#ffd46e">
+    <circle cx="210" cy="164" r="4" />
+    <circle cx="304" cy="146" r="4" />
+    <circle cx="262" cy="214" r="4" />
+    <circle cx="344" cy="226" r="4" />
+    <circle cx="180" cy="238" r="4" />
+    <circle cx="288" cy="264" r="3.5" />
+    <circle cx="232" cy="270" r="3.5" />
+  </g>
+</svg>

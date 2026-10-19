@@ -1,0 +1,27 @@
+# Abhängigkeiten
+node_modules
+
+# Build-Ausgabe
+dist
+dev-dist
+coverage
+
+# Umgebungsvariablen / Schlüssel (Vorlagen dürfen rein)
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Lokale Editor-/Werkzeug-Einstellungen
+.claude/settings.local.json
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
