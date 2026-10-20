@@ -5,7 +5,9 @@ import { createHabit, deleteHabit, newSeed, updateHabit, type HabitInput } from 
 import { COLOR_KEYS, COLORS, colorHex, type ColorKey } from '../domain/colors'
 import { type DateStr, WEEKDAYS_MON0 } from '../domain/dates'
 import { ALL_DAYS, daysAt } from '../domain/schedule'
-import type { Habit } from '../domain/types'
+import type { Habit, Metaphor } from '../domain/types'
+import { ShadowDuel } from '../shadow/ShadowDuel'
+import { SPECIES_INFO, SPECIES_KEYS, speciesOf, type SpeciesKey } from '../domain/species'
 import { goBack, navigate, paths } from '../app/router'
 import { confirmDialog } from '../lib/confirm'
 import { Tree } from '../tree/Tree'
@@ -42,6 +44,8 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
   const [days, setDays] = useState<number[]>(habit ? daysAt(habit.schedule, today) : ALL_DAYS)
   const [startDate, setStartDate] = useState<DateStr>(habit?.startDate ?? today)
   const [seed, setSeed] = useState(habit?.seed ?? newSeed())
+  const [species, setSpecies] = useState<SpeciesKey>(habit ? speciesOf(habit) : randomSpecies())
+  const [metaphor, setMetaphor] = useState<Metaphor>(habit?.metaphor ?? 'pflanze')
   const [saving, setSaving] = useState(false)
 
   const daily = days.length === 7
@@ -50,7 +54,7 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
   async function save() {
     if (!valid || saving) return
     setSaving(true)
-    const input: HabitInput = { name, emoji, color, days, startDate, seed }
+    const input: HabitInput = { name, emoji, color, days, startDate, seed, species, metaphor }
     if (habit) {
       await updateHabit(habit.id, input, today)
       goBack(paths.habit(habit.id))
@@ -92,13 +96,44 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
           <span className="w-20" />
         </div>
 
-        {/* Vorschau: so sieht der Baum ausgewachsen aus */}
+        {/* Bild für den Fortschritt: Pflanze oder Schatten-Ich */}
+        <div className="mt-2 grid grid-cols-2 gap-1 rounded-2xl bg-surface p-1">
+          {(
+            [
+              ['pflanze', 'Wachsende Pflanze'],
+              ['schatten', 'Schatten-Ich'],
+            ] as const
+          ).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setMetaphor(k)}
+              aria-pressed={metaphor === k}
+              className={`h-11 rounded-xl text-[15px] font-medium transition-colors ${metaphor === k ? 'bg-ink text-bg' : 'text-muted'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Vorschau */}
+        {metaphor === 'schatten' ? (
+          <section className="mt-2 rounded-3xl bg-surface px-4 pt-3 pb-3">
+            <div className="mx-auto aspect-square w-52">
+              <ShadowDuel color={color} territory={0.42} s={58} light={45} animated density="rich" className="size-full" />
+            </div>
+            <p className="text-[13px] leading-snug text-muted">
+              Eine dunkle Version von dir, die an jedem Tag stärker wird, an dem du schwach bist. Ihr kämpft um dasselbe
+              Land – jeder erledigte Tag drängt ihn zurück.
+            </p>
+          </section>
+        ) : (
         <section className="mt-2 rounded-3xl bg-surface px-4 pt-3 pb-1">
           <div className="mx-auto aspect-square w-48">
-            <Tree seed={seed} color={color} g={6.7} className="size-full" />
+            <Tree seed={seed} color={color} species={species} g={6.7} className="size-full" />
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-[13px] text-muted">Dein Baum, wenn er blüht</p>
+            <p className="text-[13px] text-muted">Deine Pflanze in voller Blüte</p>
             <button
               type="button"
               onClick={() => setSeed(newSeed())}
@@ -109,6 +144,31 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
             </button>
           </div>
         </section>
+        )}
+
+        {metaphor === 'pflanze' && (
+        <Field label="Pflanze">
+          {/* Waagerecht wischbar; jede Karte zeigt die Art in voller Blüte */}
+          <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+            {SPECIES_KEYS.map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setSpecies(k)}
+                aria-pressed={species === k}
+                className={`flex w-[88px] shrink-0 snap-start flex-col items-center rounded-2xl bg-surface px-1 pt-1 pb-2 transition-shadow ${
+                  species === k ? 'ring-2 ring-accent' : ''
+                }`}
+              >
+                <span className="aspect-square w-full">
+                  <Tree seed={seed} color={color} species={k} g={6.7} ground={false} className="size-full" />
+                </span>
+                <span className="text-[12px] leading-tight font-medium">{SPECIES_INFO[k].label}</span>
+              </button>
+            ))}
+          </div>
+        </Field>
+        )}
 
         <Field label="Name">
           <input
@@ -151,7 +211,7 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
           </label>
         </Field>
 
-        <Field label="Farbe der Blüten">
+        <Field label={metaphor === 'schatten' ? 'Farbe deines Lichts' : 'Farbe der Blüten und Früchte'}>
           <div className="grid grid-cols-4 justify-items-center gap-1 rounded-2xl bg-surface p-2">
             {COLOR_KEYS.map((k) => (
               <button
@@ -271,6 +331,10 @@ function lastGrapheme(s: string): string {
   let last = ''
   for (const { segment } of seg.segment(s.trim())) last = segment
   return last
+}
+
+function randomSpecies(): SpeciesKey {
+  return SPECIES_KEYS[Math.floor(Math.random() * SPECIES_KEYS.length)]
 }
 
 function randomColor(): ColorKey {

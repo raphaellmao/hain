@@ -6,7 +6,8 @@
 import { db } from './schema'
 import type { DateStr } from '../domain/dates'
 import type { ColorKey } from '../domain/colors'
-import { type Checkin, type Habit, type Settings, DEFAULT_SETTINGS } from '../domain/types'
+import type { SpeciesKey } from '../domain/species'
+import { type Checkin, type DayEntry, type Habit, type Metaphor, type Settings, DEFAULT_SETTINGS } from '../domain/types'
 import { daysAt, withNewDays } from '../domain/schedule'
 
 export interface HabitInput {
@@ -16,6 +17,8 @@ export interface HabitInput {
   days: number[]
   startDate: DateStr
   seed: number
+  species: SpeciesKey
+  metaphor: Metaphor
 }
 
 export const newSeed = () => Math.floor(Math.random() * 2 ** 31)
@@ -31,6 +34,8 @@ export async function createHabit(input: HabitInput): Promise<string> {
     schedule: [{ from: input.startDate, days: [...input.days].sort((a, b) => a - b) }],
     startDate: input.startDate,
     seed: input.seed,
+    species: input.species,
+    metaphor: input.metaphor,
     order: (last?.order ?? 0) + 1,
     deleted: false,
     createdAt: now,
@@ -61,6 +66,8 @@ export async function updateHabit(id: string, input: HabitInput, today: DateStr)
     emoji: input.emoji,
     color: input.color,
     seed: input.seed,
+    species: input.species,
+    metaphor: input.metaphor,
     startDate: input.startDate,
     schedule,
     updatedAt: Date.now(),
@@ -75,6 +82,19 @@ export async function deleteHabit(id: string): Promise<void> {
 export async function setCheckin(habitId: string, date: DateStr, done: boolean): Promise<void> {
   const checkin: Checkin = { id: `${habitId}_${date}`, habitId, date, done, updatedAt: Date.now() }
   await db.checkins.put(checkin)
+}
+
+// ── Notizen pro Tag ─────────────────────────────────────────────────────────
+
+export const NOTE_MAX_LENGTH = 2000
+
+/** Notiz eines Tages speichern. Leerer Text bleibt als Eintrag mit note: '' liegen (für späteren Sync). */
+export async function setDayNote(date: DateStr, note: string): Promise<void> {
+  const text = note.trimEnd().slice(0, NOTE_MAX_LENGTH)
+  const current = await db.dayEntries.get(date)
+  if ((current?.note ?? '') === text) return
+  const entry: DayEntry = { id: date, date, note: text, updatedAt: Date.now() }
+  await db.dayEntries.put(entry)
 }
 
 // ── Einstellungen ───────────────────────────────────────────────────────────

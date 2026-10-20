@@ -2,7 +2,9 @@
  * Aktionen, die mehr tun als nur speichern (Feedback, Hinweise).
  */
 import type { DateStr } from '../domain/dates'
-import { computeHealth, stageOf, STAGE_NAMES } from '../domain/health'
+import { computeHealth, stageOf } from '../domain/health'
+import { stageName } from '../domain/species'
+import { TERRITORY_STATUS, computeShadowPower, shadowState } from '../domain/shadow'
 import type { DoneSet, Habit } from '../domain/types'
 import { setCheckin } from '../db/repo'
 import { celebrate, tick } from '../lib/haptics'
@@ -20,8 +22,13 @@ export async function toggleDay(habit: Habit, done: DoneSet, date: DateStr, toda
   if (wasDone) next.delete(date)
   else next.add(date)
 
-  const before = stageOf(computeHealth(habit, done, today).h)
-  const after = stageOf(computeHealth(habit, next, today).h)
+  // Fortschritt messen: Pflanze → Stufe, Schatten-Ich → Lage im Kampf ums Territorium
+  const level = (d: DoneSet) => {
+    const h = computeHealth(habit, d, today).h
+    return habit.metaphor === 'schatten' ? shadowState(h, computeShadowPower(habit, d, today)).status : stageOf(h)
+  }
+  const before = level(done)
+  const after = level(next)
 
   if (!wasDone) {
     if (after > before) celebrate()
@@ -31,6 +38,11 @@ export async function toggleDay(habit: Habit, done: DoneSet, date: DateStr, toda
   await setCheckin(habit.id, date, !wasDone)
 
   if (after > before) {
-    showToast(`${habit.name}: jetzt ${STAGE_NAMES[after]}`, habit.emoji)
+    showToast(
+      habit.metaphor === 'schatten'
+        ? `${habit.name}: ${TERRITORY_STATUS[after].label}`
+        : `${habit.name}: jetzt ${stageName(habit.species, after)}`,
+      habit.emoji,
+    )
   }
 }

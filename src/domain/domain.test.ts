@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { addDays, diffDays, eachDay, logicalToday, shiftMonth, weekday, weekdayMon0, startOfWeek } from './dates'
 import { ALL_DAYS, daysAt, describeDays, isDue, withNewDays } from './schedule'
 import { computeStreaks } from './streaks'
-import { computeHealth, growthOf, nextStage, stageOf, H_MAX } from './health'
+import { computeHealth, growthOf, healthOfGrowth, nextStage, stageOf, H_MAX } from './health'
 import { successRate, dayState } from './stats'
 import type { ScheduleVersion } from './types'
 
@@ -151,9 +151,20 @@ describe('health', () => {
     expect(computeHealth(daily(start), done, addDays(start, 40)).h).toBe(0)
   })
 
-  it('wird bei H_MAX gedeckelt', () => {
-    const done = new Set(run('2026-01-01', 150))
-    expect(computeHealth(daily('2026-01-01'), done, addDays('2026-01-01', 150)).h).toBe(H_MAX)
+  it('wird bei H_MAX (365) gedeckelt', () => {
+    const done = new Set(run('2025-01-01', 400))
+    expect(H_MAX).toBe(365)
+    expect(computeHealth(daily('2025-01-01'), done, addDays('2025-01-01', 400)).h).toBe(H_MAX)
+  })
+
+  it('voller Hain (365) ist nach 10 Fehltagen kahl', () => {
+    const start = '2025-01-01'
+    const done = new Set(run(start, 400))
+    const h = daily(start)
+    const after = (miss: number) => computeHealth(h, done, addDays(start, 400 + miss))
+    expect(stageOf(after(0).h)).toBe(9)
+    expect(after(9).dormant).toBe(false)
+    expect(after(10).dormant).toBe(true)
   })
 
   it('Fehltage zählen nur an fälligen Tagen', () => {
@@ -173,13 +184,17 @@ describe('growth & stages', () => {
     expect(growthOf(10)).toBeCloseTo(3 + 3 / 7)
     expect(growthOf(60)).toBe(6)
     expect(growthOf(100)).toBe(7)
+    expect(growthOf(150)).toBeCloseTo(7.5)
+    expect(growthOf(365)).toBe(9)
+    for (const h of [0.5, 2, 10, 75, 150, 300]) expect(healthOfGrowth(growthOf(h))).toBeCloseTo(h)
   })
 
   it('kennt die nächste Stufe', () => {
     expect(nextStage(0)).toMatchObject({ name: 'Samen', daysNeeded: 1 })
     expect(nextStage(10)).toMatchObject({ name: 'Junger Baum', daysNeeded: 4 })
     expect(nextStage(14.75)).toMatchObject({ name: 'Großer Baum', daysNeeded: 16 })
-    expect(nextStage(60)).toBeNull()
+    expect(nextStage(60)).toMatchObject({ name: 'Kleiner Hain', daysNeeded: 40 })
+    expect(nextStage(365)).toBeNull()
   })
 })
 

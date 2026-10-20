@@ -144,3 +144,116 @@ button {
     display: none;
   }
 }
+
+/* Neue Begleitpflanze im Hain wächst sanft heran */
+@keyframes grove-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.grove-in {
+  animation: grove-in 0.9s ease-out both;
+}
+
+/* ── Schatten-Ich ──────────────────────────────────────────────────────────
+   Alles nur transform/opacity → läuft auf dem Grafikchip. */
+@keyframes wisp-rise {
+  0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+  20% { opacity: var(--o, 0.8); }
+  100% { transform: translate(var(--dx), var(--dy, -60px)) scale(1.9); opacity: 0; }
+}
+.wisp {
+  animation: wisp-rise var(--t, 4s) ease-out infinite both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes ember-rise {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 1; }
+  70% { opacity: 0.8; }
+  100% { transform: translate(var(--dx), -72px); opacity: 0; }
+}
+.ember {
+  animation: ember-rise var(--t, 3s) ease-in infinite both;
+}
+@keyframes mote-rise {
+  0% { transform: translate(0, 0); opacity: 0; }
+  25% { opacity: 0.9; }
+  100% { transform: translate(var(--dx), -46px); opacity: 0; }
+}
+.mote {
+  animation: mote-rise var(--t, 4s) ease-out infinite both;
+}
+@keyframes breathe {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.025); }
+}
+.breathe {
+  animation: breathe 4.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.breathe-slow {
+  animation-duration: 6.2s;
+}
+@keyframes eye-flicker {
+  0%, 100% { opacity: 1; }
+  44% { opacity: 0.85; }
+  47% { opacity: 0.3; }
+  50% { opacity: 0.95; }
+  78% { opacity: 0.7; }
+}
+.shadow-eyes {
+  animation: eye-flicker 3.4s infinite;
+}
+@keyframes seam-glow {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.35; }
+}
+.seam {
+  animation: seam-glow 2.2s ease-in-out infinite;
+}
+@keyframes crack-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.crack {
+  animation: crack-glow 3.1s ease-in-out infinite;
+}
+@keyframes tendril-creep {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-3px); }
+}
+.tendril {
+  animation: tendril-creep 5s ease-in-out infinite;
+}
+
+/* Blut tropft von der Sense, die Schneide blitzt */
+@keyframes blood-drip {
+  0%, 55% { transform: translateY(0) scaleY(1); opacity: 1; }
+  80% { transform: translateY(0.5px) scaleY(1.45); opacity: 1; }
+  100% { transform: translateY(11px) scaleY(0.8); opacity: 0; }
+}
+.blood-drip {
+  animation: blood-drip 3s ease-in infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+}
+@keyframes blade-glint {
+  0%, 70%, 100% { opacity: 0.35; }
+  80% { opacity: 1; }
+}
+.blade-glint {
+  animation: blade-glint 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blood-drip, .blade-glint {
+    animation: none;
+  }
+  .wisp, .ember, .mote, .breathe, .shadow-eyes, .seam, .crack, .tendril {
+    animation: none;
+  }
+  .ember, .mote {
+    display: none;
+  }
+}

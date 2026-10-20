@@ -46,6 +46,13 @@ export function useDoneMap(): Map<string, Set<DateStr>> | undefined {
 const EMPTY: ReadonlySet<DateStr> = new Set()
 export const doneFor = (map: Map<string, Set<DateStr>> | undefined, id: string) => map?.get(id) ?? EMPTY
 
+/** Notiz eines Tages: undefined = lädt noch, '' = keine Notiz. */
+export function useDayNote(date: DateStr): string | undefined {
+  const result = useLiveQuery(async () => ({ date, note: (await db.dayEntries.get(date))?.note ?? '' }), [date])
+  // Nach einem Datumswechsel liefert useLiveQuery kurz noch das alte Ergebnis
+  return result?.date === date ? result.note : undefined
+}
+
 export function useSettings(): Settings {
   const value = useLiveQuery(() => db.meta.get('settings'))
   return useMemo(() => ({ ...DEFAULT_SETTINGS, ...((value?.value as Partial<Settings>) ?? {}) }), [value])

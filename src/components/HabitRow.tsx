@@ -2,8 +2,8 @@ import { motion } from 'motion/react'
 import { colorHex } from '../domain/colors'
 import { stageLabel, type HabitSummary } from '../domain/summary'
 import type { Habit } from '../domain/types'
-import { Tree } from '../tree/Tree'
-import { useLastSeen } from '../lib/lastSeen'
+import { HabitVisual } from './HabitVisual'
+import { TERRITORY_STATUS } from '../domain/shadow'
 import { CheckCircle } from './CheckCircle'
 import { IconChevronRight } from './icons'
 
@@ -31,14 +31,21 @@ export function HabitRow({
   onOpen: () => void
 }) {
   const color = colorHex(habit.color)
-  const fromG = useLastSeen(habit.id, summary.g)
   const { current } = summary.streaks
   const wilted = summary.health.wilted
 
-  const stage = stageLabel(summary)
+  const stage = stageLabel(summary, habit.species)
   let sub: string
   let subClass = 'text-muted'
-  if (summary.health.dormant && summary.stage === 0) {
+  if (habit.metaphor === 'schatten') {
+    // Schatten-Ich: Lage im Kampf statt Wachstumsstufe
+    const sh = summary.shadow
+    const lage = TERRITORY_STATUS[sh.status].label
+    if (sh.status <= 1 || (wilted && showWilt)) {
+      sub = `${lage} · Schatten ${Math.round(sh.s)}`
+      subClass = 'text-warn'
+    } else sub = current > 0 ? `${current} ${current === 1 ? 'Tag' : 'Tage'} in Folge · ${lage}` : lage
+  } else if (summary.health.dormant && summary.stage === 0) {
     sub = 'Kahl – ein neuer Samen liegt bereit'
   } else if (wilted && showWilt) {
     sub = `welkt · ${stage}`
@@ -63,16 +70,7 @@ export function HabitRow({
         className="flex min-h-[76px] min-w-0 flex-1 items-center gap-3 py-2 pl-2 pr-1 text-left"
       >
         <span className="size-16 shrink-0">
-          <Tree
-            seed={habit.seed}
-            color={habit.color}
-            g={summary.g}
-            wilted={wilted}
-            dormant={summary.health.dormant}
-            animated
-            fromG={fromG}
-            className="size-full"
-          />
+          <HabitVisual habit={habit} summary={summary} animated density="small" className="size-full" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 text-[17px] font-semibold leading-tight">

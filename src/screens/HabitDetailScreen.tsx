@@ -1,15 +1,17 @@
 import { doneFor, useDoneMap, useHabit, useToday } from '../db/hooks'
 import { colorHex } from '../domain/colors'
 import { type DateStr } from '../domain/dates'
-import { H_MAX, nextStage } from '../domain/health'
+import { H_MAX, MAX_STAGE, nextStage } from '../domain/health'
+import { SPECIES_INFO, speciesOf, stageName } from '../domain/species'
+import { groveSize } from '../tree/grove'
 import { describeDays, daysAt, isDue } from '../domain/schedule'
 import { successRate, totalDone } from '../domain/stats'
 import { stageLabel, summarize } from '../domain/summary'
 import type { DoneSet, Habit } from '../domain/types'
 import { toggleDay } from '../app/actions'
 import { goBack, navigate, paths } from '../app/router'
-import { Tree } from '../tree/Tree'
-import { useLastSeen } from '../lib/lastSeen'
+import { HabitVisual } from '../components/HabitVisual'
+import { ShadowCard } from '../components/ShadowCard'
 import { CheckCircle } from '../components/CheckCircle'
 import { IconChevronLeft } from '../components/icons'
 import { Heatmap } from '../components/Heatmap'
@@ -57,21 +59,21 @@ const days = (n: number) => `${n} ${n === 1 ? 'Tag' : 'Tage'}`
 
 function Detail({ habit, done, today }: { habit: Habit; done: DoneSet; today: DateStr }) {
   const s = summarize(habit, done, today)
-  const fromG = useLastSeen(habit.id, s.g)
   const color = colorHex(habit.color)
-  const { h, wilted, dormant, missRun } = s.health
+  const { h, wilted, missRun } = s.health
   const next = nextStage(h)
   const rate = successRate(habit, done, today)
   const dueToday = isDue(habit, today)
   const doneToday = done.has(today)
 
   // Fortschritt innerhalb der aktuellen Stufe (0 … 1)
-  const stageProgress = s.g >= 7 ? 1 : s.g - Math.floor(s.g)
+  const stageProgress = s.g >= MAX_STAGE ? 1 : s.g - Math.floor(s.g)
+  const species = speciesOf(habit)
+  const plants = groveSize(s.g)
 
-  let progressText: string
-  if (next) progressText = `Noch ${days(next.daysNeeded)} erledigt bis „${next.name}“`
-  else if (h < H_MAX) progressText = `Blüht – noch ${days(Math.ceil(H_MAX - h))} bis zur vollen Blüte`
-  else progressText = 'In voller Blüte'
+  const progressText = next
+    ? `Noch ${days(next.daysNeeded)} erledigt bis „${stageName(species, next.stage)}“`
+    : 'Voll ausgewachsen – dein Hain ist komplett'
 
   return (
     <div className="pb-nav">
@@ -84,28 +86,23 @@ function Detail({ habit, done, today }: { habit: Habit; done: DoneSet; today: Da
         </h1>
         <p className="text-[15px] text-muted">{describeDays(daysAt(habit.schedule, today))}</p>
 
-        {/* Baum */}
+        {/* Pflanze bzw. Schatten-Ich */}
         <div className="mx-auto mt-2 aspect-square w-full max-w-[340px]">
-          <Tree
-            seed={habit.seed}
-            color={habit.color}
-            g={s.g}
-            wilted={wilted}
-            dormant={dormant}
-            animated
-            fromG={fromG}
-            className="size-full"
-          />
+          <HabitVisual habit={habit} summary={s} animated density="rich" className="size-full" />
         </div>
 
-        {/* Stufe */}
+        {habit.metaphor === 'schatten' ? (
+          <ShadowCard summary={s} color={color} />
+        ) : (
         <section className="rounded-3xl bg-surface p-4">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="text-xl font-bold">
-              {stageLabel(s)}
+              {stageLabel(s, species)}
               {wilted && <span className="text-warn"> · welk</span>}
             </h2>
-            <span className="text-[13px] text-muted tabular-nums">Stufe {s.stage}/6</span>
+            <span className="text-[13px] text-muted tabular-nums">
+              Stufe {s.stage}/{MAX_STAGE}
+            </span>
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
             <div
@@ -114,7 +111,10 @@ function Detail({ habit, done, today }: { habit: Habit; done: DoneSet; today: Da
             />
           </div>
           <p className="mt-2 text-[15px]">{progressText}</p>
-          <p className="mt-0.5 text-[13px] text-muted tabular-nums">Gesundheit {fmt1(h)} von {H_MAX}</p>
+          <p className="mt-0.5 text-[13px] text-muted tabular-nums">
+            {SPECIES_INFO[species].label} · Gesundheit {fmt1(h)} von {H_MAX}
+            {plants > 1 && ` · ${plants} Pflanzen im Hain`}
+          </p>
 
           {wilted && (
             <p className="mt-3 rounded-2xl bg-surface-2 p-3 text-[14px] leading-snug">
@@ -124,6 +124,7 @@ function Detail({ habit, done, today }: { habit: Habit; done: DoneSet; today: Da
             </p>
           )}
         </section>
+        )}
 
         {/* Heute abhaken – auch aus der Detailansicht */}
         {(dueToday || doneToday) && (

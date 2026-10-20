@@ -10,19 +10,25 @@ import type { DoneSet, Habit } from './types'
  *   1. verpasster fälliger Tag     → H − 1, Baum welk (Warnung)
  *   ab dem 2. verpassten in Folge  → H halbiert (≈ eine Stufe tiefer)
  *
- * Die Stufengrenzen (1, 3, 7, 14, 30, 60) verdoppeln sich ungefähr, darum
- * entspricht Halbieren ziemlich genau einer Stufe. Ein blühender Baum
- * (H = 60) ist nach 7 verpassten Tagen in Folge kahl.
+ * Die Stufengrenzen (1, 3, 7, 14, 30, 60, 100, 200, 365) verdoppeln sich
+ * ungefähr, darum entspricht Halbieren ziemlich genau einer Stufe. Ein
+ * blühender Baum (H = 60) ist nach 7 verpassten Tagen in Folge kahl, ein
+ * voller Hain (H = 365) nach 10.
+ *
+ * Ab H = 100 (volle Blüte) wächst nicht mehr die Pflanze selbst, sondern
+ * um sie herum ein Hain: bis zu fünf weitere Pflanzen (siehe tree/grove.ts).
  *
  * H wird nie gespeichert, sondern immer aus der Abhak-Historie neu
  * berechnet – so wirken nachträgliche Korrekturen sofort richtig.
  */
 
-export const H_MAX = 100
+export const H_MAX = 365
 
-/** H, ab dem Stufe 1 … 6 beginnt */
-export const STAGE_THRESHOLDS = [1, 3, 7, 14, 30, 60] as const
+/** H, ab dem Stufe 1 … 9 beginnt */
+export const STAGE_THRESHOLDS = [1, 3, 7, 14, 30, 60, 100, 200, 365] as const
+export const MAX_STAGE = STAGE_THRESHOLDS.length
 
+/** Allgemeine Stufennamen (Laubbaum) – je Art siehe domain/species.ts */
 export const STAGE_NAMES = [
   'Erde',
   'Samen',
@@ -31,6 +37,9 @@ export const STAGE_NAMES = [
   'Junger Baum',
   'Großer Baum',
   'Blühender Baum',
+  'Kleiner Hain',
+  'Hain',
+  'Alter Hain',
 ] as const
 
 export interface Health {
@@ -77,7 +86,7 @@ export function computeHealth(
   }
 }
 
-/** Stufe 0 (Erde) … 6 (Blühender Baum) */
+/** Stufe 0 (Erde) … 9 (Alter Hain) */
 export function stageOf(h: number): number {
   let stage = 0
   for (const t of STAGE_THRESHOLDS) if (h >= t) stage++
@@ -85,18 +94,28 @@ export function stageOf(h: number): number {
 }
 
 /**
- * Stufenloser Wachstumswert g ∈ [0, 7] für die Darstellung:
+ * Stufenloser Wachstumswert g ∈ [0, 9] für die Darstellung:
  * ganzzahliger Teil = Stufe, Nachkommateil = Fortschritt zur nächsten Stufe.
  * Beispiel: H = 10 liegt zwischen 7 und 14 → g = 3 + 3/7 ≈ 3,43.
- * Ab 60 füllt sich der Baum bis H_MAX mit Blüten (g 6 → 7).
+ * g 6 → 7 (H 60 → 100): die Pflanze füllt sich mit Blüten/Früchten,
+ * g 7 → 9 (H 100 → 365): der Hain wächst.
  */
 export function growthOf(h: number): number {
-  if (h < STAGE_THRESHOLDS[0]) return h / STAGE_THRESHOLDS[0]
-  const bounds = [...STAGE_THRESHOLDS, H_MAX]
-  for (let i = 0; i < bounds.length - 1; i++) {
-    if (h < bounds[i + 1]) return i + 1 + (h - bounds[i]) / (bounds[i + 1] - bounds[i])
+  const T = STAGE_THRESHOLDS
+  if (h < T[0]) return h / T[0]
+  for (let i = 0; i < T.length - 1; i++) {
+    if (h < T[i + 1]) return i + 1 + (h - T[i]) / (T[i + 1] - T[i])
   }
-  return 7
+  return MAX_STAGE
+}
+
+/** Umkehrung von growthOf: welches H gehört zu g? */
+export function healthOfGrowth(g: number): number {
+  const T = STAGE_THRESHOLDS
+  if (g < 1) return g * T[0]
+  if (g >= MAX_STAGE) return T[T.length - 1]
+  const i = Math.floor(g) - 1
+  return T[i] + (g - Math.floor(g)) * (T[i + 1] - T[i])
 }
 
 /** Wie viele erledigte Tage fehlen noch bis zur nächsten Stufe? */

@@ -9,6 +9,7 @@ import { navigate, paths } from '../app/router'
 import { HabitRow } from '../components/HabitRow'
 import { WeekStrip } from '../components/WeekStrip'
 import { Fab } from '../components/Fab'
+import { DayNote } from '../components/DayNote'
 import { Tree } from '../tree/Tree'
 
 export function TodayScreen() {
@@ -120,6 +121,8 @@ export function TodayScreen() {
             {showRest && <ul className="mt-1 flex flex-col gap-2.5">{rest.map((i) => row(i, true))}</ul>}
           </section>
         )}
+
+        <DayNote date={selected} isToday={isToday} />
       </main>
 
       {needsBackup(habits, lastBackupAt) && (

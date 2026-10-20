@@ -6,10 +6,13 @@
  */
 import { db } from './schema'
 import { COLORS } from '../domain/colors'
-import { type Checkin, type Habit, type Settings, DEFAULT_SETTINGS } from '../domain/types'
+import { isSpecies } from '../domain/species'
+import { type Checkin, type DayEntry, type Habit, type Settings, DEFAULT_SETTINGS } from '../domain/types'
+import { NOTE_MAX_LENGTH } from './repo'
 import { toDateStr } from '../domain/dates'
 
-export const BACKUP_VERSION = 1
+/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag */
+export const BACKUP_VERSION = 2
 
 export interface BackupFile {
   app: 'hain'
@@ -18,14 +21,16 @@ export interface BackupFile {
   settings: Settings
   habits: Habit[]
   checkins: Checkin[]
+  dayEntries: DayEntry[]
 }
 
 export async function createBackup(): Promise<BackupFile> {
   const habits = (await db.habits.toArray()).filter((h) => !h.deleted)
   const ids = new Set(habits.map((h) => h.id))
   const checkins = (await db.checkins.toArray()).filter((c) => c.done && ids.has(c.habitId))
+  const dayEntries = (await db.dayEntries.toArray()).filter((e) => e.note !== '')
   const settings = { ...DEFAULT_SETTINGS, ...((await db.meta.get('settings'))?.value as Partial<Settings>) }
-  return { app: 'hain', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), settings, habits, checkins }
+  return { app: 'hain', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), settings, habits, checkins, dayEntries }
 }
 
 /** Backup speichern: auf dem Handy über das Teilen-Menü („In Dateien sichern“), sonst als Download. */
@@ -91,6 +96,8 @@ export function parseBackup(text: string): BackupFile {
       schedule: [...h.schedule].sort((a, c) => a.from.localeCompare(c.from)),
       startDate: h.startDate,
       seed: h.seed,
+      ...(isSpecies(h.species) ? { species: h.species } : {}),
+      ...(h.metaphor === 'schatten' || h.metaphor === 'pflanze' ? { metaphor: h.metaphor } : {}),
       order: typeof h.order === 'number' ? h.order : i + 1,
       deleted: false,
       createdAt: typeof h.createdAt === 'number' ? h.createdAt : now,
@@ -111,19 +118,37 @@ export function parseBackup(text: string): BackupFile {
     })
   }
 
+  // Notizen gibt es erst ab Backup-Version 2 – ältere Backups haben keine
+  const dayEntries: DayEntry[] = []
+  const seen = new Set<string>()
+  for (const e of Array.isArray(b.dayEntries) ? b.dayEntries : []) {
+    if (!e || !isDate(e.date) || seen.has(e.date)) continue
+    const note = typeof e.note === 'string' ? e.note.slice(0, NOTE_MAX_LENGTH) : ''
+    if (note.trim() === '') continue
+    seen.add(e.date)
+    dayEntries.push({
+      id: e.date,
+      date: e.date,
+      note,
+      updatedAt: typeof e.updatedAt === 'number' ? e.updatedAt : now,
+    })
+  }
+
   const hour = b.settings?.dayStartHour
   const settings: Settings = { dayStartHour: Number.isInteger(hour) && hour! >= 0 && hour! <= 4 ? hour! : 0 }
 
-  return { app: 'hain', version: b.version, exportedAt: String(b.exportedAt ?? ''), settings, habits, checkins }
+  return { app: 'hain', version: b.version, exportedAt: String(b.exportedAt ?? ''), settings, habits, checkins, dayEntries }
 }
 
 /** Ersetzt ALLE vorhandenen Daten durch das Backup (in einer Transaktion: ganz oder gar nicht). */
 export async function restoreBackup(backup: BackupFile): Promise<void> {
-  await db.transaction('rw', db.habits, db.checkins, db.meta, async () => {
+  await db.transaction('rw', [db.habits, db.checkins, db.dayEntries, db.meta], async () => {
     await db.habits.clear()
     await db.checkins.clear()
+    await db.dayEntries.clear()
     await db.habits.bulkAdd(backup.habits)
     await db.checkins.bulkPut(backup.checkins)
+    await db.dayEntries.bulkPut(backup.dayEntries)
     await db.meta.put({ key: 'settings', value: backup.settings })
   })
 }

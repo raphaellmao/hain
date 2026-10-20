@@ -1,5 +1,6 @@
 import type { DateStr } from './dates'
 import type { ColorKey } from './colors'
+import type { SpeciesKey } from './species'
 
 /**
  * Ab `from` gilt: fällig an den Wochentagen `days` (0 = So … 6 = Sa).
@@ -24,6 +25,10 @@ export interface Habit {
   startDate: DateStr
   /** bestimmt die Form des Baums – gleicher Seed, gleicher Baum */
   seed: number
+  /** Pflanzenart; fehlt bei Habits von vor der Einführung → Laubbaum */
+  species?: SpeciesKey
+  /** Bild für den Fortschritt: wachsende Pflanze (Standard) oder Schatten-Ich */
+  metaphor?: Metaphor
   /** Sortierung in Listen */
   order: number
   /** Gelöschte Habits bleiben als „Grabstein“ liegen (für späteren Sync) */
@@ -31,6 +36,8 @@ export interface Habit {
   createdAt: number
   updatedAt: number
 }
+
+export type Metaphor = 'pflanze' | 'schatten'
 
 /** Ein Eintrag pro Habit und Tag. Fehlt er, gilt der Tag als nicht erledigt. */
 export interface Checkin {
@@ -40,6 +47,16 @@ export interface Checkin {
   date: DateStr
   /** Abhaken rückgängig = done: false statt Löschen (für späteren Sync) */
   done: boolean
+  updatedAt: number
+}
+
+/** Notiz zu einem Tag – unabhängig von einzelnen Habits, höchstens eine pro Tag. */
+export interface DayEntry {
+  /** = `date` – damit gibt es pro Tag höchstens einen Eintrag (auch nach einem Sync) */
+  id: DateStr
+  date: DateStr
+  /** Leeren = note: '' statt Löschen (für späteren Sync) */
+  note: string
   updatedAt: number
 }
 

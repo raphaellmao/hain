@@ -1,5 +1,7 @@
 import type { DateStr } from './dates'
-import { computeHealth, growthOf, stageOf, STAGE_NAMES, type Health } from './health'
+import { computeHealth, growthOf, stageOf, type Health } from './health'
+import { stageName, type SpeciesKey } from './species'
+import { computeShadowPower, shadowState, type Shadow } from './shadow'
 import { computeStreaks, type Streaks } from './streaks'
 import type { DoneSet, Habit } from './types'
 
@@ -10,6 +12,8 @@ export interface HabitSummary {
   g: number
   stage: number
   streaks: Streaks
+  /** Kampf gegen das Schatten-Ich (wird immer berechnet, angezeigt nur bei metaphor = 'schatten') */
+  shadow: Shadow
 }
 
 export function summarize(habit: Habit, done: DoneSet, today: DateStr): HabitSummary {
@@ -19,10 +23,11 @@ export function summarize(habit: Habit, done: DoneSet, today: DateStr): HabitSum
     g: growthOf(health.h),
     stage: stageOf(health.h),
     streaks: computeStreaks(habit, done, today),
+    shadow: shadowState(health.h, computeShadowPower(habit, done, today)),
   }
 }
 
 /** Name der Stufe – ein eingegangener Baum heißt „Kahl“ statt „Erde“. */
-export function stageLabel(s: HabitSummary): string {
-  return s.health.dormant && s.stage === 0 ? 'Kahl' : STAGE_NAMES[s.stage]
+export function stageLabel(s: HabitSummary, species?: SpeciesKey): string {
+  return s.health.dormant && s.stage === 0 ? 'Kahl' : stageName(species, s.stage)
 }

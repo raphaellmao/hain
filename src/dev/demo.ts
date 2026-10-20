@@ -9,11 +9,14 @@ import { addDays, logicalToday, weekday, type DateStr } from '../domain/dates'
 import { ALL_DAYS } from '../domain/schedule'
 import type { Checkin, Habit } from '../domain/types'
 import type { ColorKey } from '../domain/colors'
+import type { SpeciesKey } from '../domain/species'
 
 interface DemoSpec {
   name: string
   emoji: string
   color: ColorKey
+  species: SpeciesKey
+  metaphor?: 'schatten'
   days: number[]
   /** Tage seit Start */
   age: number
@@ -24,13 +27,20 @@ interface DemoSpec {
 export async function hainDemo() {
   const today = logicalToday(new Date(), 0)
   const specs: DemoSpec[] = [
-    { name: 'Lesen', emoji: '📖', color: 'koralle', days: ALL_DAYS, age: 95, done: (i) => i % 23 !== 5 },
-    { name: 'Laufen', emoji: '🏃', color: 'blau', days: [1, 3, 5], age: 70, done: () => true },
-    { name: 'Wasser trinken', emoji: '💧', color: 'tuerkis', days: ALL_DAYS, age: 19, done: () => true },
-    { name: 'Meditieren', emoji: '🧘', color: 'flieder', days: ALL_DAYS, age: 45, done: (i) => i < 43 },
-    { name: 'Zahnseide', emoji: '🦷', color: 'rosa', days: ALL_DAYS, age: 5, done: () => true },
-    { name: 'Vokabeln', emoji: '🗣️', color: 'gold', days: ALL_DAYS, age: 42, done: (i) => i < 32 },
-    { name: 'Handyfrei', emoji: '📵', color: 'apricot', days: ALL_DAYS, age: 1, done: (i) => i === 0 },
+    { name: 'Lesen', emoji: '📖', color: 'koralle', species: 'laubbaum', days: ALL_DAYS, age: 400, done: (i) => i % 61 !== 5 },
+    { name: 'Laufen', emoji: '🏃', color: 'blau', species: 'tanne', days: [1, 3, 5], age: 330, done: () => true },
+    { name: 'Wasser trinken', emoji: '💧', color: 'tuerkis', species: 'birke', days: ALL_DAYS, age: 19, done: () => true },
+    { name: 'Meditieren', emoji: '🧘', color: 'flieder', species: 'kirsche', days: ALL_DAYS, age: 75, done: (i) => i < 73 },
+    { name: 'Zahnseide', emoji: '🦷', color: 'rosa', species: 'weide', days: ALL_DAYS, age: 5, done: () => true },
+    { name: 'Vokabeln', emoji: '🗣️', color: 'gold', species: 'apfel', days: ALL_DAYS, age: 42, done: (i) => i < 32 },
+    { name: 'Handyfrei', emoji: '📵', color: 'apricot', species: 'sonnenblume', days: ALL_DAYS, age: 1, done: (i) => i === 0 },
+    { name: 'Gitarre', emoji: '🎸', color: 'weinrot', species: 'kaktus', days: ALL_DAYS, age: 90, done: () => true },
+    { name: 'Spazieren', emoji: '🚶', color: 'gold', species: 'sonnenblume', days: ALL_DAYS, age: 70, done: () => true },
+    { name: 'Dehnen', emoji: '🤸', color: 'rosa', species: 'apfel', days: ALL_DAYS, age: 160, done: () => true },
+    // Schatten-Ich in drei Lagen: gewonnen, umkämpft, fast verloren
+    { name: 'Sport', emoji: '💪', color: 'blau', species: 'laubbaum', metaphor: 'schatten', days: ALL_DAYS, age: 40, done: () => true },
+    { name: 'Früh aufstehen', emoji: '☀️', color: 'gold', species: 'laubbaum', metaphor: 'schatten', days: ALL_DAYS, age: 30, done: (i) => i < 20 || i % 3 === 0 },
+    { name: 'Kein Social Media', emoji: '📵', color: 'tuerkis', species: 'laubbaum', metaphor: 'schatten', days: ALL_DAYS, age: 30, done: (i) => i < 22 },
   ]
 
   const now = Date.now()
@@ -46,6 +56,8 @@ export async function hainDemo() {
       name: s.name,
       emoji: s.emoji,
       color: s.color,
+      species: s.species,
+      ...(s.metaphor ? { metaphor: s.metaphor } : {}),
       schedule: [{ from: startDate, days: s.days }],
       startDate,
       seed: 1000 + idx * 97,

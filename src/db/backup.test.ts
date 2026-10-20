@@ -29,6 +29,27 @@ describe('parseBackup', () => {
     expect(b.settings.dayStartHour).toBe(3)
   })
 
+  it('liest alte Backups ohne Notizen', () => {
+    expect(parseBackup(JSON.stringify(valid)).dayEntries).toEqual([])
+  })
+
+  it('übernimmt Notizen und räumt auf', () => {
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        version: 2,
+        dayEntries: [
+          { id: '2026-10-01', date: '2026-10-01', note: 'Guter Tag', updatedAt: 5 },
+          { date: '2026-10-01', note: 'doppelt' },
+          { date: '2026-10-02', note: '   ' },
+          { date: 'kaputt', note: 'x' },
+          { date: '2026-10-03', note: 42 },
+        ],
+      }),
+    )
+    expect(b.dayEntries).toEqual([{ id: '2026-10-01', date: '2026-10-01', note: 'Guter Tag', updatedAt: 5 }])
+  })
+
   it('ersetzt unbekannte Farben', () => {
     const b = parseBackup(JSON.stringify({ ...valid, habits: [{ ...valid.habits[0], color: 'neon' }] }))
     expect(b.habits[0].color).toBe('koralle')

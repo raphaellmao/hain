@@ -3,7 +3,8 @@ import { motion } from 'motion/react'
 import { doneFor, useDoneMap, useHabits, useToday } from '../db/hooks'
 import { stageLabel, summarize } from '../domain/summary'
 import { navigate, paths } from '../app/router'
-import { Tree } from '../tree/Tree'
+import { HabitVisual } from '../components/HabitVisual'
+import { TERRITORY_STATUS } from '../domain/shadow'
 import { Fab } from '../components/Fab'
 
 /**
@@ -64,24 +65,23 @@ export function GardenScreen() {
                   className="flex w-full flex-col items-center rounded-3xl pt-1 pb-2 active:bg-surface-2"
                 >
                   <span className="aspect-square w-full">
-                    <Tree
-                      seed={habit.seed}
-                      color={habit.color}
-                      g={summary.g}
-                      wilted={summary.health.wilted}
-                      dormant={summary.health.dormant}
-                      className="size-full"
-                    />
+                    <HabitVisual habit={habit} summary={summary} className="size-full" />
                   </span>
                   <span className="mt-0.5 flex w-full items-center justify-center gap-1 px-1 text-[13px] font-semibold">
                     <span aria-hidden>{habit.emoji}</span>
                     <span className="truncate">{habit.name}</span>
                   </span>
-                  <span
-                    className={`text-[11px] ${summary.health.wilted && !isBare(summary) ? 'font-semibold text-warn' : 'text-muted'}`}
-                  >
-                    {summary.health.wilted && !isBare(summary) ? 'welkt' : stageLabel(summary)}
-                  </span>
+                  {habit.metaphor === 'schatten' ? (
+                    <span className={`text-[11px] ${summary.shadow.status <= 1 ? 'font-semibold text-warn' : 'text-muted'}`}>
+                      {TERRITORY_STATUS[summary.shadow.status].label}
+                    </span>
+                  ) : (
+                    <span
+                      className={`text-[11px] ${summary.health.wilted && !isBare(summary) ? 'font-semibold text-warn' : 'text-muted'}`}
+                    >
+                      {summary.health.wilted && !isBare(summary) ? 'welkt' : stageLabel(summary, habit.species)}
+                    </span>
+                  )}
                 </button>
               </motion.li>
             ))}

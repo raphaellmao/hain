@@ -1,26 +1,28 @@
 /**
- * Zeichnet den Baum eines Habits als SVG.
+ * Zeichnet die Pflanze eines Habits als SVG.
  *
- * Je nach Wachstum g (0 … 7, siehe health.ts → growthOf):
- *   g < 1   Erde (oder kahler Stummel, wenn der Baum eingegangen ist)
+ * Je nach Wachstum g (0 … 9, siehe health.ts → growthOf):
+ *   g < 1   Erde (oder kahler Stummel, wenn die Pflanze eingegangen ist)
  *   g < 2   Samen
  *   g < 3   Keimling
- *   g ≥ 3   prozeduraler Baum aus generate.ts (Busch → blühender Baum)
+ *   g < 7   die Pflanze der gewählten Art (species/), vom Busch bis zur vollen Blüte
+ *   g ≥ 7   zusätzlich wachsen Begleitpflanzen zu einem Hain (grove.ts)
  *
  * Animationen (nur mit `animated`):
  *   - neue Blätter/Blüten „ploppen“ auf (CSS-Keyframes, siehe index.css)
- *   - der ganze Baum „streckt sich“ kurz, wenn g steigt (motion)
+ *   - die ganze Pflanze „streckt sich“ kurz, wenn g steigt (motion)
  *   - Größenänderung federt weich nach (motion)
  *   - sinkt g, fallen die verlorenen Blätter herunter
  * Pro Blatt werden bewusst CSS-Animationen statt motion-Komponenten benutzt:
- * Ein großer Baum hat ~200 Blätter, CSS kostet dabei praktisch kein JavaScript
- * und bleibt auch auf älteren Handys bei 60 fps.
+ * Eine große Pflanze hat ~200 Blätter, CSS kostet dabei praktisch kein
+ * JavaScript und bleibt auch auf älteren Handys bei 60 fps.
  */
 import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { motion, useAnimate } from 'motion/react'
 import type { ColorKey } from '../domain/colors'
-import { STAGE_NAMES } from '../domain/health'
-import { BASE_X, GROUND, leafPath, leafVisible, quadPoint, treeModel, treeScale, type TreeModel } from './generate'
+import { stageName, type SpeciesKey } from '../domain/species'
+import { BASE_X, GROUND, leafPath, leafVisible, plantModel, quadPoint, treeScale, type PlantModel } from './generate'
+import { companions } from './grove'
 import { clamp, lerp } from './rng'
 import { DORMANT_BARK, treePalette, type TreePalette } from './palette'
 import { useDarkMode } from '../lib/useDarkMode'
@@ -28,7 +30,9 @@ import { useDarkMode } from '../lib/useDarkMode'
 export interface TreeProps {
   seed: number
   color: ColorKey
-  /** Wachstum 0 … 7 */
+  /** Pflanzenart (fehlt bei alten Habits → Laubbaum) */
+  species?: SpeciesKey
+  /** Wachstum 0 … 9 */
   g: number
   wilted?: boolean
   dormant?: boolean
@@ -36,14 +40,18 @@ export interface TreeProps {
   animated?: boolean
   /** Wachstum beim letzten Ansehen: war es größer, fallen beim Öffnen Blätter */
   fromG?: number
-  /** Erde unter dem Baum zeichnen */
+  /** Erde unter der Pflanze zeichnen */
   ground?: boolean
   className?: string
 }
 
+/** Bis g = 7 wächst die Pflanze selbst, danach nur noch der Hain um sie herum. */
+const MAIN_MAX = 7
+
 export const Tree = memo(function Tree({
   seed,
   color,
+  species,
   g,
   wilted = false,
   dormant = false,
@@ -53,10 +61,11 @@ export const Tree = memo(function Tree({
   className,
 }: TreeProps) {
   const dark = useDarkMode()
-  const model = treeModel(seed)
+  const model = plantModel(species, seed)
   const wilt = wilted ? 1 : 0
   const pal = useMemo(() => treePalette(color, wilt, dark), [color, wilt, dark])
   const pop = usePopTracker(animated, fromG)
+  const gm = Math.min(g, MAIN_MAX)
 
   // ── Reaktion auf Wachstumsänderungen ──────────────────────────────────────
   const [scope, animate] = useAnimate<SVGGElement>()
@@ -68,7 +77,7 @@ export const Tree = memo(function Tree({
     prevG.current = g
     if (!animated) return
     if (g < prev - 1e-6) {
-      setFall({ from: prev, to: g, key: Date.now() })
+      setFall({ from: Math.min(prev, MAIN_MAX), to: Math.min(g, MAIN_MAX), key: Date.now() })
     } else if (g > prev + 1e-6 && scope.current) {
       // kurz strecken: erst in die Höhe, dann zurückfedern
       animate(scope.current, { scaleY: [1, 1.08, 0.98, 1], scaleX: [1, 0.97, 1.01, 1] }, { duration: 0.65 })
@@ -81,20 +90,30 @@ export const Tree = memo(function Tree({
     return () => window.clearTimeout(t)
   }, [fall])
 
-  // ── Inhalt je nach Stufe ──────────────────────────────────────────────────
+  // ── Inhalt ────────────────────────────────────────────────────────────────
   // Die Teile werden als normale Funktionen aufgerufen (nicht als <Komponente/>),
   // damit sie *jetzt* laufen – der Pop-Tracker muss vor pop.end() alles sehen.
-  const isTree = g >= 3
-  let content: ReactNode
-  if (g < 1) content = dormant ? Dormant({ model, pal, dark }) : PlantingHole({ pal })
-  else if (g < 2) content = Seed({ t: g - 1, pal, pop: pop.is })
-  else if (g < 3) content = Sprout({ t: g - 2, pal, wilt, pop: pop.is })
-  else content = FullTree({ model, g, pal, wilt, pop: pop.is })
+  const isTree = gm >= 3
+  const content = plantContent({ model, g: gm, pal, wilt, dormant, dark, pop: pop.is })
   pop.end()
 
-  const scale = isTree ? treeScale(g) : 1
-  const stage = Math.min(6, Math.floor(g))
-  const label = dormant && g < 1 ? 'Kahler Stamm' : `${STAGE_NAMES[stage]}${wilted ? ', welk' : ''}`
+  // Begleitpflanzen des Hains (vereinfacht gezeichnet, ohne Einzel-Animationen)
+  const grove = companions(g, seed).map((c) => (
+    <g
+      key={c.k}
+      className={animated ? 'grove-in' : undefined}
+      transform={`translate(${c.x} ${c.y}) scale(${c.s}) translate(${-BASE_X} ${-GROUND})`}
+    >
+      {Soil({ pal, small: true })}
+      <g transform={scaleAboutBase(c.g >= 3 ? treeScale(c.g) : 1)}>
+        {plantContent({ model: plantModel(species, c.seed), g: c.g, pal, wilt, dormant: false, dark, pop: NO_POP, lite: true })}
+      </g>
+    </g>
+  ))
+
+  const scale = isTree ? treeScale(gm) : 1
+  const stage = Math.min(9, Math.floor(g))
+  const label = dormant && g < 1 ? 'Kahl' : `${stageName(species, stage)}${wilted ? ', welk' : ''}`
 
   const viewBox = viewBoxFor(g)
   const Svg = animated ? motion.svg : 'svg'
@@ -111,6 +130,7 @@ export const Tree = memo(function Tree({
     >
       {/* Erde gegen den Zoom skalieren → im Garten überall gleich groß */}
       {ground && <g transform={scaleAboutBase(zoomOf(g) / 200)}>{Soil({ pal })}</g>}
+      {grove}
       {animated ? (
         // key: Beim Wechsel Keimling ↔ Baum neu aufbauen statt hinüberzufedern
         <motion.g
@@ -136,9 +156,11 @@ export const Tree = memo(function Tree({
 
 /**
  * Kamera: Kleine Pflanzen werden herangezoomt, damit ein Samen auch im
- * 64-px-Listenbild erkennbar ist. Ab dem jungen Baum ist alles im Bild.
+ * 64-px-Listenbild erkennbar ist. Ab dem jungen Baum ist alles im Bild,
+ * wächst der Hain, zoomt die Kamera wieder etwas heraus.
  */
-const zoomOf = (g: number) => lerp(112, 200, clamp((g - 1.5) / 4, 0, 1))
+const zoomOf = (g: number) =>
+  g <= MAIN_MAX ? lerp(112, 200, clamp((g - 1.5) / 4, 0, 1)) : lerp(200, 240, clamp((g - MAIN_MAX) / 2, 0, 1))
 
 function viewBoxFor(g: number): string {
   const v = zoomOf(g)
@@ -162,7 +184,26 @@ const leafTransform = (x: number, y: number, angle: number) => ({
 
 // ── Teile ────────────────────────────────────────────────────────────────────
 
-function Soil({ pal }: { pal: TreePalette }) {
+function plantContent(o: {
+  model: PlantModel
+  g: number
+  pal: TreePalette
+  wilt: number
+  dormant: boolean
+  dark: boolean
+  pop: PopFn
+  lite?: boolean
+}): ReactNode {
+  if (o.g < 1) return o.dormant ? Dormant({ model: o.model, pal: o.pal, dark: o.dark }) : PlantingHole({ pal: o.pal })
+  if (o.g < 2) return Seed({ t: o.g - 1, pal: o.pal, pop: o.pop })
+  if (o.g < 3) return Sprout({ t: o.g - 2, pal: o.pal, wilt: o.wilt, pop: o.pop })
+  return FullTree({ model: o.model, g: o.g, pal: o.pal, wilt: o.wilt, pop: o.pop, lite: o.lite })
+}
+
+function Soil({ pal, small = false }: { pal: TreePalette; small?: boolean }) {
+  if (small) {
+    return <path d={`M${BASE_X - 34} ${GROUND + 4}Q${BASE_X} ${GROUND - 6} ${BASE_X + 34} ${GROUND + 4}Z`} fill={pal.soil} />
+  }
   return (
     <>
       <ellipse cx={BASE_X} cy={GROUND + 6} rx={60} ry={9} fill={pal.soilShadow} />
@@ -245,21 +286,23 @@ function Sprout({ t, pal, wilt, pop }: { t: number; pal: TreePalette; wilt: numb
 const cotyledonPath = (s: number) =>
   `M0 0C${0.5 * s} ${-0.1 * s} ${0.6 * s} ${-0.8 * s} 0 ${-s}C${-0.6 * s} ${-0.8 * s} ${-0.5 * s} ${-0.1 * s} 0 0Z`
 
-/** Der eigentliche Baum: Äste wachsen über die Strichlänge, Blätter erscheinen nach `appear`. */
-function FullTree({ model, g, pal, wilt, pop }: { model: TreeModel; g: number; pal: TreePalette; wilt: number; pop: PopFn }) {
+/** Die Pflanze: Striche wachsen über die Strichlänge, Blätter und Blüten erscheinen nach `appear`. */
+function FullTree({
+  model, g, pal, wilt, pop, lite = false,
+}: { model: PlantModel; g: number; pal: TreePalette; wilt: number; pop: PopFn; lite?: boolean }) {
   return (
     <>
-      <path d={model.flare} fill={pal.bark} />
+      {model.flare && <path d={model.flare} fill={pal.branch(model.branches[0]?.tone)} />}
       {model.branches.map((b) => {
         if (b.start >= g) return null
         const p = Math.min(1, (g - b.start) / b.span)
         return (
           <path
             key={b.id}
-            className="branch"
+            className={lite ? undefined : 'branch'}
             d={b.d}
             fill="none"
-            stroke={pal.bark}
+            stroke={pal.branch(b.tone)}
             strokeWidth={b.width}
             strokeLinecap="round"
             pathLength={1}
@@ -269,18 +312,25 @@ function FullTree({ model, g, pal, wilt, pop }: { model: TreeModel; g: number; p
         )
       })}
       {model.leaves.map((l) =>
-        !leafVisible(l, g) ? null : (
-          <g key={l.id} className="leaf-g" style={leafTransform(l.x, l.y, droop(l.angle, wilt))}>
-            <path className={pop(`l${l.id}`, l.appear) ? 'leaf leaf-pop' : 'leaf'} d={l.d} fill={pal.leaf(l.shade)} />
+        !leafVisible(l, g) || (lite && l.id % 2 === 1 && l.tone !== 'needle') ? null : (
+          <g key={l.id} className={lite ? undefined : 'leaf-g'} style={leafTransform(l.x, l.y, droop(l.angle, wilt * (l.droop ?? 1)))}>
+            <path
+              className={lite ? undefined : pop(`l${l.id}`, l.appear) ? 'leaf leaf-pop' : 'leaf'}
+              d={l.d}
+              fill={pal.leaf(l.shade, l.tone)}
+            />
           </g>
         ),
       )}
       {model.blossoms.map((b) =>
         b.appear > g ? null : (
           <g key={b.id} style={{ transform: `translate(${b.x}px, ${b.y}px)` }}>
-            <g className={pop(`b${b.id}`, b.appear) ? 'leaf-pop' : undefined}>
-              <path className="leaf" d={b.d} fill={pal.blossom(b.shade)} />
-              <circle r={b.size * 0.32} fill={pal.blossomCenter} />
+            <g className={!lite && pop(`b${b.id}`, b.appear) ? 'leaf-pop' : undefined}>
+              <path className={lite ? undefined : 'leaf'} d={b.d} fill={pal.blossom(b.shade, b.tone)} />
+              {b.shine && <path d={b.shine} fill={pal.shine} />}
+              {b.lines && <path d={b.lines} fill="none" stroke={pal.lines} strokeWidth={Math.max(0.6, b.size * 0.12)} strokeLinecap="round" />}
+              {b.dots && <path d={b.dots} fill={pal.lines} />}
+              {b.center && <circle r={b.center.r} fill={pal.center(b.center.tone)} />}
             </g>
           </g>
         ),
@@ -289,15 +339,17 @@ function FullTree({ model, g, pal, wilt, pop }: { model: TreeModel; g: number; p
   )
 }
 
-/** Eingegangener Baum: grauer Stamm mit Aststummeln, daneben ein neuer Samen. */
-function Dormant({ model, pal, dark }: { model: TreeModel; pal: TreePalette; dark: boolean }) {
+const NO_POP: PopFn = () => false
+
+/** Eingegangene Pflanze: grauer Stamm mit Aststummeln, daneben ein neuer Samen. */
+function Dormant({ model, pal, dark }: { model: PlantModel; pal: TreePalette; dark: boolean }) {
   const bark = DORMANT_BARK(dark)
   return (
     <>
       <g transform={scaleAboutBase(0.55)}>
-        <path d={model.flare} fill={bark} />
+        {model.flare && <path d={model.flare} fill={bark} />}
         {model.branches
-          .filter((b) => b.depth <= 1)
+          .filter((b) => (b.depth === 0 || (b.depth === 1 && model.stump?.limbs !== false)) && b.tone !== 'mark' && b.tone !== 'rib')
           .map((b) => (
             <path
               key={b.id}
@@ -308,7 +360,7 @@ function Dormant({ model, pal, dark }: { model: TreeModel; pal: TreePalette; dar
               strokeLinecap="round"
               pathLength={1}
               strokeDasharray="1 2"
-              strokeDashoffset={b.depth === 0 ? 0 : 0.62}
+              strokeDashoffset={b.depth === 0 ? 1 - (model.stump?.trunk ?? 1) : 0.62}
             />
           ))}
       </g>
@@ -318,10 +370,10 @@ function Dormant({ model, pal, dark }: { model: TreeModel; pal: TreePalette; dar
 }
 
 /** Blätter und Blüten zwischen `to` und `from` fallen einmal herunter. */
-function FallingLeaves({ model, from, to, color, dark }: { model: TreeModel; from: number; to: number; color: ColorKey; dark: boolean }) {
+function FallingLeaves({ model, from, to, color, dark }: { model: PlantModel; from: number; to: number; color: ColorKey; dark: boolean }) {
   // Fallende Blätter sind schon verfärbt
   const pal = treePalette(color, 1, dark)
-  const leaves = model.leaves.filter((l) => leafVisible(l, from) && !leafVisible(l, to))
+  const leaves = model.leaves.filter((l) => leafVisible(l, from) && !leafVisible(l, to) && l.tone !== 'spine')
   const blossoms = model.blossoms.filter((b) => b.appear > to && b.appear <= from)
   if (!leaves.length && !blossoms.length) return null
   // Bei vielen Blättern nur jedes n-te animieren – sieht genauso aus, spart Arbeit
@@ -340,13 +392,13 @@ function FallingLeaves({ model, from, to, color, dark }: { model: TreeModel; fro
         .map((l) => (
           <g key={`l${l.id}`} className="leaf-fall" style={fallStyle(l.id)}>
             <g style={leafTransform(l.x, l.y, l.angle)}>
-              <path d={l.d} fill={pal.leaf(l.shade)} />
+              <path d={l.d} fill={pal.leaf(l.shade, l.tone)} />
             </g>
           </g>
         ))}
       {blossoms.map((b) => (
         <g key={`b${b.id}`} className="leaf-fall" style={fallStyle(b.id + 7)}>
-          <path d={b.d} transform={`translate(${b.x} ${b.y})`} fill={pal.blossom(b.shade)} />
+          <path d={b.d} transform={`translate(${b.x} ${b.y})`} fill={pal.blossom(b.shade, b.tone)} />
         </g>
       ))}
     </g>

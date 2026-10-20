@@ -76,9 +76,12 @@ src/
     schedule.ts  fällig an welchem Tag? (Häufigkeit mit Versionsliste)
     streaks.ts   aktuelle und längste Serie
     health.ts    Gesundheitswert H, Stufen, Wachstum g
+    species.ts   Pflanzenarten mit ihren Stufennamen
     stats.ts     Tageszustände, 30-Tage-Quote
   db/          Dexie (IndexedDB): Schema, Schreibfunktionen, Live-Hooks, Backup
-  tree/        Baum: Zufallsgenerator, Geometrie, Farben, SVG-Komponente
+  tree/        Pflanzen: Zufallsgenerator, Formen, Farben, SVG-Komponente
+    species/     ein Erzeuger je Art (recursive.ts = gemeinsamer Baumkern)
+    grove.ts     Begleitpflanzen des Hains ab H = 100
   screens/     Heute, Garten, Detail, Formular, Einstellungen
   components/  wiederverwendbare Bausteine (Zeile, Heatmap, Kalender …)
   app/         Router (Hash-URLs) und Aktionen mit Feedback
@@ -90,15 +93,53 @@ src/
 - **Gespeichert werden nur Fakten:** Habits und „an Tag X erledigt“. Serien,
   Gesundheitswert und Statistik werden immer neu berechnet – dadurch stimmen sie
   auch nach nachträglichen Korrekturen sofort.
-- **Gesundheitswert H:** erledigt +1 (max. 100) · 1. verpasster fälliger Tag −1 und
+- **Gesundheitswert H:** erledigt +1 (max. 365) · 1. verpasster fälliger Tag −1 und
   welk · ab dem 2. in Folge halbiert · H < 1 nach einem großen Baum = kahl.
-  Stufen bei H = 1 / 3 / 7 / 14 / 30 / 60.
+  Stufen bei H = 1 / 3 / 7 / 14 / 30 / 60 (Pflanze) und 100 / 200 / 365 (Hain).
+- **Neue Art hinzufügen:** Erzeuger in `tree/species/` schreiben (gibt ein
+  `PlantModel` zurück), in `tree/species/index.ts` und `domain/species.ts` eintragen.
+  `src/tree/species.test.ts` prüft automatisch, dass jede Art Stufe für Stufe wächst.
 - **Schema-Änderungen** in `db/schema.ts` immer als neue `version(n)` anhängen.
+
+## Pflanzen und Hain
+
+Acht Arten: Laubbaum, Kirschbaum, Apfelbaum, Birke, Trauerweide, Tanne, Kaktus,
+Sonnenblume – jede mit eigenem Wuchs, eigenen Blättern und eigenen Blüten bzw.
+Früchten, Zapfen oder Kätzchen in der Habit-Farbe. Gewählt wird die Art im
+Formular; Habits von vor der Einführung bleiben Laubbäume und sehen unverändert aus
+(ein Test sichert das ab).
+
+Bis H = 100 wächst die Pflanze selbst bis zur vollen Blüte. Danach entsteht um sie
+herum ein Hain: bei H = 100, 150, 200, 270 und 340 kommt je eine Begleitpflanze
+dazu, die als Keimling beginnt und mitwächst. Verpasste Tage lassen zuerst die
+jüngsten wieder verschwinden.
+
+## Schatten-Ich (statt Pflanze)
+
+Pro Gewohnheit wählbar: eine dunkle Version von dir, die an jedem Tag stärker wird,
+an dem du schwach bist. Ihr steht euch auf demselben Boden gegenüber; die Grenze
+zwischen deinem Land und seinem verschiebt sich mit dem Kräfteverhältnis.
+
+- Schattenstärke S: verpasster fälliger Tag +18 % des Abstands zu 100, erledigter Tag −15 %
+- dein Licht L = 100 · (1 − e^(−H/25)), Territorium T = (L + 10) / (L + S + 20)
+- Lagen: Er herrscht (< 15 %) · Er rückt vor · Patt (40–60 %) · Du drängst ihn zurück · Dein Land (≥ 85 %)
+- abgestimmt auf den Baum: von voller Stärke 7 verpasste Tage → „Er herrscht“
+
+Logik in `domain/shadow.ts` (mit Tests), Darstellung in `shadow/ShadowDuel.tsx`.
+Im Baumlabor zeigt `baumlabor.html?schatten` alle Lagen.
+
+## Notizen pro Tag
+
+Unter „Heute“ gibt es ein Notizfeld zum ausgewählten Tag (über die Wochenleiste
+auch für vergangene Tage). Gespeichert wird automatisch in der Tabelle `dayEntries`
+(`version(2)` in `db/schema.ts`), eine Notiz pro Kalendertag, unabhängig von Habits.
+Notizen sind im Backup enthalten (Backup-Format 2; ältere Backups lassen sich weiter
+einspielen).
 
 ## Erweiterungen (vorbereitet)
 
-- **Notizen / Stimmung pro Tag:** neue Tabelle `dayEntries` als `version(2)` in
-  `db/schema.ts`, Eingabe z. B. im Detail-Kalender oder unter „Heute“.
+- **Stimmung pro Tag:** als zusätzliches Feld in `DayEntry` (`domain/types.ts`) –
+  da nur ein neues, nicht indiziertes Feld, ist dafür keine neue Schema-Version nötig.
 - **Sync (z. B. Supabase):** IDs sind UUIDs, jeder Datensatz hat `updatedAt`,
   gelöschte Habits bleiben als Grabstein (`deleted: true`), abgehakte Tage werden
   mit `done: false` statt gelöscht zurückgenommen – damit lässt sich „neuester
