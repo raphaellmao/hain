@@ -27,6 +27,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+        env:
+          TZ: Europe/Berlin
       - run: npm run build
         env:
           # Pages liefert unter https://<name>.github.io/<repo>/ aus.

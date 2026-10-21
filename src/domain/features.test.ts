@@ -82,9 +82,10 @@ describe('Erfolge', () => {
 })
 
 describe('Tageszeit', () => {
+  // Zeiten so gewählt, dass sie mit und ohne Sommerzeit (CI läuft in UTC) stimmen
   it('kennt Tag, Abend und Nacht im Herbst', () => {
     expect(skyAt(new Date(2026, 9, 21, 12, 0))).toMatchObject({ phase: 'tag', season: 'herbst' })
-    expect(skyAt(new Date(2026, 9, 21, 18, 30)).phase).toBe('abend')
+    expect(skyAt(new Date(2026, 9, 21, 17, 45)).phase).toBe('abend')
     expect(skyAt(new Date(2026, 9, 21, 23, 0)).phase).toBe('nacht')
     expect(skyAt(new Date(2026, 9, 21, 7, 45)).phase).toBe('morgen')
     expect(skyAt(new Date(2027, 0, 10, 12, 0)).season).toBe('winter')
