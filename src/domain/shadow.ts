@@ -104,3 +104,30 @@ export function daysToNextStatus(h: number, s: number): { days: number; label: s
   }
   return null
 }
+
+/** Beste je erreichte Lage gegen den Schatten (Index in TERRITORY_STATUS), für Erfolge. */
+export function bestShadowStatus(
+  habit: Pick<Habit, 'schedule' | 'startDate'>,
+  done: DoneSet,
+  today: DateStr,
+  excused: DoneSet = NO_DAYS,
+): number {
+  let h = 0
+  let s = 0
+  let miss = 0
+  let best = 0
+  if (habit.startDate > today) return 0
+  for (const d of eachDay(habit.startDate, today)) {
+    if (done.has(d)) {
+      h = Math.min(H_MAX, h + 1)
+      s *= 1 - SHADOW_DECAY
+      miss = 0
+    } else if (d < today && isDue(habit, d) && !excused.has(d)) {
+      miss++
+      h = miss === 1 ? Math.max(0, h - 1) : h / 2
+      s += (100 - s) * SHADOW_GAIN
+    } else continue
+    best = Math.max(best, statusOf(territoryOf(lightOf(h), s)))
+  }
+  return best
+}

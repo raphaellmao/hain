@@ -1,4 +1,4 @@
-import { type DateStr, addDays, eachDay, maxDate } from './dates'
+import { type DateStr, addDays, eachDay, maxDate, minDate, shiftMonth } from './dates'
 import { isDue } from './schedule'
 import { type DoneSet, type Habit, NO_DAYS } from './types'
 
@@ -59,4 +59,60 @@ export function totalDone(habit: Pick<Habit, 'startDate'>, done: DoneSet, today:
   let n = 0
   for (const d of done) if (d >= habit.startDate && d <= today) n++
   return n
+}
+
+export interface MonthRate {
+  /** 'JJJJ-MM' */
+  month: string
+  /** erledigte / fällige Tage, null = im Monat nichts fällig */
+  rate: number | null
+  done: number
+  due: number
+  /** laufender Monat (noch nicht vorbei) */
+  partial: boolean
+}
+
+/**
+ * Erfolgsquote je Kalendermonat für die letzten `months` Monate (inkl. dem
+ * laufenden). Gleiche Regeln wie successRate: ausgesetzte Tage zählen nicht,
+ * heute nur, wenn schon erledigt.
+ */
+export function monthlyRates(
+  habit: Pick<Habit, 'schedule' | 'startDate'>,
+  done: DoneSet,
+  today: DateStr,
+  excused: DoneSet = NO_DAYS,
+  months = 6,
+): MonthRate[] {
+  const current = today.slice(0, 7)
+  return Array.from({ length: months }, (_, i) => shiftMonth(current, i - (months - 1))).map((month) => {
+    const first = maxDate(`${month}-01`, habit.startDate)
+    const last = minDate(addDays(`${shiftMonth(month, 1)}-01`, -1), today)
+    let due = 0
+    let hit = 0
+    if (first <= last) {
+      for (const d of eachDay(first, last)) {
+        if (!isDue(habit, d)) continue
+        if (excused.has(d) && !done.has(d)) continue
+        if (d === today && !done.has(d)) continue
+        due++
+        if (done.has(d)) hit++
+      }
+    }
+    return { month, rate: due ? hit / due : null, done: hit, due, partial: month === current }
+  })
+}
+
+/** Monatsquoten mehrerer Habits zusammengefasst (Summe erledigt / Summe fällig). */
+export function combineMonthly(perHabit: MonthRate[][]): MonthRate[] {
+  if (perHabit.length === 0) return []
+  return perHabit[0].map((m, i) => {
+    let done = 0
+    let due = 0
+    for (const list of perHabit) {
+      done += list[i].done
+      due += list[i].due
+    }
+    return { month: m.month, rate: due ? done / due : null, done, due, partial: m.partial }
+  })
 }

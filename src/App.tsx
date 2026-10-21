@@ -9,6 +9,8 @@ import { HabitDetailScreen } from './screens/HabitDetailScreen'
 import { HabitFormScreen } from './screens/HabitFormScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { TodayScreen } from './screens/TodayScreen'
+import { AchievementsScreen } from './screens/AchievementsScreen'
+import { AchievementWatcher } from './app/achievements'
 
 export default function App() {
   const route = useRoute()
@@ -23,6 +25,9 @@ export default function App() {
       break
     case 'settings':
       screen = <SettingsScreen />
+      break
+    case 'erfolge':
+      screen = <AchievementsScreen />
       break
     case 'habit':
       screen = <HabitDetailScreen key={route.id} id={route.id} />
@@ -45,6 +50,7 @@ export default function App() {
       <Toaster />
       <UpdateToast />
       <ExcuseHost />
+      <AchievementWatcher />
       <ConfirmHost />
     </div>
   )

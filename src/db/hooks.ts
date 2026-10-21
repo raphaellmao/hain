@@ -119,3 +119,8 @@ export function useToday(): DateStr {
 
   return today
 }
+
+/** Anzahl der Tage mit Notiz (für den Erfolg „Tagebuch“) */
+export function useNoteCount(): number | undefined {
+  return useLiveQuery(() => db.dayEntries.filter((e) => e.note.trim() !== '').count())
+}

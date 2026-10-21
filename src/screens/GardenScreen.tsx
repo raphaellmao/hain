@@ -6,6 +6,8 @@ import { navigate, paths } from '../app/router'
 import { HabitVisual } from '../components/HabitVisual'
 import { TERRITORY_STATUS } from '../domain/shadow'
 import { Fab } from '../components/Fab'
+import { GardenScene } from '../components/GardenScene'
+import { useSky } from '../lib/sky'
 
 /**
  * Alle Bäume auf einen Blick. Bewusst ohne Animationen pro Blatt – hier
@@ -17,6 +19,7 @@ export function GardenScreen() {
   const doneMap = useDoneMap()
   const excuseMap = useExcuseMap()
   const today = useToday()
+  const sky = useSky()
 
   const items = useMemo(() => {
     if (!habits || !doneMap) return []
@@ -41,21 +44,24 @@ export function GardenScreen() {
     .join(' · ')
 
   return (
+    <GardenScene sky={sky}>
     <div className="pb-nav">
       <header className="px-safe pt-safe">
-        <div className="pt-2 pb-4">
-          <p className="text-[13px] font-semibold tracking-wide text-muted uppercase">
+        <div className="pt-2 pb-4 [text-shadow:0_1px_8px_rgba(0,0,0,0.18)]">
+          <p className="text-[13px] font-semibold tracking-wide uppercase opacity-85">
             {items.length === 0 ? 'Noch leer' : summaryLine}
           </p>
           <h1 className="text-[32px] font-bold leading-tight">Garten</h1>
         </div>
       </header>
 
-      <main className="px-safe">
+      <main className="px-safe pt-10">
         {items.length === 0 ? (
-          <p className="py-10 text-center text-[15px] text-muted">Hier wachsen deine Bäume, sobald du eine Gewohnheit anlegst.</p>
+          <p className="mx-auto mt-24 max-w-xs rounded-2xl bg-surface/85 p-4 text-center text-[15px] text-ink">
+            Hier wachsen deine Bäume, sobald du eine Gewohnheit anlegst.
+          </p>
         ) : (
-          <ul className="grid grid-cols-3 gap-x-2 gap-y-2">
+          <ul className="grid grid-cols-3 gap-x-2 gap-y-3">
             {items.map(({ habit, summary }, idx) => (
               <motion.li
                 key={habit.id}
@@ -66,22 +72,23 @@ export function GardenScreen() {
                 <button
                   type="button"
                   onClick={() => navigate(paths.habit(habit.id))}
-                  className="flex w-full flex-col items-center rounded-3xl pt-1 pb-2 active:bg-surface-2"
+                  className="flex w-full flex-col items-center rounded-3xl pt-1 pb-2 active:bg-white/15"
                 >
-                  <span className="aspect-square w-full">
+                  {/* jede Pflanze wiegt sich in ihrem eigenen Takt */}
+                  <span className="sway aspect-square w-full" style={{ animationDuration: `${4.5 + (idx % 5) * 0.7}s`, animationDelay: `${-idx * 0.9}s` }}>
                     <HabitVisual habit={habit} summary={summary} className="size-full" />
                   </span>
-                  <span className="mt-0.5 flex w-full items-center justify-center gap-1 px-1 text-[13px] font-semibold">
+                  <span className="mt-0.5 flex max-w-full items-center justify-center gap-1 rounded-t-xl bg-surface/85 px-2 pt-0.5 text-[13px] font-semibold text-ink">
                     <span aria-hidden>{habit.emoji}</span>
                     <span className="truncate">{habit.name}</span>
                   </span>
                   {habit.metaphor === 'schatten' ? (
-                    <span className={`text-[11px] ${summary.shadow.status <= 1 ? 'font-semibold text-warn' : 'text-muted'}`}>
+                    <span className={`rounded-b-xl bg-surface/85 px-2 pb-0.5 text-[11px] ${summary.shadow.status <= 1 ? 'font-semibold text-warn' : 'text-muted'}`}>
                       {TERRITORY_STATUS[summary.shadow.status].label}
                     </span>
                   ) : (
                     <span
-                      className={`text-[11px] ${summary.health.wilted && !isBare(summary) ? 'font-semibold text-warn' : 'text-muted'}`}
+                      className={`rounded-b-xl bg-surface/85 px-2 pb-0.5 text-[11px] ${summary.health.wilted && !isBare(summary) ? 'font-semibold text-warn' : 'text-muted'}`}
                     >
                       {summary.health.wilted && !isBare(summary) ? 'welkt' : stageLabel(summary, habit.species)}
                     </span>
@@ -95,5 +102,6 @@ export function GardenScreen() {
 
       <Fab onClick={() => navigate(paths.new)} />
     </div>
+    </GardenScene>
   )
 }

@@ -53,6 +53,8 @@ export interface Health {
   wilted: boolean
   /** kahl: H < 1, obwohl der Baum schon mal mindestens ein Busch war */
   dormant: boolean
+  /** war schon einmal kahl und ist danach wieder zum Busch gewachsen (Erfolg „Comeback“) */
+  comeback: boolean
 }
 
 export function computeHealth(
@@ -65,6 +67,8 @@ export function computeHealth(
   let h = 0
   let peak = 0
   let missRun = 0
+  let wasBare = false
+  let comeback = false
 
   if (habit.startDate <= today) {
     for (const d of eachDay(habit.startDate, today)) {
@@ -76,6 +80,8 @@ export function computeHealth(
         h = missRun === 1 ? Math.max(0, h - 1) : h / 2
       }
       if (h > peak) peak = h
+      if (h < 1 && peak >= STAGE_THRESHOLDS[2]) wasBare = true
+      else if (wasBare && h >= STAGE_THRESHOLDS[2]) comeback = true
     }
   }
 
@@ -85,6 +91,7 @@ export function computeHealth(
     missRun,
     wilted: missRun > 0,
     dormant: h < 1 && peak >= STAGE_THRESHOLDS[2],
+    comeback,
   }
 }
 

@@ -1,9 +1,10 @@
 import { navigate, paths, type Route } from '../app/router'
-import { IconGarden, IconSettings, IconToday } from './icons'
+import { IconGarden, IconSettings, IconToday, IconTrophy } from './icons'
 
 const items = [
   { key: 'today', label: 'Heute', path: paths.today, Icon: IconToday },
   { key: 'garden', label: 'Garten', path: paths.garden, Icon: IconGarden },
+  { key: 'erfolge', label: 'Erfolge', path: paths.erfolge, Icon: IconTrophy },
   { key: 'settings', label: 'Einstellungen', path: paths.settings, Icon: IconSettings },
 ] as const
 

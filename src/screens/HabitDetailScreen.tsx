@@ -7,7 +7,10 @@ import { H_MAX, MAX_STAGE, nextStage } from '../domain/health'
 import { SPECIES_INFO, speciesOf, stageName } from '../domain/species'
 import { groveSize } from '../tree/grove'
 import { describeDays, daysAt, isDue } from '../domain/schedule'
-import { successRate, totalDone } from '../domain/stats'
+import { monthlyRates, successRate, totalDone } from '../domain/stats'
+import { shadowTaunt } from '../domain/taunts'
+import { ShadowTaunt } from '../components/ShadowTaunt'
+import { MonthBars } from '../components/MonthBars'
 import { stageLabel, summarize } from '../domain/summary'
 import type { DoneSet, Habit } from '../domain/types'
 import { toggleDay } from '../app/actions'
@@ -93,8 +96,20 @@ function Detail({ habit, done, excuses, today }: { habit: Habit; done: DoneSet; 
         <p className="text-[15px] text-muted">{describeDays(daysAt(habit.schedule, today))}</p>
 
         {/* Pflanze bzw. Schatten-Ich */}
-        <div className="mx-auto mt-2 aspect-square w-full max-w-[340px]">
+        <div className="relative mx-auto mt-2 aspect-square w-full max-w-[340px]">
           <HabitVisual habit={habit} summary={s} animated density="rich" className="size-full" />
+          {habit.metaphor === 'schatten' && (
+            <ShadowTaunt
+              text={shadowTaunt({
+                habitId: habit.id,
+                today,
+                status: s.shadow.status,
+                missRun: s.health.missRun,
+                doneToday,
+                excusedToday: !!todayExcuse,
+              })}
+            />
+          )}
         </div>
 
         {habit.metaphor === 'schatten' ? (
@@ -170,6 +185,12 @@ function Detail({ habit, done, excuses, today }: { habit: Habit; done: DoneSet; 
             hint={rate ? `${rate.done} von ${rate.due} fälligen${recent ? ` · ${recent} ausgesetzt` : ''}` : undefined}
           />
           <Stat label="Erledigt gesamt" value={days(totalDone(habit, done, today))} />
+        </section>
+
+        {/* Erfolgsquote je Monat */}
+        <section className="mt-3 rounded-3xl bg-surface p-4">
+          <h2 className="mb-2 text-[13px] font-semibold tracking-wide text-muted uppercase">Erfolgsquote je Monat</h2>
+          <MonthBars data={monthlyRates(habit, done, today, excused, 6)} color={color} />
         </section>
 
         {/* Verlauf */}

@@ -12,6 +12,7 @@ export type Route =
   | { name: 'today' }
   | { name: 'garden' }
   | { name: 'settings' }
+  | { name: 'erfolge' }
   | { name: 'habit'; id: string }
   | { name: 'new' }
   | { name: 'edit'; id: string }
@@ -20,6 +21,7 @@ export const paths = {
   today: '/',
   garden: '/garten',
   settings: '/einstellungen',
+  erfolge: '/erfolge',
   habit: (id: string) => `/habit/${id}`,
   new: '/neu',
   edit: (id: string) => `/habit/${id}/bearbeiten`,
@@ -30,6 +32,7 @@ export function parseHash(hash: string): Route {
   const parts = path.split('/').filter(Boolean)
   if (parts[0] === 'garten') return { name: 'garden' }
   if (parts[0] === 'einstellungen') return { name: 'settings' }
+  if (parts[0] === 'erfolge') return { name: 'erfolge' }
   if (parts[0] === 'neu') return { name: 'new' }
   if (parts[0] === 'habit' && parts[1]) {
     return parts[2] === 'bearbeiten' ? { name: 'edit', id: parts[1] } : { name: 'habit', id: parts[1] }

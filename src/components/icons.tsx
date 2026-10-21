@@ -79,3 +79,11 @@ export const IconMore = (p: P) => (
     <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
   </svg>
 )
+
+export const IconTrophy = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" />
+    <path d="M16 6h3a2 2 0 0 1-2 4h-1M8 6H5a2 2 0 0 0 2 4h1" />
+    <path d="M12 13v4M9 21h6M10 17h4l1 4H9l1-4Z" />
+  </svg>
+)

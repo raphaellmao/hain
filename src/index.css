@@ -257,3 +257,129 @@ button {
     display: none;
   }
 }
+
+/* ── Erfolge: sanfter Lichtschimmer über freigeschalteten Abzeichen ─────────── */
+.badge-glow {
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--accent) 30%, transparent) 80%, transparent 90%);
+  animation: badge-spin 9s linear infinite;
+  opacity: 0.55;
+}
+@keyframes badge-spin {
+  to { transform: rotate(1turn); }
+}
+.badge-earned {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-glow { animation: none; }
+}
+
+/* ── Lebendiger Garten ────────────────────────────────────────────────────────
+   Himmel (SVG) und Wetter (HTML) – nur transform/opacity. */
+@keyframes twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.star { animation: twinkle 3s ease-in-out infinite; }
+
+@keyframes glow-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+.sun-glow { animation: glow-pulse 6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+@keyframes cloud-drift { from { transform: translateX(-90px); } to { transform: translateX(490px); } }
+.cloud { animation: cloud-drift 120s linear infinite; }
+
+@keyframes bird-fly { from { transform: translate(-30px, 0); } to { transform: translate(440px, -24px); } }
+.bird { animation: bird-fly 28s linear infinite; }
+@keyframes flap { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(-0.5); } }
+.wing { animation: flap 0.55s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+@keyframes mist-drift { from { transform: translateX(-40px); } to { transform: translateX(40px); } }
+.mist { animation: mist-drift 14s ease-in-out infinite alternate; }
+
+/* Pflanzen wiegen sich leicht im Wind */
+@keyframes sway { from { transform: rotate(-1.1deg); } to { transform: rotate(1.1deg); } }
+.sway { animation: sway 5.5s ease-in-out infinite alternate; transform-origin: 50% 90%; }
+
+.fall-leaf {
+  position: absolute;
+  top: -20px;
+  border-radius: 0 100% 0 100%;
+  animation-name: leaf-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.12);
+}
+.fall-petal { border-radius: 60% 0 60% 0; }
+@keyframes leaf-drift {
+  0% { transform: translate(0, -4vh) rotate(0deg); opacity: 0; }
+  8% { opacity: 0.95; }
+  30% { transform: translate(calc(var(--dx) * 0.45), 30vh) rotate(160deg); }
+  60% { transform: translate(calc(var(--dx) * 0.2), 64vh) rotate(330deg); }
+  100% { transform: translate(var(--dx), 108vh) rotate(560deg); opacity: 0.85; }
+}
+
+.snow {
+  position: absolute;
+  top: -10px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  animation-name: snow-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes snow-fall {
+  0% { transform: translate(0, -3vh); }
+  50% { transform: translate(var(--dx), 50vh); }
+  100% { transform: translate(0, 106vh); }
+}
+
+.firefly {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f4ff9c;
+  box-shadow: 0 0 8px 3px rgba(214, 255, 110, 0.75);
+  animation-name: firefly-move, firefly-blink;
+  animation-iteration-count: infinite, infinite;
+  animation-timing-function: ease-in-out, ease-in-out;
+  animation-direction: alternate, normal;
+}
+@keyframes firefly-move { from { transform: translate(0, 0); } to { transform: translate(var(--fx), var(--fy)); } }
+@keyframes firefly-blink { 0%, 100% { opacity: 0.1; } 45%, 60% { opacity: 1; } }
+
+.butterfly {
+  position: absolute;
+  left: -30px;
+  width: 14px;
+  height: 10px;
+  animation: butterfly-fly 22s linear infinite;
+}
+.butterfly i {
+  position: absolute;
+  top: 0;
+  width: 7px;
+  height: 10px;
+  background: var(--c);
+  border-radius: 60% 60% 40% 40%;
+  animation: wing-beat 0.22s ease-in-out infinite alternate;
+}
+.butterfly i:first-child { left: 0; transform-origin: right center; }
+.butterfly i:last-child { right: 0; transform-origin: left center; }
+@keyframes wing-beat { from { transform: scaleX(1); } to { transform: scaleX(0.25); } }
+@keyframes butterfly-fly {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(28vw, -34px); }
+  50% { transform: translate(56vw, 8px); }
+  75% { transform: translate(82vw, -22px); }
+  100% { transform: translate(112vw, 0); }
+}
+
+/* Sprechblase des Schattens flackert leicht */
+@keyframes taunt-flicker { 0%, 100% { box-shadow: 0 0 22px rgba(140, 60, 200, 0.4); } 50% { box-shadow: 0 0 10px rgba(140, 60, 200, 0.2); } }
+.taunt { animation: taunt-flicker 3.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .star, .sun-glow, .cloud, .bird, .wing, .mist, .sway, .taunt { animation: none; }
+  .fall-leaf, .snow, .firefly, .butterfly { display: none; }
+}

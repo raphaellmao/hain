@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, useMeta, useToday } from '../db/hooks'
 import { excusesInWindow } from '../domain/excuse'
 import { openExcuseSheet } from '../lib/excuseSheet'
+import { GREETING, useSky } from '../lib/sky'
 import { formatLong, type DateStr } from '../domain/dates'
 import { isDue } from '../domain/schedule'
 import { summarize } from '../domain/summary'
@@ -19,6 +20,7 @@ export function TodayScreen() {
   const doneMap = useDoneMap()
   const excuseMap = useExcuseMap()
   const today = useToday()
+  const sky = useSky()
   const [selected, setSelected] = useState<DateStr>(today)
   const [showRest, setShowRest] = useState(false)
   const lastBackupAt = useMeta<number>('lastBackupAt')
@@ -87,7 +89,7 @@ export function TodayScreen() {
         <div className="flex items-end justify-between gap-3 pt-2 pb-3">
           <div className="min-w-0">
             <p className="text-[13px] font-semibold tracking-wide text-muted uppercase">
-              {isToday ? formatLong(today) : 'Nachtragen'}
+              {isToday ? `${GREETING[sky.phase]} · ${formatLong(today)}` : 'Nachtragen'}
             </p>
             <h1 className={`truncate font-bold leading-tight ${isToday ? 'text-[32px]' : 'text-[26px]'}`}>
               {isToday ? 'Heute' : formatLong(selected)}

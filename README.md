@@ -141,6 +141,18 @@ Wird er doch erledigt, gilt „erledigt“. Gespeichert als Abhak-Eintrag mit
 `excused: true`, `reason` und optional `reasonNote` (Logik: `domain/excuse.ts`).
 Das Blatt zeigt, wie viele Ausnahmen es in den letzten 30 Tagen gab.
 
+## Erfolge, Monatsquote, lebendiger Garten
+
+- **Erfolge** (Tab „Erfolge“): 20 Abzeichen, berechnet aus der Historie
+  (`domain/achievements.ts`); neu freigeschaltete melden sich per Hinweis.
+- **Erfolgsquote je Monat**: in jeder Detailansicht und über alle Gewohnheiten
+  im Tab „Erfolge“ (`monthlyRates` in `domain/stats.ts`).
+- **Drohungen des Schattens**: Sprechblase in der Detailansicht, wechselt täglich
+  und reagiert auf Lage, Abhaken und Ausnahmen (`domain/taunts.ts`).
+- **Lebendiger Garten**: Himmel, Licht und Wetter nach echter Tages- und
+  Jahreszeit (`lib/sky.ts`, `components/GardenScene.tsx`). In der Entwicklung
+  lässt sich das mit `?zeit=nacht&saison=winter` ausprobieren.
+
 ## Notizen pro Tag
 
 Unter „Heute“ gibt es ein Notizfeld zum ausgewählten Tag (über die Wochenleiste

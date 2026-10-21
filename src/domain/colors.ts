@@ -56,3 +56,32 @@ export function mixHue(a: number, b: number, t: number): number {
   const d = ((b - a + 540) % 360) - 180
   return (a + d * t + 360) % 360
 }
+
+// ── Kontrast (WCAG) ─────────────────────────────────────────────────────────
+
+function hslToRgb({ h, s, l }: Hsl): [number, number, number] {
+  const S = s / 100
+  const L = l / 100
+  const k = (n: number) => (n + h / 30) % 12
+  const a = S * Math.min(L, 1 - L)
+  const f = (n: number) => L - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
+  return [f(0), f(8), f(4)]
+}
+
+function luminance([r, g, b]: [number, number, number]): number {
+  const lin = (v: number) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+}
+
+/**
+ * Dieselbe Farbe so weit abdunkeln, bis sie auf `surface` mindestens `min`:1
+ * Kontrast hat (für Diagramm-Balken im Hellmodus).
+ */
+export function withContrast(hex: string, surface = '#fdfcf9', min = 3): string {
+  const c = hexToHsl(hex)
+  const sl = hexToHsl(surface)
+  const ls = luminance(hslToRgb(sl))
+  let l = c.l
+  while (l > 5 && (ls + 0.05) / (luminance(hslToRgb({ ...c, l })) + 0.05) < min) l -= 1
+  return hsl({ ...c, l })
+}
