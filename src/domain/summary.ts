@@ -3,7 +3,7 @@ import { computeHealth, growthOf, stageOf, type Health } from './health'
 import { stageName, type SpeciesKey } from './species'
 import { computeShadowPower, shadowState, type Shadow } from './shadow'
 import { computeStreaks, type Streaks } from './streaks'
-import type { DoneSet, Habit } from './types'
+import { type DoneSet, type Habit, NO_DAYS } from './types'
 
 /** Alles, was die Oberfläche über den Zustand eines Habits wissen muss. */
 export interface HabitSummary {
@@ -16,14 +16,14 @@ export interface HabitSummary {
   shadow: Shadow
 }
 
-export function summarize(habit: Habit, done: DoneSet, today: DateStr): HabitSummary {
-  const health = computeHealth(habit, done, today)
+export function summarize(habit: Habit, done: DoneSet, today: DateStr, excused: DoneSet = NO_DAYS): HabitSummary {
+  const health = computeHealth(habit, done, today, excused)
   return {
     health,
     g: growthOf(health.h),
     stage: stageOf(health.h),
-    streaks: computeStreaks(habit, done, today),
-    shadow: shadowState(health.h, computeShadowPower(habit, done, today)),
+    streaks: computeStreaks(habit, done, today, excused),
+    shadow: shadowState(health.h, computeShadowPower(habit, done, today, excused)),
   }
 }
 

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { doneFor, useDoneMap, useHabits, useMeta, useToday } from '../db/hooks'
+import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, useMeta, useToday } from '../db/hooks'
+import { excusesInWindow } from '../domain/excuse'
+import { openExcuseSheet } from '../lib/excuseSheet'
 import { formatLong, type DateStr } from '../domain/dates'
 import { isDue } from '../domain/schedule'
 import { summarize } from '../domain/summary'
@@ -15,6 +17,7 @@ import { Tree } from '../tree/Tree'
 export function TodayScreen() {
   const habits = useHabits()
   const doneMap = useDoneMap()
+  const excuseMap = useExcuseMap()
   const today = useToday()
   const [selected, setSelected] = useState<DateStr>(today)
   const [showRest, setShowRest] = useState(false)
@@ -29,9 +32,11 @@ export function TodayScreen() {
     if (!habits || !doneMap) return []
     return habits.map((habit) => {
       const done = doneFor(doneMap, habit.id)
-      return { habit, done, summary: summarize(habit, done, today) }
+      const excuses = excusesFor(excuseMap, habit.id)
+      const excused = excusedSet(excuses)
+      return { habit, done, excuses, excused, summary: summarize(habit, done, today, excused) }
     })
-  }, [habits, doneMap, today])
+  }, [habits, doneMap, excuseMap, today])
 
   if (!habits || !doneMap) return null
 
@@ -41,11 +46,14 @@ export function TodayScreen() {
   const active = items.filter((i) => i.habit.startDate <= selected)
   const due = active.filter((i) => isDue(i.habit, selected))
   const rest = active.filter((i) => !isDue(i.habit, selected))
-  const doneCount = due.filter((i) => i.done.has(selected)).length
-  const allDone = due.length > 0 && doneCount === due.length
+  // Ausgesetzte Tage zählen weder als offen noch als erledigt
+  const isOff = (i: (typeof items)[number], date: DateStr) => i.excused.has(date) && !i.done.has(date)
+  const countable = due.filter((i) => !isOff(i, selected))
+  const doneCount = countable.filter((i) => i.done.has(selected)).length
+  const allDone = due.length > 0 && doneCount === countable.length
 
   const progress = (date: DateStr) => {
-    const d = items.filter((i) => isDue(i.habit, date))
+    const d = items.filter((i) => isDue(i.habit, date) && !isOff(i, date))
     return d.length === 0 ? null : d.filter((i) => i.done.has(date)).length / d.length
   }
 
@@ -55,10 +63,21 @@ export function TodayScreen() {
       habit={i.habit}
       summary={i.summary}
       done={i.done.has(selected)}
+      excuse={i.excuses.get(selected)}
       showWilt={isToday}
       dimmed={dimmed}
-      onToggle={() => toggleDay(i.habit, i.done, selected, today)}
-      onOpen={() => navigate(paths.habit(i.habit.id))}
+      onToggle={() => toggleDay(i.habit, i.done, selected, today, i.excused)}
+      onMore={() =>
+        openExcuseSheet({
+          habit: i.habit,
+          date: selected,
+          today,
+          current: i.excuses.get(selected),
+          done: i.done.has(selected),
+          recent: excusesInWindow(i.excused, today),
+          showDetails: true,
+        })
+      }
     />
   )
 
@@ -74,9 +93,9 @@ export function TodayScreen() {
               {isToday ? 'Heute' : formatLong(selected)}
             </h1>
           </div>
-          {due.length > 0 && (
+          {countable.length > 0 && (
             <span className="pb-1.5 text-[15px] font-semibold text-muted tabular-nums">
-              {doneCount}/{due.length}
+              {doneCount}/{countable.length}
             </span>
           )}
         </div>

@@ -11,12 +11,15 @@ import type { DoneSet, Habit } from '../domain/types'
 export function Heatmap({
   habit,
   done,
+  excused,
   today,
   color,
   weeks = 22,
 }: {
   habit: Habit
   done: DoneSet
+  /** ausgesetzte Tage („nicht möglich“) */
+  excused?: DoneSet
   today: DateStr
   color: string
   weeks?: number
@@ -43,7 +46,7 @@ export function Heatmap({
   let due = 0
   for (const col of columns) {
     for (const d of col) {
-      const s = dayState(habit, done, d, today)
+      const s = dayState(habit, done, d, today, excused)
       if (s === 'done') hit++
       if (s === 'done' || s === 'missed') due++
     }
@@ -55,6 +58,8 @@ export function Heatmap({
         return { background: color }
       case 'missed':
         return { background: 'color-mix(in srgb, var(--warn) 28%, var(--surface-2))' }
+      case 'excused':
+        return { boxShadow: 'inset 0 0 0 1.5px var(--muted)', opacity: 0.6 }
       case 'rest':
         return { background: 'var(--surface-2)', opacity: 0.5 }
       case 'open':
@@ -77,7 +82,7 @@ export function Heatmap({
         {columns.map((col, w) => (
           <div key={w} className="flex flex-1 flex-col gap-[3px]">
             {col.map((d) => (
-              <span key={d} className="aspect-square rounded-[3px]" style={style(dayState(habit, done, d, today))} />
+              <span key={d} className="aspect-square rounded-[3px]" style={style(dayState(habit, done, d, today, excused))} />
             ))}
           </div>
         ))}
@@ -86,6 +91,7 @@ export function Heatmap({
         <Legend style={{ background: color }} label="erledigt" />
         <Legend style={style('missed')} label="verpasst" />
         <Legend style={style('rest')} label="nicht fällig" />
+        {excused && excused.size > 0 && <Legend style={style('excused')} label="ausgesetzt" />}
         <span className="ml-auto tabular-nums">
           {hit} / {due} fällig
         </span>

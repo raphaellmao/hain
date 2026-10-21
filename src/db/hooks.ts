@@ -9,6 +9,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './schema'
 import { type DateStr, logicalToday } from '../domain/dates'
 import { type Habit, type Settings, DEFAULT_SETTINGS } from '../domain/types'
+import type { ExcuseReason } from '../domain/excuse'
 
 /** Alle nicht gelöschten Habits in Listenreihenfolge (undefined = lädt noch). */
 export function useHabits(): Habit[] | undefined {
@@ -45,6 +46,38 @@ export function useDoneMap(): Map<string, Set<DateStr>> | undefined {
 
 const EMPTY: ReadonlySet<DateStr> = new Set()
 export const doneFor = (map: Map<string, Set<DateStr>> | undefined, id: string) => map?.get(id) ?? EMPTY
+
+export interface ExcuseInfo {
+  reason?: ExcuseReason
+  note?: string
+}
+export type ExcuseDays = ReadonlyMap<DateStr, ExcuseInfo>
+
+/** Ausgesetzte Tage pro Habit (mit Grund): Map<habitId, Map<Datum, Grund>> */
+export function useExcuseMap(): Map<string, Map<DateStr, ExcuseInfo>> | undefined {
+  return useLiveQuery(async () => {
+    const map = new Map<string, Map<DateStr, ExcuseInfo>>()
+    await db.checkins.each((c) => {
+      if (c.done || !c.excused) return
+      let m = map.get(c.habitId)
+      if (!m) map.set(c.habitId, (m = new Map()))
+      m.set(c.date, { reason: c.reason, note: c.reasonNote })
+    })
+    return map
+  })
+}
+
+const NO_EXCUSES: ExcuseDays = new Map()
+export const excusesFor = (map: Map<string, Map<DateStr, ExcuseInfo>> | undefined, id: string): ExcuseDays =>
+  map?.get(id) ?? NO_EXCUSES
+
+// Für die Berechnungen reicht die Menge der Tage – pro Map nur einmal bilden
+const setCache = new WeakMap<ExcuseDays, ReadonlySet<DateStr>>()
+export function excusedSet(days: ExcuseDays): ReadonlySet<DateStr> {
+  let s = setCache.get(days)
+  if (!s) setCache.set(days, (s = new Set(days.keys())))
+  return s
+}
 
 /** Notiz eines Tages: undefined = lädt noch, '' = keine Notiz. */
 export function useDayNote(date: DateStr): string | undefined {

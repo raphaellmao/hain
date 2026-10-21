@@ -1,6 +1,7 @@
 import type { DateStr } from './dates'
 import type { ColorKey } from './colors'
 import type { SpeciesKey } from './species'
+import type { ExcuseReason } from './excuse'
 
 /**
  * Ab `from` gilt: fällig an den Wochentagen `days` (0 = So … 6 = Sa).
@@ -47,6 +48,11 @@ export interface Checkin {
   date: DateStr
   /** Abhaken rückgängig = done: false statt Löschen (für späteren Sync) */
   done: boolean
+  /** „Heute nicht möglich“: zählt weder als erledigt noch als verpasst (siehe excuse.ts) */
+  excused?: boolean
+  reason?: ExcuseReason
+  /** optionale kurze Notiz zur Ausnahme */
+  reasonNote?: string
   updatedAt: number
 }
 
@@ -67,5 +73,8 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = { dayStartHour: 0 }
 
-/** Für die Berechnungen: an welchen Tagen wurde ein Habit erledigt? */
+/** Für die Berechnungen: an welchen Tagen wurde ein Habit erledigt (bzw. ausgesetzt)? */
 export type DoneSet = ReadonlySet<DateStr>
+
+/** Leere Menge als Standard für „keine Ausnahmetage“ */
+export const NO_DAYS: DoneSet = new Set()

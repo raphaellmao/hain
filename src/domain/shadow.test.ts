@@ -59,3 +59,11 @@ describe('Schatten-Ich', () => {
     expect(daysToNextStatus(365, 0)).toBeNull()
   })
 })
+
+describe('Schatten-Ich und Ausnahmetage', () => {
+  it('wird an ausgesetzten Tagen nicht stärker', () => {
+    const start = '2026-01-01'
+    const excused = new Set(run(start, 5))
+    expect(computeShadowPower(daily(start), new Set(), addDays(start, 5), excused)).toBe(0)
+  })
+})

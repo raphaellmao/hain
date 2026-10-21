@@ -128,6 +128,19 @@ zwischen deinem Land und seinem verschiebt sich mit dem Kräfteverhältnis.
 Logik in `domain/shadow.ts` (mit Tests), Darstellung in `shadow/ShadowDuel.tsx`.
 Im Baumlabor zeigt `baumlabor.html?schatten` alle Lagen.
 
+## Ausnahmetage („heute nicht möglich“)
+
+Über „⋯“ in einer Zeile (oder lange drücken) bzw. „Heute nicht möglich …“ in der
+Detailansicht lässt sich ein Tag mit Grund aussetzen: Krank, Dienst, Unterwegs,
+Familie, Ruhetag oder anderer Grund, optional mit Notiz. Im Kalender der
+Detailansicht geht das per langem Druck auch für vergangene Tage.
+
+Ein ausgesetzter Tag zählt wie ein nicht fälliger Tag: kein Welken, die Serie
+läuft weiter, der Schatten wird nicht stärker, die Erfolgsquote zählt ihn nicht.
+Wird er doch erledigt, gilt „erledigt“. Gespeichert als Abhak-Eintrag mit
+`excused: true`, `reason` und optional `reasonNote` (Logik: `domain/excuse.ts`).
+Das Blatt zeigt, wie viele Ausnahmen es in den letzten 30 Tagen gab.
+
 ## Notizen pro Tag
 
 Unter „Heute“ gibt es ein Notizfeld zum ausgewählten Tag (über die Wochenleiste

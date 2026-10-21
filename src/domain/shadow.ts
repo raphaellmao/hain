@@ -20,7 +20,7 @@
 import { type DateStr, eachDay } from './dates'
 import { isDue } from './schedule'
 import { H_MAX } from './health'
-import type { DoneSet, Habit } from './types'
+import { type DoneSet, type Habit, NO_DAYS } from './types'
 
 export const SHADOW_GAIN = 0.18
 export const SHADOW_DECAY = 0.15
@@ -69,12 +69,17 @@ export const statusOf = (territory: number) => indexOf(TERRITORY_STATUS, territo
 export const levelOf = (s: number) => indexOf(SHADOW_LEVELS, s)
 
 /** Schattenstärke aus der Historie. Heute zählt nur, wenn schon erledigt. */
-export function computeShadowPower(habit: Pick<Habit, 'schedule' | 'startDate'>, done: DoneSet, today: DateStr): number {
+export function computeShadowPower(
+  habit: Pick<Habit, 'schedule' | 'startDate'>,
+  done: DoneSet,
+  today: DateStr,
+  excused: DoneSet = NO_DAYS,
+): number {
   let s = 0
   if (habit.startDate > today) return 0
   for (const d of eachDay(habit.startDate, today)) {
     if (done.has(d)) s *= 1 - SHADOW_DECAY
-    else if (d < today && isDue(habit, d)) s += (100 - s) * SHADOW_GAIN
+    else if (d < today && isDue(habit, d) && !excused.has(d)) s += (100 - s) * SHADOW_GAIN
   }
   return s
 }

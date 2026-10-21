@@ -1,6 +1,6 @@
 import { type DateStr, eachDay } from './dates'
 import { isDue } from './schedule'
-import type { DoneSet, Habit } from './types'
+import { type DoneSet, type Habit, NO_DAYS } from './types'
 
 /**
  * Regeln für Serien (Streaks):
@@ -8,6 +8,7 @@ import type { DoneSet, Habit } from './types'
  *  - Ein fälliger, nicht erledigter Tag *vor heute* bricht die Serie.
  *  - Nicht fällige, nicht erledigte Tage sind neutral.
  *  - Heute noch nicht erledigt bricht nichts – der Tag läuft ja noch.
+ *  - Ausgesetzte Tage („heute nicht möglich“) sind ebenfalls neutral.
  */
 export interface Streaks {
   current: number
@@ -18,6 +19,7 @@ export function computeStreaks(
   habit: Pick<Habit, 'schedule' | 'startDate'>,
   done: DoneSet,
   today: DateStr,
+  excused: DoneSet = NO_DAYS,
 ): Streaks {
   let run = 0
   let longest = 0
@@ -27,7 +29,7 @@ export function computeStreaks(
     if (done.has(d)) {
       run++
       if (run > longest) longest = run
-    } else if (d < today && isDue(habit, d)) {
+    } else if (d < today && isDue(habit, d) && !excused.has(d)) {
       run = 0
     }
   }

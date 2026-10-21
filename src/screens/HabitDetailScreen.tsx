@@ -1,4 +1,6 @@
-import { doneFor, useDoneMap, useHabit, useToday } from '../db/hooks'
+import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabit, useToday, type ExcuseDays } from '../db/hooks'
+import { excusesInWindow, reasonInfo } from '../domain/excuse'
+import { openExcuseSheet } from '../lib/excuseSheet'
 import { colorHex } from '../domain/colors'
 import { type DateStr } from '../domain/dates'
 import { H_MAX, MAX_STAGE, nextStage } from '../domain/health'
@@ -20,6 +22,7 @@ import { MonthCalendar } from '../components/MonthCalendar'
 export function HabitDetailScreen({ id }: { id: string }) {
   const habit = useHabit(id)
   const doneMap = useDoneMap()
+  const excuseMap = useExcuseMap()
   const today = useToday()
 
   if (habit === undefined || !doneMap) return null
@@ -31,7 +34,7 @@ export function HabitDetailScreen({ id }: { id: string }) {
       </div>
     )
   }
-  return <Detail habit={habit} done={doneFor(doneMap, id)} today={today} />
+  return <Detail habit={habit} done={doneFor(doneMap, id)} excuses={excusesFor(excuseMap, id)} today={today} />
 }
 
 function TopBar({ onEdit }: { onEdit?: () => void }) {
@@ -57,12 +60,15 @@ function TopBar({ onEdit }: { onEdit?: () => void }) {
 const fmt1 = (v: number) => v.toLocaleString('de-DE', { maximumFractionDigits: 1 })
 const days = (n: number) => `${n} ${n === 1 ? 'Tag' : 'Tage'}`
 
-function Detail({ habit, done, today }: { habit: Habit; done: DoneSet; today: DateStr }) {
-  const s = summarize(habit, done, today)
+function Detail({ habit, done, excuses, today }: { habit: Habit; done: DoneSet; excuses: ExcuseDays; today: DateStr }) {
+  const excused = excusedSet(excuses)
+  const s = summarize(habit, done, today, excused)
   const color = colorHex(habit.color)
   const { h, wilted, missRun } = s.health
   const next = nextStage(h)
-  const rate = successRate(habit, done, today)
+  const rate = successRate(habit, done, today, 30, excused)
+  const recent = excusesInWindow(excused, today)
+  const todayExcuse = done.has(today) ? undefined : excuses.get(today)
   const dueToday = isDue(habit, today)
   const doneToday = done.has(today)
 
@@ -127,15 +133,30 @@ function Detail({ habit, done, today }: { habit: Habit; done: DoneSet; today: Da
         )}
 
         {/* Heute abhaken – auch aus der Detailansicht */}
-        {(dueToday || doneToday) && (
+        {(dueToday || doneToday || todayExcuse) && (
           <button
             type="button"
-            onClick={() => toggleDay(habit, done, today, today)}
+            onClick={() => toggleDay(habit, done, today, today, excused)}
             aria-pressed={doneToday}
             className="mt-3 flex h-14 w-full items-center justify-between rounded-3xl bg-surface px-4 text-[17px] font-semibold"
           >
             {doneToday ? 'Heute erledigt' : 'Heute abhaken'}
             <CheckCircle done={doneToday} color={color} />
+          </button>
+        )}
+        {/* … oder heute aussetzen */}
+        {(dueToday || todayExcuse) && !doneToday && (
+          <button
+            type="button"
+            onClick={() =>
+              openExcuseSheet({ habit, date: today, today, current: todayExcuse, done: doneToday, recent })
+            }
+            className="mt-2 flex h-12 w-full items-center justify-between rounded-3xl bg-surface px-4 text-[16px] font-medium text-muted"
+          >
+            {todayExcuse
+              ? `Heute ausgesetzt · ${reasonInfo(todayExcuse.reason).emoji} ${reasonInfo(todayExcuse.reason).label}`
+              : 'Heute nicht möglich …'}
+            <span aria-hidden>›</span>
           </button>
         )}
 
@@ -146,7 +167,7 @@ function Detail({ habit, done, today }: { habit: Habit; done: DoneSet; today: Da
           <Stat
             label="Quote 30 Tage"
             value={rate ? `${Math.round(rate.rate * 100)} %` : '–'}
-            hint={rate ? `${rate.done} von ${rate.due} fälligen` : undefined}
+            hint={rate ? `${rate.done} von ${rate.due} fälligen${recent ? ` · ${recent} ausgesetzt` : ''}` : undefined}
           />
           <Stat label="Erledigt gesamt" value={days(totalDone(habit, done, today))} />
         </section>
@@ -154,13 +175,14 @@ function Detail({ habit, done, today }: { habit: Habit; done: DoneSet; today: Da
         {/* Verlauf */}
         <section className="mt-3 rounded-3xl bg-surface p-4">
           <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-muted uppercase">Verlauf · 22 Wochen</h2>
-          <Heatmap habit={habit} done={done} today={today} color={color} />
+          <Heatmap habit={habit} done={done} excused={excused} today={today} color={color} />
         </section>
 
         {/* Nachtragen & korrigieren */}
         <section className="mt-3 rounded-3xl bg-surface px-2 pt-2 pb-4">
           <h2 className="px-2 pt-2 text-[13px] font-semibold tracking-wide text-muted uppercase">Nachtragen & korrigieren</h2>
-          <MonthCalendar habit={habit} done={done} today={today} color={color} />
+          <p className="px-2 pt-0.5 text-[12px] text-muted">Tippen: erledigt ein/aus · lange drücken: Tag aussetzen</p>
+          <MonthCalendar habit={habit} done={done} excuses={excuses} today={today} color={color} />
         </section>
       </div>
     </div>

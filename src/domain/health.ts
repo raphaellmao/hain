@@ -1,6 +1,6 @@
 import { type DateStr, eachDay } from './dates'
 import { isDue } from './schedule'
-import type { DoneSet, Habit } from './types'
+import { type DoneSet, type Habit, NO_DAYS } from './types'
 
 /**
  * Gesundheitswert H – bestimmt, wie groß der Baum ist.
@@ -59,6 +59,8 @@ export function computeHealth(
   habit: Pick<Habit, 'schedule' | 'startDate'>,
   done: DoneSet,
   today: DateStr,
+  /** ausgesetzte Tage zählen nicht als verpasst */
+  excused: DoneSet = NO_DAYS,
 ): Health {
   let h = 0
   let peak = 0
@@ -69,7 +71,7 @@ export function computeHealth(
       if (done.has(d)) {
         h = Math.min(H_MAX, h + 1)
         missRun = 0
-      } else if (d < today && isDue(habit, d)) {
+      } else if (d < today && isDue(habit, d) && !excused.has(d)) {
         missRun++
         h = missRun === 1 ? Math.max(0, h - 1) : h / 2
       }

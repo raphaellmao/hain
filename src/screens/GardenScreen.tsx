@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'motion/react'
-import { doneFor, useDoneMap, useHabits, useToday } from '../db/hooks'
+import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, useToday } from '../db/hooks'
 import { stageLabel, summarize } from '../domain/summary'
 import { navigate, paths } from '../app/router'
 import { HabitVisual } from '../components/HabitVisual'
@@ -15,12 +15,16 @@ import { Fab } from '../components/Fab'
 export function GardenScreen() {
   const habits = useHabits()
   const doneMap = useDoneMap()
+  const excuseMap = useExcuseMap()
   const today = useToday()
 
   const items = useMemo(() => {
     if (!habits || !doneMap) return []
-    return habits.map((habit) => ({ habit, summary: summarize(habit, doneFor(doneMap, habit.id), today) }))
-  }, [habits, doneMap, today])
+    return habits.map((habit) => ({
+      habit,
+      summary: summarize(habit, doneFor(doneMap, habit.id), today, excusedSet(excusesFor(excuseMap, habit.id))),
+    }))
+  }, [habits, doneMap, excuseMap, today])
 
   if (!habits || !doneMap) return null
 

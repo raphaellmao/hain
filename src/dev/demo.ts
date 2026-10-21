@@ -73,6 +73,19 @@ export async function hainDemo() {
     }
   })
 
+  // Ausnahmetage zum Ausprobieren: Gitarre heute wegen Dienst, Spazieren vor einer Woche krank
+  const excuse = (idx: number, daysAgo: number, reason: 'dienst' | 'krank', note?: string) => {
+    const habitId = `demo-${idx + 1}`
+    const date = addDays(today, -daysAgo)
+    const id = `${habitId}_${date}`
+    const i = checkins.findIndex((c) => c.id === id)
+    if (i >= 0) checkins.splice(i, 1)
+    checkins.push({ id, habitId, date, done: false, excused: true, reason, ...(note ? { reasonNote: note } : {}), updatedAt: now })
+  }
+  excuse(7, 0, 'dienst', 'Übung bis Freitag')
+  excuse(8, 7, 'krank')
+  excuse(8, 6, 'krank')
+
   await db.transaction('rw', db.habits, db.checkins, async () => {
     await db.habits.bulkAdd(habits)
     await db.checkins.bulkAdd(checkins)

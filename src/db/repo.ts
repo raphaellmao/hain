@@ -7,6 +7,7 @@ import { db } from './schema'
 import type { DateStr } from '../domain/dates'
 import type { ColorKey } from '../domain/colors'
 import type { SpeciesKey } from '../domain/species'
+import type { ExcuseReason } from '../domain/excuse'
 import { type Checkin, type DayEntry, type Habit, type Metaphor, type Settings, DEFAULT_SETTINGS } from '../domain/types'
 import { daysAt, withNewDays } from '../domain/schedule'
 
@@ -79,8 +80,20 @@ export async function deleteHabit(id: string): Promise<void> {
   await db.habits.update(id, { deleted: true, updatedAt: Date.now() })
 }
 
+/** Erledigt setzen bzw. zurücknehmen. Überschreibt eine evtl. Ausnahme des Tages. */
 export async function setCheckin(habitId: string, date: DateStr, done: boolean): Promise<void> {
   const checkin: Checkin = { id: `${habitId}_${date}`, habitId, date, done, updatedAt: Date.now() }
+  await db.checkins.put(checkin)
+}
+
+/** „Heute nicht möglich“: Tag aussetzen, mit Grund und optionaler Notiz. */
+export async function setExcused(habitId: string, date: DateStr, reason: ExcuseReason, note?: string): Promise<void> {
+  const text = note?.trim().slice(0, 140)
+  const checkin: Checkin = {
+    id: `${habitId}_${date}`, habitId, date, done: false, excused: true, reason,
+    ...(text ? { reasonNote: text } : {}),
+    updatedAt: Date.now(),
+  }
   await db.checkins.put(checkin)
 }
 

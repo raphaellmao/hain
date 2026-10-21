@@ -62,3 +62,19 @@ describe('parseBackup', () => {
     expect(() => parseBackup(JSON.stringify({ ...valid, habits: [{ id: 'h1' }] }))).toThrow(/beschädigt/)
   })
 })
+
+describe('Backup mit Ausnahmetagen', () => {
+  it('übernimmt ausgesetzte Tage samt Grund', () => {
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        checkins: [
+          { habitId: 'h1', date: '2026-10-02', done: false, excused: true, reason: 'krank', reasonNote: 'Grippe' },
+          { habitId: 'h1', date: '2026-10-03', done: false, excused: true, reason: 'quatsch' },
+        ],
+      }),
+    )
+    expect(b.checkins[0]).toMatchObject({ done: false, excused: true, reason: 'krank', reasonNote: 'Grippe' })
+    expect(b.checkins[1]).toMatchObject({ excused: true, reason: 'sonst' })
+  })
+})

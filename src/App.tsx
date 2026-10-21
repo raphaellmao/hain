@@ -1,6 +1,7 @@
 import { useRoute } from './app/router'
 import { BottomNav } from './components/BottomNav'
 import { ConfirmHost } from './components/ConfirmHost'
+import { ExcuseHost } from './components/ExcuseHost'
 import { Toaster } from './components/Toaster'
 import { UpdateToast } from './components/UpdateToast'
 import { GardenScreen } from './screens/GardenScreen'
@@ -43,6 +44,7 @@ export default function App() {
       {showNav && <BottomNav route={route} />}
       <Toaster />
       <UpdateToast />
+      <ExcuseHost />
       <ConfirmHost />
     </div>
   )

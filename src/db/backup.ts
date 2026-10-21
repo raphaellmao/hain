@@ -7,6 +7,7 @@
 import { db } from './schema'
 import { COLORS } from '../domain/colors'
 import { isSpecies } from '../domain/species'
+import { isExcuseReason } from '../domain/excuse'
 import { type Checkin, type DayEntry, type Habit, type Settings, DEFAULT_SETTINGS } from '../domain/types'
 import { NOTE_MAX_LENGTH } from './repo'
 import { toDateStr } from '../domain/dates'
@@ -27,7 +28,7 @@ export interface BackupFile {
 export async function createBackup(): Promise<BackupFile> {
   const habits = (await db.habits.toArray()).filter((h) => !h.deleted)
   const ids = new Set(habits.map((h) => h.id))
-  const checkins = (await db.checkins.toArray()).filter((c) => c.done && ids.has(c.habitId))
+  const checkins = (await db.checkins.toArray()).filter((c) => (c.done || c.excused) && ids.has(c.habitId))
   const dayEntries = (await db.dayEntries.toArray()).filter((e) => e.note !== '')
   const settings = { ...DEFAULT_SETTINGS, ...((await db.meta.get('settings'))?.value as Partial<Settings>) }
   return { app: 'hain', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), settings, habits, checkins, dayEntries }
@@ -109,11 +110,20 @@ export function parseBackup(text: string): BackupFile {
   const checkins: Checkin[] = []
   for (const c of b.checkins) {
     if (!c || typeof c.habitId !== 'string' || !isDate(c.date) || !ids.has(c.habitId)) continue
+    const done = c.done !== false && c.excused !== true
     checkins.push({
       id: `${c.habitId}_${c.date}`,
       habitId: c.habitId,
       date: c.date,
-      done: c.done !== false,
+      done,
+      // Ausnahmetage („heute nicht möglich“) samt Grund
+      ...(!done && c.excused === true
+        ? {
+            excused: true,
+            reason: isExcuseReason(c.reason) ? c.reason : 'sonst',
+            ...(typeof c.reasonNote === 'string' && c.reasonNote.trim() ? { reasonNote: c.reasonNote.slice(0, 140) } : {}),
+          }
+        : {}),
       updatedAt: typeof c.updatedAt === 'number' ? c.updatedAt : now,
     })
   }

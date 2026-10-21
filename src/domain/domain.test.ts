@@ -216,3 +216,31 @@ describe('stats', () => {
     expect(dayState(h, done, '2026-10-13', '2026-10-12')).toBe('future')
   })
 })
+
+describe('Ausnahmetage („heute nicht möglich“)', () => {
+  const start = '2026-01-01'
+  // 20 Tage erledigt, Tag 21 und 22 ausgesetzt (z. B. krank), heute = Tag 23
+  const done = new Set(run(start, 20))
+  const excused = new Set([addDays(start, 20), addDays(start, 21)])
+  const today = addDays(start, 22)
+
+  it('zählen nicht als verpasst: kein Welken, kein Halbieren', () => {
+    expect(computeHealth(daily(start), done, today, excused)).toMatchObject({ h: 20, wilted: false, missRun: 0 })
+    expect(computeHealth(daily(start), done, today).h).toBe(9.5) // ohne Ausnahme
+  })
+
+  it('die Serie läuft weiter', () => {
+    expect(computeStreaks(daily(start), done, today, excused).current).toBe(20)
+    expect(computeStreaks(daily(start), done, today).current).toBe(0)
+  })
+
+  it('fallen aus der Erfolgsquote heraus und haben einen eigenen Tageszustand', () => {
+    expect(successRate(daily(start), done, today, 30, excused)).toMatchObject({ done: 20, due: 20 })
+    expect(dayState(daily(start), done, addDays(start, 20), today, excused)).toBe('excused')
+  })
+
+  it('erledigt schlägt ausgesetzt', () => {
+    const both = new Set([...done, addDays(start, 20)])
+    expect(dayState(daily(start), both, addDays(start, 20), today, excused)).toBe('done')
+  })
+})
