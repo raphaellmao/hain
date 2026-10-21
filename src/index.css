@@ -258,22 +258,57 @@ button {
   }
 }
 
-/* ── Erfolge: sanfter Lichtschimmer über freigeschalteten Abzeichen ─────────── */
+/* ── Erfolge: Seltenheit mit eigenem Schimmer ─────────────────────────────── */
+.tier-bronze { --tier: #c4874d; }
+.tier-silber { --tier: #a9b5c2; }
+.tier-gold { --tier: #e2b33a; }
+.tier-legendaer { --tier: #b06bff; }
+
+.badge-earned {
+  box-shadow: inset 0 0 0 1.5px var(--tier);
+}
 .badge-glow {
   position: absolute;
   inset: -40%;
-  background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--accent) 30%, transparent) 80%, transparent 90%);
+  background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--tier, var(--accent)) 35%, transparent) 80%, transparent 90%);
   animation: badge-spin 9s linear infinite;
-  opacity: 0.55;
+  opacity: 0.6;
 }
 @keyframes badge-spin {
   to { transform: rotate(1turn); }
 }
-.badge-earned {
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 45%, transparent);
+/* Legendär: umlaufender Regenbogenrand */
+.tier-legendaer.badge-earned {
+  box-shadow: none;
+}
+.tier-legendaer.badge-earned::before {
+  content: '';
+  position: absolute;
+  inset: -60%;
+  background: conic-gradient(#ff5a5a, #ffb84d, #f6ff6b, #5dff9c, #4dc3ff, #b06bff, #ff5a5a);
+  animation: badge-spin 4s linear infinite;
+}
+.tier-legendaer.badge-earned::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 22px;
+  background: var(--surface);
+}
+.tier-legendaer.badge-earned .badge-glow {
+  z-index: 0;
+  opacity: 0.35;
+}
+@keyframes badge-float {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-4px) rotate(4deg); }
+}
+.badge-float {
+  display: inline-block;
+  animation: badge-float 3s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .badge-glow { animation: none; }
+  .badge-glow, .badge-float, .tier-legendaer.badge-earned::before { animation: none; }
 }
 
 /* ── Lebendiger Garten ────────────────────────────────────────────────────────

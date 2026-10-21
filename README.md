@@ -143,8 +143,11 @@ Das Blatt zeigt, wie viele Ausnahmen es in den letzten 30 Tagen gab.
 
 ## Erfolge, Monatsquote, lebendiger Garten
 
-- **Erfolge** (Tab „Erfolge“): 20 Abzeichen, berechnet aus der Historie
-  (`domain/achievements.ts`); neu freigeschaltete melden sich per Hinweis.
+- **Erfolge** (Tab „Erfolge“): 49 Abzeichen in sieben Kategorien und vier
+  Seltenheiten (Bronze, Silber, Gold, Legendär), dazu Geheimerfolge, die sich
+  erst beim Erreichen zeigen. Berechnet aus der Historie (`domain/achievements.ts`),
+  Uhrzeit-Erfolge aus dem Zeitstempel der Haken; neu freigeschaltete melden sich
+  per Hinweis.
 - **Erfolgsquote je Monat**: in jeder Detailansicht und über alle Gewohnheiten
   im Tab „Erfolge“ (`monthlyRates` in `domain/stats.ts`).
 - **Drohungen des Schattens**: Sprechblase in der Detailansicht, wechselt täglich

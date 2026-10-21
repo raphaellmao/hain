@@ -112,11 +112,26 @@ export function bestShadowStatus(
   today: DateStr,
   excused: DoneSet = NO_DAYS,
 ): number {
+  return shadowJourney(habit, done, today, excused).best
+}
+
+/**
+ * Verlauf des Kampfes: beste Lage und ob du es von „Er herrscht“ bis zu
+ * „Dein Land“ geschafft hast.
+ */
+export function shadowJourney(
+  habit: Pick<Habit, 'schedule' | 'startDate'>,
+  done: DoneSet,
+  today: DateStr,
+  excused: DoneSet = NO_DAYS,
+): { best: number; fromDarkness: boolean } {
   let h = 0
   let s = 0
   let miss = 0
   let best = 0
-  if (habit.startDate > today) return 0
+  let ruled = false
+  let fromDarkness = false
+  if (habit.startDate > today) return { best: 0, fromDarkness: false }
   for (const d of eachDay(habit.startDate, today)) {
     if (done.has(d)) {
       h = Math.min(H_MAX, h + 1)
@@ -127,7 +142,10 @@ export function bestShadowStatus(
       h = miss === 1 ? Math.max(0, h - 1) : h / 2
       s += (100 - s) * SHADOW_GAIN
     } else continue
-    best = Math.max(best, statusOf(territoryOf(lightOf(h), s)))
+    const st = statusOf(territoryOf(lightOf(h), s))
+    best = Math.max(best, st)
+    if (st === 0) ruled = true
+    else if (ruled && st === TERRITORY_STATUS.length - 1) fromDarkness = true
   }
-  return best
+  return { best, fromDarkness }
 }

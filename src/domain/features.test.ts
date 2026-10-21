@@ -72,6 +72,7 @@ describe('Erfolge', () => {
       today,
       notes: 2,
       backedUp: false,
+      ticks: { early: 0, late: 0, ghost: false },
     })
     const get = (id: string) => list.find((x) => x.id === id)!
     expect(get('baum').achieved).toBe(true) // H 20 ≥ 14
@@ -98,5 +99,62 @@ describe('Balkenfarben', () => {
     const l = Number(gold.match(/([\d.]+)%\)$/)![1])
     expect(l).toBeLessThan(hexToHsl('#e2bd3a').l - 10)
     expect(withContrast('#c44a6e')).toContain(`${hexToHsl('#c44a6e').l.toFixed(1)}%`)
+  })
+})
+
+describe('Neue Erfolge', () => {
+  const mk = (id: string, start: string, extra: Partial<Habit> = {}) =>
+    ({ id, name: id, emoji: '⭐', color: 'blau', ...daily(start), seed: 1, order: 1, deleted: false, createdAt: 0, updatedAt: 0, ...extra }) as Habit
+  const ctx = (items: { habit: Habit; done: Set<string> }[], today: string, ticks = { early: 0, late: 0, ghost: false }) =>
+    computeAchievements({
+      items: items.map(({ habit, done }) => ({ habit, done, excused: new Set<string>(), summary: summarize(habit, done, today) })),
+      today,
+      notes: 0,
+      backedUp: false,
+      ticks,
+    })
+  const get = (list: ReturnType<typeof computeAchievements>, id: string) => list.find((a) => a.id === id)!
+
+  it('Phönix: aus kahl bis zum Hain', () => {
+    const start = '2025-01-01'
+    // 20 erledigt, 10 verpasst (kahl), dann 110 erledigt
+    const done = new Set([...run(start, 20), ...run(addDays(start, 30), 110)])
+    const list = ctx([{ habit: mk('h', start), done }], addDays(start, 140))
+    expect(get(list, 'comeback').achieved).toBe(true)
+    expect(get(list, 'phoenix').achieved).toBe(true)
+  })
+
+  it('Aus der Dunkelheit beim Schatten-Ich', () => {
+    const start = '2025-01-01'
+    // 14 verpasst (er herrscht), dann 30 erledigt (Dein Land)
+    const done = new Set(run(addDays(start, 14), 30))
+    const list = ctx([{ habit: mk('s', start, { metaphor: 'schatten' }), done }], addDays(start, 44))
+    expect(get(list, 'dunkelheit').achieved).toBe(true)
+  })
+
+  it('Perfekter Tag, Doppelpack und Kaltstart', () => {
+    const today = '2026-10-21'
+    const habits = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ habit: mk(id, today), done: new Set([today]) }))
+    const list = ctx(habits, today)
+    expect(get(list, 'perfekter-tag').achieved).toBe(true)
+    expect(get(list, 'doppelpack').achieved).toBe(true)
+    expect(get(list, 'kaltstart').achieved).toBe(true)
+    expect(get(list, 'gaertner').achieved).toBe(true)
+  })
+
+  it('Uhrzeit- und Geheimerfolge', () => {
+    const today = '2026-12-25'
+    const list = ctx([{ habit: mk('a', '2026-12-01'), done: new Set(['2026-12-24']) }], today, { early: 12, late: 3, ghost: true })
+    expect(get(list, 'fruehaufsteher').achieved).toBe(true)
+    expect(get(list, 'nachteule')).toMatchObject({ achieved: false, value: 3, target: 10 })
+    expect(get(list, 'geisterstunde')).toMatchObject({ achieved: true, secret: true })
+    expect(get(list, 'weihnachten').achieved).toBe(true)
+    expect(get(list, 'neujahr').achieved).toBe(false)
+  })
+
+  it('jeder Erfolg hat eine eindeutige ID', () => {
+    const list = ctx([{ habit: mk('a', '2026-10-01'), done: new Set<string>() }], '2026-10-21')
+    expect(new Set(list.map((a) => a.id)).size).toBe(list.length)
+    expect(list.length).toBeGreaterThanOrEqual(45)
   })
 })

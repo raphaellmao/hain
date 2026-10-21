@@ -10,6 +10,7 @@ import { db } from './schema'
 import { type DateStr, logicalToday } from '../domain/dates'
 import { type Habit, type Settings, DEFAULT_SETTINGS } from '../domain/types'
 import type { ExcuseReason } from '../domain/excuse'
+import type { TickStats } from '../domain/achievements'
 
 /** Alle nicht gelöschten Habits in Listenreihenfolge (undefined = lädt noch). */
 export function useHabits(): Habit[] | undefined {
@@ -123,4 +124,24 @@ export function useToday(): DateStr {
 /** Anzahl der Tage mit Notiz (für den Erfolg „Tagebuch“) */
 export function useNoteCount(): number | undefined {
   return useLiveQuery(() => db.dayEntries.filter((e) => e.note.trim() !== '').count())
+}
+
+/**
+ * Uhrzeiten der Haken (aus dem Zeitstempel). Gezählt wird nur, wenn der Haken
+ * am selben (logischen) Tag gesetzt wurde – Nachträge zählen nicht.
+ */
+export function useTickStats(dayStartHour: number): TickStats | undefined {
+  return useLiveQuery(async () => {
+    const stats: TickStats = { early: 0, late: 0, ghost: false }
+    await db.checkins.each((c) => {
+      if (!c.done) return
+      const at = new Date(c.updatedAt)
+      if (logicalToday(at, dayStartHour) !== c.date) return
+      const h = at.getHours()
+      if (h < 7 && h >= dayStartHour) stats.early++
+      if (h >= 23 || h < dayStartHour) stats.late++
+      if (h === 0) stats.ghost = true
+    })
+    return stats
+  }, [dayStartHour])
 }
