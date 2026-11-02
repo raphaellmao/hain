@@ -39,6 +39,21 @@ class HainDB extends Dexie {
     this.version(3).stores({
       todos: 'id, date, updatedAt',
     })
+    // Mehrere Erinnerungen pro To-do statt einer: Offene bleiben, weggeklickte waren erledigt
+    this.version(4)
+      .stores({
+        todos: 'id, date, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table('todos')
+          .toCollection()
+          .modify((t) => {
+            t.reminders = t.remindAt && !t.remindedAt ? [t.remindAt] : []
+            delete t.remindAt
+            delete t.remindedAt
+          }),
+      )
   }
 }
 

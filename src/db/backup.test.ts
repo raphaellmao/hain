@@ -72,22 +72,39 @@ describe('Backup mit To-dos', () => {
     const b = parseBackup(
       JSON.stringify({
         ...valid,
-        version: 3,
+        version: 4,
         todos: [
-          { id: 'a', title: 'Antrag', scope: 'tag', date: '2026-11-04', remindAt: '2026-11-04T18:00', done: false, deleted: false, createdAt: 1, updatedAt: 2 },
+          { id: 'a', title: 'Antrag', scope: 'tag', date: '2026-11-04', reminders: ['2026-11-04T18:00', '2026-11-04T08:00', '2026-11-04T08:00', 'bald'], done: false, deleted: false, createdAt: 1, updatedAt: 2 },
           { id: 'b', title: 'Woche', scope: 'woche', date: '2026-11-04', done: true, doneAt: 9, createdAt: 1, updatedAt: 2 },
           { id: 'a', title: 'doppelt', scope: 'tag', date: '2026-11-04' },
           { id: 'c', title: '   ', scope: 'tag', date: '2026-11-04' },
           { id: 'd', title: 'kaputt', scope: 'monat', date: '2026-11-04' },
           { id: 'e', title: 'kaputt', scope: 'tag', date: 'morgen' },
-          { id: 'f', title: 'Zeit kaputt', scope: 'tag', date: '2026-11-04', remindAt: 'bald' },
+          { id: 'f', title: 'Ohne Erinnerung', scope: 'tag', date: '2026-11-04' },
         ],
       }),
     )
     expect(b.todos.map((t) => t.id)).toEqual(['a', 'b', 'f'])
-    expect(b.todos[0]).toMatchObject({ remindAt: '2026-11-04T18:00', done: false })
+    expect(b.todos[0]).toMatchObject({ reminders: ['2026-11-04T08:00', '2026-11-04T18:00'], done: false }) // sortiert, ohne Doppelte
     expect(b.todos[1]).toMatchObject({ date: '2026-11-02', done: true, doneAt: 9 }) // Woche beginnt am Montag
-    expect(b.todos[2]).not.toHaveProperty('remindAt')
+    expect(b.todos[2].reminders).toEqual([])
+  })
+
+  it('übernimmt die einzelne Erinnerung aus Format 3', () => {
+    const base = { scope: 'tag', date: '2026-11-04' }
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        version: 3,
+        todos: [
+          { ...base, id: 'offen', title: 'x', remindAt: '2026-11-04T18:00' },
+          { ...base, id: 'weggeklickt', title: 'x', remindAt: '2026-11-04T18:00', remindedAt: 5 },
+          { ...base, id: 'kaputt', title: 'x', remindAt: 'bald' },
+        ],
+      }),
+    )
+    expect(b.todos.map((t) => t.reminders)).toEqual([['2026-11-04T18:00'], [], []])
+    expect(b.todos[0]).not.toHaveProperty('remindAt')
   })
 })
 

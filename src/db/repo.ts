@@ -10,6 +10,7 @@ import type { SpeciesKey } from '../domain/species'
 import type { ExcuseReason } from '../domain/excuse'
 import { type Checkin, type DayEntry, type Habit, type Metaphor, type Settings, type Todo, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
 import { daysAt, withNewDays } from '../domain/schedule'
+import { cleanReminders, withoutDue } from '../domain/todos'
 
 export interface HabitInput {
   name: string
@@ -118,7 +119,7 @@ export interface TodoInput {
   title: string
   scope: TodoScope
   date: DateStr
-  remindAt?: string
+  reminders: string[]
 }
 
 export async function createTodo(id: string, input: TodoInput): Promise<void> {
@@ -128,7 +129,7 @@ export async function createTodo(id: string, input: TodoInput): Promise<void> {
     title: input.title.trim().slice(0, TODO_MAX_LENGTH),
     scope: input.scope,
     date: input.date,
-    ...(input.remindAt ? { remindAt: input.remindAt } : {}),
+    reminders: cleanReminders(input.reminders),
     done: false,
     deleted: false,
     createdAt: now,
@@ -137,21 +138,14 @@ export async function createTodo(id: string, input: TodoInput): Promise<void> {
   await db.todos.add(todo)
 }
 
-/** Eine geänderte Erinnerung klingelt neu, eine unveränderte bleibt weggeklickt. */
 export async function updateTodo(id: string, input: TodoInput): Promise<void> {
-  const current = await db.todos.get(id)
-  if (!current) return
-  const { remindedAt: _gone, remindAt: _old, ...rest } = current
-  const todo: Todo = {
-    ...rest,
+  await db.todos.update(id, {
     title: input.title.trim().slice(0, TODO_MAX_LENGTH),
     scope: input.scope,
     date: input.date,
-    ...(input.remindAt ? { remindAt: input.remindAt } : {}),
-    ...(current.remindedAt && input.remindAt === current.remindAt ? { remindedAt: current.remindedAt } : {}),
+    reminders: cleanReminders(input.reminders),
     updatedAt: Date.now(),
-  }
-  await db.todos.put(todo)
+  })
 }
 
 export async function setTodoDone(id: string, done: boolean): Promise<void> {
@@ -164,15 +158,18 @@ export async function deleteTodo(id: string): Promise<void> {
   await db.todos.update(id, { deleted: true, updatedAt: Date.now() })
 }
 
-/** Erinnerung weggeklickt: klingelt nicht mehr, das To-do bleibt offen. */
-export async function dismissReminder(id: string): Promise<void> {
-  const now = Date.now()
-  await db.todos.update(id, { remindedAt: now, updatedAt: now })
+/** Fällige Erinnerungen wegklicken: Das To-do bleibt offen, spätere Erinnerungen bleiben stehen. */
+export async function dismissDueReminders(id: string): Promise<void> {
+  const todo = await db.todos.get(id)
+  if (!todo) return
+  await db.todos.update(id, { reminders: withoutDue(todo.reminders, new Date()), updatedAt: Date.now() })
 }
 
-/** Später nochmal erinnern. */
-export async function snoozeReminder(id: string, remindAt: string): Promise<void> {
-  await db.todos.update(id, { remindAt, remindedAt: undefined, updatedAt: Date.now() })
+/** Später nochmal erinnern: Die fälligen Erinnerungen werden durch eine neue ersetzt. */
+export async function snoozeDueReminders(id: string, remindAt: string): Promise<void> {
+  const todo = await db.todos.get(id)
+  if (!todo) return
+  await db.todos.update(id, { reminders: cleanReminders([...withoutDue(todo.reminders, new Date()), remindAt]), updatedAt: Date.now() })
 }
 
 /** Überfälliges nach vorn holen: Tagesaufgaben auf heute, Wochenaufgaben auf diese Woche. */

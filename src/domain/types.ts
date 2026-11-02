@@ -75,10 +75,11 @@ export interface Todo {
   scope: TodoScope
   /** scope 'tag': der Tag · scope 'woche': der Montag der Woche */
   date: DateStr
-  /** Erinnerung in Ortszeit 'JJJJ-MM-TTTHH:MM' – eine Uhrzeit auf der Wanduhr, wie im Kalender */
-  remindAt?: string
-  /** Erinnerung wurde weggeklickt und klingelt nicht mehr */
-  remindedAt?: number
+  /**
+   * Offene Erinnerungen in Ortszeit 'JJJJ-MM-TTTHH:MM' (Uhrzeit auf der Wanduhr,
+   * wie im Kalender), aufsteigend sortiert. Weggeklickte fallen heraus.
+   */
+  reminders: string[]
   done: boolean
   doneAt?: number
   /** Gelöschte To-dos bleiben als „Grabstein“ liegen (für späteren Sync) */

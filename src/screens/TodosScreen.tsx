@@ -3,7 +3,8 @@ import { AnimatePresence } from 'motion/react'
 import { useToday, useTodos } from '../db/hooks'
 import { moveTodosToNow } from '../db/repo'
 import { startOfWeek, type DateStr } from '../domain/dates'
-import { daysLeftInWeek, groupTodos, toRemindAt } from '../domain/todos'
+import { calendarItems } from '../domain/ics'
+import { daysLeftInWeek, groupTodos } from '../domain/todos'
 import type { Todo } from '../domain/types'
 import { Fab } from '../components/Fab'
 import { IconPlus } from '../components/icons'
@@ -155,8 +156,7 @@ function Empty({ children }: { children: ReactNode }) {
 /** Ehrlich erklären, wann Hain sich melden kann – und was bei geschlossener App hilft. */
 function ReminderInfo({ todos }: { todos: Todo[] }) {
   const [permission, setPermission] = useState<NotifyState>(notificationState)
-  const now = toRemindAt(new Date())
-  const upcoming = todos.flatMap((t) => (!t.done && t.remindAt && t.remindAt > now ? [{ id: t.id, title: t.title, remindAt: t.remindAt }] : []))
+  const upcoming = calendarItems(todos, new Date())
 
   return (
     <section className="rounded-3xl bg-surface p-4 text-[14px] leading-snug">

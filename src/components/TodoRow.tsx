@@ -2,7 +2,7 @@ import { useState, type Ref } from 'react'
 import { motion } from 'motion/react'
 import { setTodoDone } from '../db/repo'
 import type { DateStr } from '../domain/dates'
-import { isOverdue, remindLabel, remindTimeOf, whenLabel } from '../domain/todos'
+import { isOverdue, remindLabel, whenLabel } from '../domain/todos'
 import type { Todo } from '../domain/types'
 import { tick } from '../lib/haptics'
 import { openTodoSheet } from '../lib/todoSheet'
@@ -10,6 +10,8 @@ import { CheckCircle } from './CheckCircle'
 
 /** So lange bleibt ein abgehaktes To-do stehen, damit man den Haken noch sieht */
 const LEAVE_DELAY_MS = 320
+/** Mehr Uhrzeiten passen nicht gut in die Zeile, der Rest steht als „+2“ dahinter */
+const MAX_TIMES = 3
 
 /**
  * Eine Zeile: links abhaken, sonst antippen zum Bearbeiten.
@@ -36,11 +38,13 @@ export function TodoRow({ todo, today, showWhen = false, compact = false, ref }:
     window.setTimeout(() => void setTodoDone(todo.id, true), LEAVE_DELAY_MS)
   }
 
-  // Steht der Tag schon davor, reicht bei der Erinnerung am selben Tag die Uhrzeit
-  const sameDay = showWhen && todo.scope === 'tag' && todo.remindAt?.startsWith(todo.date)
+  // Steht der Tag schon davor, reicht bei Erinnerungen an diesem Tag die Uhrzeit
+  const shownDay = showWhen && todo.scope === 'tag' ? todo.date : today
+  const times = todo.done ? [] : todo.reminders.slice(0, MAX_TIMES).map((r) => remindLabel(r, today, shownDay))
+  const more = todo.done ? 0 : todo.reminders.length - times.length
   const meta = [
     showWhen ? whenLabel(todo, today) : null,
-    todo.remindAt && !todo.done ? `🔔 ${sameDay ? remindTimeOf(todo.remindAt) : remindLabel(todo.remindAt, today)}` : null,
+    times.length > 0 ? `🔔 ${times.join(', ')}${more > 0 ? ` +${more}` : ''}` : null,
   ].filter(Boolean)
 
   return (

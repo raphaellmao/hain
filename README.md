@@ -168,8 +168,7 @@ Ein To-do gilt für einen Tag oder für eine Woche und steht in einem der Abschn
 wandert nicht von selbst weiter, sondern bleibt als überfällig sichtbar, bis es
 erledigt oder neu gelegt ist. Wochenaufgaben werden am Sonntag dringend. Was dringend
 ist, zeigt auch die Karte auf „Heute“, der Zähler an der Leiste und (falls das Gerät
-es kann) die Zahl am App-Symbol. Gespeichert in der Tabelle `todos` (`version(3)`),
-im Backup enthalten (Backup-Format 3).
+es kann) die Zahl am App-Symbol. Gespeichert in der Tabelle `todos`, im Backup enthalten.
 
 **Erinnerungen und ihre Grenze:** Ohne Server kann eine Web-App nichts auslösen, solange
 sie geschlossen ist; geplante Benachrichtigungen gibt es im Web nicht.
@@ -181,8 +180,16 @@ sie geschlossen ist; geplante Benachrichtigungen gibt es im Web nicht.
 | geschlossen | nichts; Verpasstes kommt beim nächsten Öffnen |
 | geschlossen, Kalender genutzt | der Kalender des Handys erinnert (`domain/ics.ts`, `lib/calendar.ts`) |
 
-Die Kalenderdatei enthält einen Alarm zur Uhrzeit, ob der Kalender ihn übernimmt, hängt
-von der Kalender-App ab. Für echte Push-Nachrichten siehe „Erweiterungen“.
+Ein To-do kann beliebig viele Erinnerungen haben, auch an verschiedenen Tagen. Im Blatt
+gelten die Uhrzeiten für den gewählten Tag, antippen setzt oder entfernt sie. Wandert das
+To-do auf einen anderen Tag, wandern die Erinnerungen mit. Sind mehrere verpasst, kommt
+pro To-do nur ein Banner, „OK“ räumt alle fälligen ab und lässt die späteren stehen.
+Gespeichert werden nur offene Erinnerungen (Feld `reminders`, `version(4)` übernimmt die
+frühere Einzel-Erinnerung; Backup-Format 4, ältere Backups bleiben lesbar).
+
+In der Kalenderdatei wird jede künftige Erinnerung ein eigener Termin mit Alarm zur
+Uhrzeit, ob der Kalender den Alarm übernimmt, hängt von der Kalender-App ab. Für echte
+Push-Nachrichten siehe „Erweiterungen“.
 
 ## Notizen pro Tag
 

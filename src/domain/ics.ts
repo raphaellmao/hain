@@ -2,12 +2,21 @@
  * Kalenderdatei (iCalendar, RFC 5545) für Erinnerungen. Ohne Server kann die
  * App bei geschlossenem Zustand nichts auslösen – der Kalender des Handys schon.
  */
-import { isRemindAt } from './todos'
+import { toRemindAt } from './todos'
 import type { Todo } from './types'
 
-export type CalendarItem = Pick<Todo, 'id' | 'title'> & { remindAt: string }
+/** Ein Kalendertermin. Ein To-do mit drei Erinnerungen ergibt drei Termine. */
+export interface CalendarItem {
+  id: string
+  title: string
+  at: string
+}
 
-export const hasReminder = (t: Pick<Todo, 'remindAt'>): t is { remindAt: string } => isRemindAt(t.remindAt)
+/** Alles, was noch kommt: künftige Erinnerungen offener To-dos */
+export function calendarItems(todos: Pick<Todo, 'id' | 'title' | 'done' | 'reminders'>[], now: Date): CalendarItem[] {
+  const limit = toRemindAt(now)
+  return todos.flatMap((t) => (t.done ? [] : t.reminders.filter((r) => r > limit).map((at) => ({ id: t.id, title: t.title, at }))))
+}
 
 const EVENT_MINUTES = 15
 
@@ -34,11 +43,11 @@ function fold(line: string): string {
 }
 
 /** Ortszeit ohne Zeitzone: Der Termin bleibt um 18:00 Uhr, wo immer das Handy gerade ist. */
-const floating = (remindAt: string) => `${remindAt.replace(/-|:/g, '')}00`
+const floating = (at: string) => `${at.replace(/-|:/g, '')}00`
 
-function plusMinutes(remindAt: string, minutes: number): string {
+function plusMinutes(at: string, minutes: number): string {
   // nur Wanduhr-Rechnung, deshalb UTC: keine Sommerzeit-Sprünge
-  const end = new Date(`${remindAt}:00Z`).getTime() + minutes * 60_000
+  const end = new Date(`${at}:00Z`).getTime() + minutes * 60_000
   return new Date(end).toISOString().slice(0, 16)
 }
 
@@ -49,10 +58,11 @@ export function buildIcs(items: CalendarItem[], now: Date = new Date()): string 
     const title = escapeText(item.title)
     lines.push(
       'BEGIN:VEVENT',
-      `UID:${item.id}@hain`,
+      // Die Uhrzeit gehört zur Kennung, sonst überschreiben sich die Termine eines To-dos
+      `UID:${item.id}-${floating(item.at)}@hain`,
       `DTSTAMP:${stamp}`,
-      `DTSTART:${floating(item.remindAt)}`,
-      `DTEND:${floating(plusMinutes(item.remindAt, EVENT_MINUTES))}`,
+      `DTSTART:${floating(item.at)}`,
+      `DTEND:${floating(plusMinutes(item.at, EVENT_MINUTES))}`,
       `SUMMARY:${title}`,
       'TRANSP:TRANSPARENT',
       'BEGIN:VALARM',

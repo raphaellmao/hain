@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useToday, useTodos } from '../db/hooks'
-import { dismissReminder, setTodoDone, snoozeReminder } from '../db/repo'
+import { dismissDueReminders, setTodoDone, snoozeDueReminders } from '../db/repo'
 import { addDays, toDateStr } from '../domain/dates'
-import { isRinging, remindLabel, toRemindAt, urgentTodos } from '../domain/todos'
+import { dueReminders, remindLabel, toRemindAt, urgentTodos } from '../domain/todos'
 import { celebrate, tick } from '../lib/haptics'
 import { notifyTodo, setAppBadge } from '../lib/reminders'
 
@@ -29,19 +29,27 @@ export function ReminderHost() {
     }
   }, [])
 
+  // Pro To-do ein Banner, auch wenn mehrere seiner Erinnerungen verpasst wurden.
+  // Angezeigt wird die jüngste davon.
   const ringing = useMemo(
-    () => (todos ?? []).filter((t) => isRinging(t, now)).sort((a, b) => a.remindAt!.localeCompare(b.remindAt!)),
+    () =>
+      (todos ?? [])
+        .flatMap((todo) => {
+          const due = dueReminders(todo, now)
+          return due.length > 0 ? [{ todo, at: due[due.length - 1] }] : []
+        })
+        .sort((a, b) => a.at.localeCompare(b.at)),
     [todos, now],
   )
 
   // Jede Erinnerung meldet sich nur einmal (Banner bleibt, bis sie weggeklickt ist)
   const announced = useRef(new Set<string>())
   useEffect(() => {
-    const fresh = ringing.filter((t) => !announced.current.has(`${t.id}|${t.remindAt}`))
+    const fresh = ringing.filter((r) => !announced.current.has(`${r.todo.id}|${r.at}`))
     if (fresh.length === 0) return
-    for (const t of fresh) {
-      announced.current.add(`${t.id}|${t.remindAt}`)
-      if (document.visibilityState === 'hidden') void notifyTodo(t)
+    for (const r of fresh) {
+      announced.current.add(`${r.todo.id}|${r.at}`)
+      if (document.visibilityState === 'hidden') void notifyTodo(r.todo)
     }
     // Vibrieren dürfen Seiten erst, nachdem einmal getippt wurde
     if (document.visibilityState === 'visible' && navigator.userActivation?.hasBeenActive) celebrate()
@@ -59,7 +67,7 @@ export function ReminderHost() {
     <AnimatePresence>
       {first && (
         <motion.div
-          key={`${first.id}|${first.remindAt}`}
+          key={`${first.todo.id}|${first.at}`}
           role="alert"
           initial={{ y: -40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -74,10 +82,10 @@ export function ReminderHost() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] opacity-70">
-                  Erinnerung · {remindLabel(first.remindAt!, today)}
+                  Erinnerung · {remindLabel(first.at, today)}
                   {ringing.length > 1 && ` · ${ringing.length - 1} weitere`}
                 </p>
-                <p className="text-[16px] leading-snug font-semibold break-words">{first.title}</p>
+                <p className="text-[16px] leading-snug font-semibold break-words">{first.todo.title}</p>
               </div>
             </div>
             <div className="mt-2.5 grid grid-cols-[1.3fr_1fr_1fr_1fr] gap-1.5">
@@ -85,15 +93,15 @@ export function ReminderHost() {
                 type="button"
                 onClick={() => {
                   tick()
-                  void setTodoDone(first.id, true)
+                  void setTodoDone(first.todo.id, true)
                 }}
                 className="h-11 rounded-xl bg-accent text-[14px] font-semibold text-accent-ink"
               >
                 Erledigt
               </button>
-              <BannerButton onClick={() => void snoozeReminder(first.id, toRemindAt(new Date(Date.now() + 3_600_000)))}>1 Std.</BannerButton>
-              <BannerButton onClick={() => void snoozeReminder(first.id, `${addDays(toDateStr(new Date()), 1)}T08:00`)}>Morgen</BannerButton>
-              <BannerButton onClick={() => void dismissReminder(first.id)}>OK</BannerButton>
+              <BannerButton onClick={() => void snoozeDueReminders(first.todo.id, toRemindAt(new Date(Date.now() + 3_600_000)))}>1 Std.</BannerButton>
+              <BannerButton onClick={() => void snoozeDueReminders(first.todo.id, `${addDays(toDateStr(new Date()), 1)}T08:00`)}>Morgen</BannerButton>
+              <BannerButton onClick={() => void dismissDueReminders(first.todo.id)}>OK</BannerButton>
             </div>
           </div>
         </motion.div>
