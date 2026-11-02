@@ -63,6 +63,34 @@ describe('parseBackup', () => {
   })
 })
 
+describe('Backup mit To-dos', () => {
+  it('liest alte Backups ohne To-dos', () => {
+    expect(parseBackup(JSON.stringify(valid)).todos).toEqual([])
+  })
+
+  it('übernimmt To-dos und räumt auf', () => {
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        version: 3,
+        todos: [
+          { id: 'a', title: 'Antrag', scope: 'tag', date: '2026-11-04', remindAt: '2026-11-04T18:00', done: false, deleted: false, createdAt: 1, updatedAt: 2 },
+          { id: 'b', title: 'Woche', scope: 'woche', date: '2026-11-04', done: true, doneAt: 9, createdAt: 1, updatedAt: 2 },
+          { id: 'a', title: 'doppelt', scope: 'tag', date: '2026-11-04' },
+          { id: 'c', title: '   ', scope: 'tag', date: '2026-11-04' },
+          { id: 'd', title: 'kaputt', scope: 'monat', date: '2026-11-04' },
+          { id: 'e', title: 'kaputt', scope: 'tag', date: 'morgen' },
+          { id: 'f', title: 'Zeit kaputt', scope: 'tag', date: '2026-11-04', remindAt: 'bald' },
+        ],
+      }),
+    )
+    expect(b.todos.map((t) => t.id)).toEqual(['a', 'b', 'f'])
+    expect(b.todos[0]).toMatchObject({ remindAt: '2026-11-04T18:00', done: false })
+    expect(b.todos[1]).toMatchObject({ date: '2026-11-02', done: true, doneAt: 9 }) // Woche beginnt am Montag
+    expect(b.todos[2]).not.toHaveProperty('remindAt')
+  })
+})
+
 describe('Backup mit Ausnahmetagen', () => {
   it('übernimmt ausgesetzte Tage samt Grund', () => {
     const b = parseBackup(

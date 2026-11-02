@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './schema'
 import { type DateStr, logicalToday } from '../domain/dates'
-import { type Habit, type Settings, DEFAULT_SETTINGS } from '../domain/types'
+import { type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
 import type { ExcuseReason } from '../domain/excuse'
 import type { TickStats } from '../domain/achievements'
 
@@ -85,6 +85,11 @@ export function useDayNote(date: DateStr): string | undefined {
   const result = useLiveQuery(async () => ({ date, note: (await db.dayEntries.get(date))?.note ?? '' }), [date])
   // Nach einem Datumswechsel liefert useLiveQuery kurz noch das alte Ergebnis
   return result?.date === date ? result.note : undefined
+}
+
+/** Alle nicht gelöschten To-dos (undefined = lädt noch). */
+export function useTodos(): Todo[] | undefined {
+  return useLiveQuery(async () => (await db.todos.toArray()).filter((t) => !t.deleted))
 }
 
 export function useSettings(): Settings {

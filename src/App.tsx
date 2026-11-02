@@ -2,13 +2,17 @@ import { useRoute } from './app/router'
 import { BottomNav } from './components/BottomNav'
 import { ConfirmHost } from './components/ConfirmHost'
 import { ExcuseHost } from './components/ExcuseHost'
+import { ReminderHost } from './components/ReminderHost'
+import { SwipePager } from './components/SwipePager'
 import { Toaster } from './components/Toaster'
+import { TodoSheetHost } from './components/TodoSheetHost'
 import { UpdateToast } from './components/UpdateToast'
 import { GardenScreen } from './screens/GardenScreen'
 import { HabitDetailScreen } from './screens/HabitDetailScreen'
 import { HabitFormScreen } from './screens/HabitFormScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { TodayScreen } from './screens/TodayScreen'
+import { TodosScreen } from './screens/TodosScreen'
 import { AchievementsScreen } from './screens/AchievementsScreen'
 import { AchievementWatcher } from './app/achievements'
 
@@ -19,6 +23,9 @@ export default function App() {
   switch (route.name) {
     case 'today':
       screen = <TodayScreen />
+      break
+    case 'todos':
+      screen = <TodosScreen />
       break
     case 'garden':
       screen = <GardenScreen />
@@ -45,11 +52,13 @@ export default function App() {
 
   return (
     <div className="mx-auto min-h-dvh max-w-md">
-      {screen}
+      <SwipePager route={route}>{screen}</SwipePager>
       {showNav && <BottomNav route={route} />}
       <Toaster />
       <UpdateToast />
       <ExcuseHost />
+      <TodoSheetHost />
+      <ReminderHost />
       <AchievementWatcher />
       <ConfirmHost />
     </div>

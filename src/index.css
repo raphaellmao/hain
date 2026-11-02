@@ -418,3 +418,21 @@ button {
   .star, .sun-glow, .cloud, .bird, .wing, .mist, .sway, .taunt { animation: none; }
   .fall-leaf, .snow, .firefly, .butterfly { display: none; }
 }
+
+/* ── Erinnerung: die Glocke läutet kurz, dann alle paar Sekunden wieder ─────── */
+@keyframes bell-ring {
+  0%, 30%, 100% { transform: rotate(0); }
+  5% { transform: rotate(16deg); }
+  10% { transform: rotate(-14deg); }
+  15% { transform: rotate(10deg); }
+  20% { transform: rotate(-7deg); }
+  25% { transform: rotate(3deg); }
+}
+.bell-ring {
+  display: inline-block;
+  transform-origin: 50% 10%;
+  animation: bell-ring 3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bell-ring { animation: none; }
+}

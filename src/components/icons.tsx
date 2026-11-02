@@ -21,6 +21,13 @@ export const IconToday = (p: P) => (
   </svg>
 )
 
+export const IconList = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="m4 6.5 1.5 1.5L8 5.2M4 16.5 5.5 18 8 15.2" />
+    <path d="M12 7h8M12 17h8" />
+  </svg>
+)
+
 export const IconGarden = (p: P) => (
   <svg {...base} {...p}>
     <path d="M12 21v-7" />

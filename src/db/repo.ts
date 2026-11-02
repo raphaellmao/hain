@@ -8,7 +8,7 @@ import type { DateStr } from '../domain/dates'
 import type { ColorKey } from '../domain/colors'
 import type { SpeciesKey } from '../domain/species'
 import type { ExcuseReason } from '../domain/excuse'
-import { type Checkin, type DayEntry, type Habit, type Metaphor, type Settings, DEFAULT_SETTINGS } from '../domain/types'
+import { type Checkin, type DayEntry, type Habit, type Metaphor, type Settings, type Todo, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
 import { daysAt, withNewDays } from '../domain/schedule'
 
 export interface HabitInput {
@@ -108,6 +108,77 @@ export async function setDayNote(date: DateStr, note: string): Promise<void> {
   if ((current?.note ?? '') === text) return
   const entry: DayEntry = { id: date, date, note: text, updatedAt: Date.now() }
   await db.dayEntries.put(entry)
+}
+
+// ── To-dos ──────────────────────────────────────────────────────────────────
+
+export const TODO_MAX_LENGTH = 200
+
+export interface TodoInput {
+  title: string
+  scope: TodoScope
+  date: DateStr
+  remindAt?: string
+}
+
+export async function createTodo(id: string, input: TodoInput): Promise<void> {
+  const now = Date.now()
+  const todo: Todo = {
+    id,
+    title: input.title.trim().slice(0, TODO_MAX_LENGTH),
+    scope: input.scope,
+    date: input.date,
+    ...(input.remindAt ? { remindAt: input.remindAt } : {}),
+    done: false,
+    deleted: false,
+    createdAt: now,
+    updatedAt: now,
+  }
+  await db.todos.add(todo)
+}
+
+/** Eine geänderte Erinnerung klingelt neu, eine unveränderte bleibt weggeklickt. */
+export async function updateTodo(id: string, input: TodoInput): Promise<void> {
+  const current = await db.todos.get(id)
+  if (!current) return
+  const { remindedAt: _gone, remindAt: _old, ...rest } = current
+  const todo: Todo = {
+    ...rest,
+    title: input.title.trim().slice(0, TODO_MAX_LENGTH),
+    scope: input.scope,
+    date: input.date,
+    ...(input.remindAt ? { remindAt: input.remindAt } : {}),
+    ...(current.remindedAt && input.remindAt === current.remindAt ? { remindedAt: current.remindedAt } : {}),
+    updatedAt: Date.now(),
+  }
+  await db.todos.put(todo)
+}
+
+export async function setTodoDone(id: string, done: boolean): Promise<void> {
+  const now = Date.now()
+  await db.todos.update(id, { done, doneAt: done ? now : undefined, updatedAt: now })
+}
+
+/** Weiches Löschen, wie bei den Habits. */
+export async function deleteTodo(id: string): Promise<void> {
+  await db.todos.update(id, { deleted: true, updatedAt: Date.now() })
+}
+
+/** Erinnerung weggeklickt: klingelt nicht mehr, das To-do bleibt offen. */
+export async function dismissReminder(id: string): Promise<void> {
+  const now = Date.now()
+  await db.todos.update(id, { remindedAt: now, updatedAt: now })
+}
+
+/** Später nochmal erinnern. */
+export async function snoozeReminder(id: string, remindAt: string): Promise<void> {
+  await db.todos.update(id, { remindAt, remindedAt: undefined, updatedAt: Date.now() })
+}
+
+/** Überfälliges nach vorn holen: Tagesaufgaben auf heute, Wochenaufgaben auf diese Woche. */
+export async function moveTodosToNow(todos: Todo[], today: DateStr, monday: DateStr): Promise<void> {
+  const now = Date.now()
+  await db.todos.bulkPut(todos.map((t) => ({ ...t, date: t.scope === 'tag' ? today : monday, updatedAt: now })))
 }
 
 // ── Einstellungen ───────────────────────────────────────────────────────────

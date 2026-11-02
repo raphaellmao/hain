@@ -10,6 +10,7 @@ import { useSyncExternalStore } from 'react'
 
 export type Route =
   | { name: 'today' }
+  | { name: 'todos' }
   | { name: 'garden' }
   | { name: 'settings' }
   | { name: 'erfolge' }
@@ -19,6 +20,7 @@ export type Route =
 
 export const paths = {
   today: '/',
+  todos: '/todos',
   garden: '/garten',
   settings: '/einstellungen',
   erfolge: '/erfolge',
@@ -30,6 +32,7 @@ export const paths = {
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#/, '') || '/'
   const parts = path.split('/').filter(Boolean)
+  if (parts[0] === 'todos') return { name: 'todos' }
   if (parts[0] === 'garten') return { name: 'garden' }
   if (parts[0] === 'einstellungen') return { name: 'settings' }
   if (parts[0] === 'erfolge') return { name: 'erfolge' }

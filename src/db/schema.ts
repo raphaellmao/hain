@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Checkin, DayEntry, Habit } from '../domain/types'
+import type { Checkin, DayEntry, Habit, Todo } from '../domain/types'
 
 /** Schlüssel-Wert-Ablage für Einstellungen und Kleinkram (z. B. letztes Backup). */
 export interface MetaEntry {
@@ -22,6 +22,7 @@ class HainDB extends Dexie {
   checkins!: EntityTable<Checkin, 'id'>
   meta!: EntityTable<MetaEntry, 'key'>
   dayEntries!: EntityTable<DayEntry, 'id'>
+  todos!: EntityTable<Todo, 'id'>
 
   constructor() {
     super('hain')
@@ -33,6 +34,10 @@ class HainDB extends Dexie {
     // Notizen pro Tag
     this.version(2).stores({
       dayEntries: 'id, date, updatedAt',
+    })
+    // To-dos für Tag und Woche
+    this.version(3).stores({
+      todos: 'id, date, updatedAt',
     })
   }
 }

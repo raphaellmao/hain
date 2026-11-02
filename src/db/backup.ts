@@ -8,12 +8,13 @@ import { db } from './schema'
 import { COLORS } from '../domain/colors'
 import { isSpecies } from '../domain/species'
 import { isExcuseReason } from '../domain/excuse'
-import { type Checkin, type DayEntry, type Habit, type Settings, DEFAULT_SETTINGS } from '../domain/types'
-import { NOTE_MAX_LENGTH } from './repo'
-import { toDateStr } from '../domain/dates'
+import { isRemindAt } from '../domain/todos'
+import { type Checkin, type DayEntry, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
+import { NOTE_MAX_LENGTH, TODO_MAX_LENGTH } from './repo'
+import { startOfWeek, toDateStr } from '../domain/dates'
 
-/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag */
-export const BACKUP_VERSION = 2
+/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos */
+export const BACKUP_VERSION = 3
 
 export interface BackupFile {
   app: 'hain'
@@ -23,6 +24,7 @@ export interface BackupFile {
   habits: Habit[]
   checkins: Checkin[]
   dayEntries: DayEntry[]
+  todos: Todo[]
 }
 
 export async function createBackup(): Promise<BackupFile> {
@@ -30,8 +32,9 @@ export async function createBackup(): Promise<BackupFile> {
   const ids = new Set(habits.map((h) => h.id))
   const checkins = (await db.checkins.toArray()).filter((c) => (c.done || c.excused) && ids.has(c.habitId))
   const dayEntries = (await db.dayEntries.toArray()).filter((e) => e.note !== '')
+  const todos = (await db.todos.toArray()).filter((t) => !t.deleted)
   const settings = { ...DEFAULT_SETTINGS, ...((await db.meta.get('settings'))?.value as Partial<Settings>) }
-  return { app: 'hain', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), settings, habits, checkins, dayEntries }
+  return { app: 'hain', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), settings, habits, checkins, dayEntries, todos }
 }
 
 /** Backup speichern: auf dem Handy über das Teilen-Menü („In Dateien sichern“), sonst als Download. */
@@ -144,21 +147,46 @@ export function parseBackup(text: string): BackupFile {
     })
   }
 
+  // To-dos gibt es erst ab Backup-Version 3
+  const todos: Todo[] = []
+  const todoIds = new Set<string>()
+  for (const t of Array.isArray(b.todos) ? b.todos : []) {
+    if (!t || typeof t.id !== 'string' || todoIds.has(t.id) || typeof t.title !== 'string' || !t.title.trim() || !isDate(t.date)) continue
+    if (t.scope !== 'tag' && t.scope !== 'woche') continue
+    todoIds.add(t.id)
+    const done = t.done === true
+    todos.push({
+      id: t.id,
+      title: t.title.slice(0, TODO_MAX_LENGTH),
+      scope: t.scope,
+      date: t.scope === 'woche' ? startOfWeek(t.date) : t.date,
+      ...(isRemindAt(t.remindAt) ? { remindAt: t.remindAt } : {}),
+      ...(typeof t.remindedAt === 'number' ? { remindedAt: t.remindedAt } : {}),
+      done,
+      ...(done && typeof t.doneAt === 'number' ? { doneAt: t.doneAt } : {}),
+      deleted: false,
+      createdAt: typeof t.createdAt === 'number' ? t.createdAt : now,
+      updatedAt: typeof t.updatedAt === 'number' ? t.updatedAt : now,
+    })
+  }
+
   const hour = b.settings?.dayStartHour
   const settings: Settings = { dayStartHour: Number.isInteger(hour) && hour! >= 0 && hour! <= 4 ? hour! : 0 }
 
-  return { app: 'hain', version: b.version, exportedAt: String(b.exportedAt ?? ''), settings, habits, checkins, dayEntries }
+  return { app: 'hain', version: b.version, exportedAt: String(b.exportedAt ?? ''), settings, habits, checkins, dayEntries, todos }
 }
 
 /** Ersetzt ALLE vorhandenen Daten durch das Backup (in einer Transaktion: ganz oder gar nicht). */
 export async function restoreBackup(backup: BackupFile): Promise<void> {
-  await db.transaction('rw', [db.habits, db.checkins, db.dayEntries, db.meta], async () => {
+  await db.transaction('rw', [db.habits, db.checkins, db.dayEntries, db.todos, db.meta], async () => {
     await db.habits.clear()
     await db.checkins.clear()
     await db.dayEntries.clear()
+    await db.todos.clear()
     await db.habits.bulkAdd(backup.habits)
     await db.checkins.bulkPut(backup.checkins)
     await db.dayEntries.bulkPut(backup.dayEntries)
+    await db.todos.bulkPut(backup.todos)
     await db.meta.put({ key: 'settings', value: backup.settings })
   })
 }

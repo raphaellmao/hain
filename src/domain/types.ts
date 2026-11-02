@@ -66,6 +66,27 @@ export interface DayEntry {
   updatedAt: number
 }
 
+export type TodoScope = 'tag' | 'woche'
+
+/** To-do für einen bestimmten Tag oder „irgendwann in dieser Woche“ (Logik: todos.ts). */
+export interface Todo {
+  id: string
+  title: string
+  scope: TodoScope
+  /** scope 'tag': der Tag · scope 'woche': der Montag der Woche */
+  date: DateStr
+  /** Erinnerung in Ortszeit 'JJJJ-MM-TTTHH:MM' – eine Uhrzeit auf der Wanduhr, wie im Kalender */
+  remindAt?: string
+  /** Erinnerung wurde weggeklickt und klingelt nicht mehr */
+  remindedAt?: number
+  done: boolean
+  doneAt?: number
+  /** Gelöschte To-dos bleiben als „Grabstein“ liegen (für späteren Sync) */
+  deleted: boolean
+  createdAt: number
+  updatedAt: number
+}
+
 export interface Settings {
   /** Tageswechsel in Stunden nach Mitternacht (0–4) */
   dayStartHour: number

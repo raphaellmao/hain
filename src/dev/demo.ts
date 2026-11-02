@@ -5,9 +5,9 @@
  * Fügt nur hinzu – vorhandene Daten bleiben unangetastet.
  */
 import { db } from '../db/schema'
-import { addDays, logicalToday, weekday, type DateStr } from '../domain/dates'
+import { addDays, logicalToday, startOfWeek, weekday, type DateStr } from '../domain/dates'
 import { ALL_DAYS } from '../domain/schedule'
-import type { Checkin, Habit } from '../domain/types'
+import type { Checkin, Habit, Todo } from '../domain/types'
 import type { ColorKey } from '../domain/colors'
 import type { SpeciesKey } from '../domain/species'
 
@@ -86,11 +86,28 @@ export async function hainDemo() {
   excuse(8, 7, 'krank')
   excuse(8, 6, 'krank')
 
-  await db.transaction('rw', db.habits, db.checkins, async () => {
+  // To-dos in allen Abschnitten: überfällig, heute, Woche, später, erledigt
+  const monday = startOfWeek(today)
+  const todo = (n: number, title: string, scope: Todo['scope'], date: DateStr, extra: Partial<Todo> = {}): Todo => ({
+    id: `demo-todo-${n}`, title, scope, date, done: false, deleted: false, createdAt: now + n, updatedAt: now + n, ...extra,
+  })
+  const todos = [
+    todo(1, 'Urlaubsantrag abgeben', 'tag', addDays(today, -1)),
+    todo(2, 'Zahnarzt anrufen', 'tag', today, { remindAt: `${today}T18:00` }),
+    todo(3, 'Paket zur Post bringen', 'tag', today),
+    todo(4, 'Steuerunterlagen sortieren', 'woche', monday),
+    todo(5, 'Reifen wechseln lassen', 'woche', monday, { remindAt: `${addDays(today, 1)}T08:00` }),
+    todo(6, 'Geburtstagsgeschenk kaufen', 'tag', addDays(today, 2), { remindAt: `${addDays(today, 2)}T12:00` }),
+    todo(7, 'Versicherung kündigen', 'woche', addDays(monday, 7)),
+    todo(8, 'Wäsche abholen', 'tag', today, { done: true, doneAt: now }),
+  ]
+
+  await db.transaction('rw', db.habits, db.checkins, db.todos, async () => {
     await db.habits.bulkAdd(habits)
     await db.checkins.bulkAdd(checkins)
+    await db.todos.bulkPut(todos)
   })
-  return `${habits.length} Habits, ${checkins.length} Einträge angelegt`
+  return `${habits.length} Habits, ${checkins.length} Einträge, ${todos.length} To-dos angelegt`
 }
 
 /** Demo-Daten nur anlegen, wenn noch gar keine Habits existieren. */

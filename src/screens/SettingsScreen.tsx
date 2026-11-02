@@ -34,7 +34,9 @@ export function SettingsScreen() {
           backup.checkins.length,
           'abgehaktem Tag',
           'abgehakten Tagen',
-        )}${backup.dayEntries.length ? ` und ${plural(backup.dayEntries.length, 'Notiz', 'Notizen')}` : ''}${
+        )}${backup.dayEntries.length ? `, ${plural(backup.dayEntries.length, 'Notiz', 'Notizen')}` : ''}${
+          backup.todos.length ? `, ${plural(backup.todos.length, 'To-do', 'To-dos')}` : ''
+        }${
           backup.exportedAt ? ` (Stand ${new Date(backup.exportedAt).toLocaleDateString('de-DE')})` : ''
         }.`,
         confirm: 'Ersetzen',

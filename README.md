@@ -82,7 +82,7 @@ src/
   tree/        Pflanzen: Zufallsgenerator, Formen, Farben, SVG-Komponente
     species/     ein Erzeuger je Art (recursive.ts = gemeinsamer Baumkern)
     grove.ts     Begleitpflanzen des Hains ab H = 100
-  screens/     Heute, Garten, Detail, Formular, Einstellungen
+  screens/     Heute, To-dos, Garten, Erfolge, Detail, Formular, Einstellungen
   components/  wiederverwendbare Bausteine (Zeile, Heatmap, Kalender …)
   app/         Router (Hash-URLs) und Aktionen mit Feedback
   lib/         Haptik, Hinweise, Dialoge, Installation
@@ -155,6 +155,34 @@ Das Blatt zeigt, wie viele Ausnahmen es in den letzten 30 Tagen gab.
 - **Lebendiger Garten**: Himmel, Licht und Wetter nach echter Tages- und
   Jahreszeit (`lib/sky.ts`, `components/GardenScene.tsx`). In der Entwicklung
   lässt sich das mit `?zeit=nacht&saison=winter` ausprobieren.
+
+## To-dos für Tag und Woche
+
+Eigener Reiter, von „Heute“ aus auch per Wischen nach links erreichbar: Zwischen allen
+Hauptansichten lässt sich waagerecht wischen (`components/SwipePager.tsx`). Die Seite
+folgt dem Finger, es ist aber immer nur eine Ansicht gerendert. Senkrechtes Wischen
+scrollt wie gewohnt, der Bildschirmrand bleibt der Zurück-Geste des Systems überlassen.
+
+Ein To-do gilt für einen Tag oder für eine Woche und steht in einem der Abschnitte
+Überfällig, Heute, Diese Woche, Später oder Erledigt (`domain/todos.ts`). Offenes
+wandert nicht von selbst weiter, sondern bleibt als überfällig sichtbar, bis es
+erledigt oder neu gelegt ist. Wochenaufgaben werden am Sonntag dringend. Was dringend
+ist, zeigt auch die Karte auf „Heute“, der Zähler an der Leiste und (falls das Gerät
+es kann) die Zahl am App-Symbol. Gespeichert in der Tabelle `todos` (`version(3)`),
+im Backup enthalten (Backup-Format 3).
+
+**Erinnerungen und ihre Grenze:** Ohne Server kann eine Web-App nichts auslösen, solange
+sie geschlossen ist; geplante Benachrichtigungen gibt es im Web nicht.
+
+| App-Zustand | Was passiert |
+|---|---|
+| offen | Banner zur Uhrzeit (Erledigt, 1 Std., Morgen, OK), `components/ReminderHost.tsx` |
+| läuft noch im Hintergrund | zusätzlich Benachrichtigung, falls erlaubt (Klick-Verhalten in `public/sw-notify.js`) |
+| geschlossen | nichts; Verpasstes kommt beim nächsten Öffnen |
+| geschlossen, Kalender genutzt | der Kalender des Handys erinnert (`domain/ics.ts`, `lib/calendar.ts`) |
+
+Die Kalenderdatei enthält einen Alarm zur Uhrzeit, ob der Kalender ihn übernimmt, hängt
+von der Kalender-App ab. Für echte Push-Nachrichten siehe „Erweiterungen“.
 
 ## Notizen pro Tag
 
