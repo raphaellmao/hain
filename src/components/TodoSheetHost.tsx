@@ -70,11 +70,11 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
     if (!text) return
     const id = todo?.id ?? crypto.randomUUID()
     const input = { title: text, scope, date, reminders }
-    void (todo ? updateTodo(id, input) : createTodo(id, input))
+    const saved = todo ? updateTodo(id, input) : createTodo(id, input)
     tick()
     closeTodoSheet()
     // Beides braucht das Tippen als Auslöser, deshalb direkt hier und ohne vorheriges Warten
-    if (withCalendar) void addToCalendar(calendarItems([{ id, title: text, done: false, reminders }], new Date()))
+    if (withCalendar) void addToCalendar(calendarItems([{ id, title: text, done: false, reminders }], new Date()), saved)
     else if (reminders.length > 0) void requestNotifications()
   }
 

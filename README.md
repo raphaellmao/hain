@@ -176,7 +176,7 @@ sie geschlossen ist; geplante Benachrichtigungen gibt es im Web nicht.
 | App-Zustand | Was passiert |
 |---|---|
 | offen | Banner zur Uhrzeit (Erledigt, 1 Std., Morgen, OK), `components/ReminderHost.tsx` |
-| läuft noch im Hintergrund | zusätzlich Benachrichtigung, falls erlaubt (Klick-Verhalten in `public/sw-notify.js`) |
+| läuft noch im Hintergrund | zusätzlich Benachrichtigung, falls erlaubt (Klick-Verhalten in `public/sw-extra.js`) |
 | geschlossen | nichts; Verpasstes kommt beim nächsten Öffnen |
 | geschlossen, Kalender genutzt | der Kalender des Handys erinnert (`domain/ics.ts`, `lib/calendar.ts`) |
 
@@ -190,6 +190,11 @@ frühere Einzel-Erinnerung; Backup-Format 4, ältere Backups bleiben lesbar).
 In der Kalenderdatei wird jede künftige Erinnerung ein eigener Termin mit Alarm zur
 Uhrzeit, ob der Kalender den Alarm übernimmt, hängt von der Kalender-App ab. Für echte
 Push-Nachrichten siehe „Erweiterungen“.
+
+**iPhone:** Im Teilen-Menü fehlt der Kalender, und eine in „Dateien“ gespeicherte Datei
+trägt iOS nicht von selbst ein. Hain ruft deshalb im selben Fenster `…/kalender/*.ics`
+auf, dort antwortet der Service Worker (`public/sw-extra.js`) mit `text/calendar` aus
+einem Cache. Antwortet er nicht, bleibt der Weg über die Datei.
 
 ## Notizen pro Tag
 

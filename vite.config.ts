@@ -42,7 +42,7 @@ export default defineConfig({
       workbox: {
         // Alles, was der Build erzeugt, wird vorab gecacht → App läuft komplett offline.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
-        importScripts: ['sw-notify.js'],
+        importScripts: ['sw-extra.js'],
       },
     }),
   ],
