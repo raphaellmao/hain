@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 
 export type Phase = 'nacht' | 'morgen' | 'tag' | 'abend'
 export type Season = 'fruehling' | 'sommer' | 'herbst' | 'winter'
+export type Weather = 'klar' | 'wolkig' | 'regen'
 
 export interface Sky {
   phase: Phase
@@ -18,6 +19,30 @@ export interface Sky {
   sun: number
   /** Stand des Mondes über die Nacht: 0 = Abend, 1 = Morgen */
   moon: number
+  /** Wetter des Tages (erdacht, aber für jeden Tag fest) */
+  weather: Weather
+  /** Mondphase: 0 = Neumond, 0,5 = Vollmond */
+  moonPhase: number
+}
+
+/** Bekannter Neumond (6. Januar 2000, 18:14 UTC) und mittlere Länge eines Mondzyklus */
+const NEW_MOON_MS = Date.UTC(2000, 0, 6, 18, 14)
+const SYNODIC_MONTH_DAYS = 29.530588853
+
+export function moonPhaseAt(now: Date): number {
+  const cycles = (now.getTime() - NEW_MOON_MS) / 86_400_000 / SYNODIC_MONTH_DAYS
+  return cycles - Math.floor(cycles)
+}
+
+/**
+ * Wetter ohne Internet: pro Kalendertag fest gewürfelt, damit es beim erneuten
+ * Öffnen gleich bleibt. Meist klar, manchmal wolkig, selten Regen.
+ */
+export function weatherOn(now: Date): Weather {
+  const day = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86_400_000)
+  const x = Math.sin(day * 91.73) * 24634.6345
+  const r = x - Math.floor(x)
+  return r < 0.12 ? 'regen' : r < 0.42 ? 'wolkig' : 'klar'
 }
 
 export function skyAt(now: Date): Sky {
@@ -47,20 +72,26 @@ export function skyAt(now: Date): Sky {
     season,
     sun: Math.max(0, Math.min(1, (h - rise) / (set - rise))),
     moon: Math.max(0, Math.min(1, sinceSet / nightLen)),
+    weather: weatherOn(now),
+    moonPhase: moonPhaseAt(now),
   }
 }
 
-/** Nur Entwicklung: ?zeit=nacht|morgen|tag|abend&saison=winter|… zum Ausprobieren */
+/** Nur Entwicklung: ?zeit=nacht|morgen|tag|abend&saison=winter|…&wetter=regen&mond=0.5 zum Ausprobieren */
 function devOverride(sky: Sky): Sky {
   if (!import.meta.env.DEV) return sky
   const q = new URLSearchParams(location.search)
   const phase = q.get('zeit') as Phase | null
   const season = q.get('saison') as Season | null
+  const weather = q.get('wetter') as Weather | null
+  const moon = q.get('mond')
   const sun = { morgen: 0.05, tag: 0.45, abend: 0.93, nacht: 0 }
   return {
     ...sky,
     ...(phase ? { phase, sun: sun[phase], moon: 0.4 } : {}),
     ...(season ? { season } : {}),
+    ...(weather ? { weather } : {}),
+    ...(moon ? { moonPhase: Number(moon) } : {}),
   }
 }
 

@@ -104,7 +104,7 @@ export const Tree = memo(function Tree({
       className={animated ? 'grove-in' : undefined}
       transform={`translate(${c.x} ${c.y}) scale(${c.s}) translate(${-BASE_X} ${-GROUND})`}
     >
-      {Soil({ pal, small: true })}
+      {ground && Soil({ pal, small: true })}
       <g transform={scaleAboutBase(c.g >= 3 ? treeScale(c.g) : 1)}>
         {plantContent({ model: plantModel(species, c.seed), g: c.g, pal, wilt, dormant: false, dark, pop: NO_POP, lite: true })}
       </g>

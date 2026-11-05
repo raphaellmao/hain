@@ -1,18 +1,23 @@
 import { useMemo } from 'react'
 import { motion } from 'motion/react'
 import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, useToday } from '../db/hooks'
+import { colorHex } from '../domain/colors'
 import { stageLabel, summarize } from '../domain/summary'
 import { navigate, paths } from '../app/router'
 import { HabitVisual } from '../components/HabitVisual'
 import { TERRITORY_STATUS } from '../domain/shadow'
 import { Fab } from '../components/Fab'
 import { GardenScene } from '../components/GardenScene'
+import { scenePalette, rnd } from '../garden/palette'
+import { PlantGround, PlantLife } from '../garden/PlantSpot'
 import { useSky } from '../lib/sky'
+import { useDarkMode } from '../lib/useDarkMode'
 
 /**
- * Alle Bäume auf einen Blick. Bewusst ohne Animationen pro Blatt – hier
- * stehen viele Bäume gleichzeitig, das soll auch auf älteren Handys flüssig
- * scrollen.
+ * Alle Bäume auf einen Blick, mitten in der Landschaft. Bewusst ohne Animationen
+ * pro Blatt – hier stehen viele Bäume gleichzeitig, das soll auch auf älteren
+ * Handys flüssig scrollen. Die Pflanzen stehen nicht in Reih und Glied: Die mittlere
+ * Spalte ist versetzt, und jede bekommt aus ihrem Seed eine kleine eigene Abweichung.
  */
 export function GardenScreen() {
   const habits = useHabits()
@@ -20,6 +25,8 @@ export function GardenScreen() {
   const excuseMap = useExcuseMap()
   const today = useToday()
   const sky = useSky()
+  const dark = useDarkMode()
+  const p = useMemo(() => scenePalette(sky.phase, sky.season, sky.weather, dark), [sky.phase, sky.season, sky.weather, dark])
 
   const items = useMemo(() => {
     if (!habits || !doneMap) return []
@@ -44,64 +51,73 @@ export function GardenScreen() {
     .join(' · ')
 
   return (
-    <GardenScene sky={sky}>
-    <div className="pb-nav">
-      <header className="px-safe pt-safe">
-        <div className="pt-2 pb-4 [text-shadow:0_1px_8px_rgba(0,0,0,0.18)]">
-          <p className="text-[13px] font-semibold tracking-wide uppercase opacity-85">
-            {items.length === 0 ? 'Noch leer' : summaryLine}
-          </p>
-          <h1 className="text-[32px] font-bold leading-tight">Garten</h1>
-        </div>
-      </header>
+    <GardenScene sky={sky} p={p}>
+      {/* pb: Gras und Tiere im Vordergrund sollen die letzte Reihe nicht verdecken */}
+      <div className="pb-nav">
+        <header className="px-safe pt-safe">
+          <div className="pt-2 pb-4 [text-shadow:0_1px_10px_rgba(0,0,0,0.22)]">
+            <p className="text-[13px] font-semibold tracking-wide uppercase opacity-90">{items.length === 0 ? 'Noch leer' : summaryLine}</p>
+            <h1 className="text-[32px] font-bold leading-tight">Garten</h1>
+          </div>
+        </header>
 
-      <main className="px-safe pt-10">
-        {items.length === 0 ? (
-          <p className="mx-auto mt-24 max-w-xs rounded-2xl bg-surface/85 p-4 text-center text-[15px] text-ink">
-            Hier wachsen deine Bäume, sobald du eine Gewohnheit anlegst.
-          </p>
-        ) : (
-          <ul className="grid grid-cols-3 gap-x-2 gap-y-3">
-            {items.map(({ habit, summary }, idx) => (
-              <motion.li
-                key={habit.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(idx, 12) * 0.03 }}
-              >
-                <button
-                  type="button"
-                  onClick={() => navigate(paths.habit(habit.id))}
-                  className="flex w-full flex-col items-center rounded-3xl pt-1 pb-2 active:bg-white/15"
-                >
-                  {/* jede Pflanze wiegt sich in ihrem eigenen Takt */}
-                  <span className="sway aspect-square w-full" style={{ animationDuration: `${4.5 + (idx % 5) * 0.7}s`, animationDelay: `${-idx * 0.9}s` }}>
-                    <HabitVisual habit={habit} summary={summary} className="size-full" />
-                  </span>
-                  <span className="mt-0.5 flex max-w-full items-center justify-center gap-1 rounded-t-xl bg-surface/85 px-2 pt-0.5 text-[13px] font-semibold text-ink">
-                    <span aria-hidden>{habit.emoji}</span>
-                    <span className="truncate">{habit.name}</span>
-                  </span>
-                  {habit.metaphor === 'schatten' ? (
-                    <span className={`rounded-b-xl bg-surface/85 px-2 pb-0.5 text-[11px] ${summary.shadow.status <= 1 ? 'font-semibold text-warn' : 'text-muted'}`}>
-                      {TERRITORY_STATUS[summary.shadow.status].label}
-                    </span>
-                  ) : (
-                    <span
-                      className={`rounded-b-xl bg-surface/85 px-2 pb-0.5 text-[11px] ${summary.health.wilted && !isBare(summary) ? 'font-semibold text-warn' : 'text-muted'}`}
+        <main className="px-safe pt-10 pb-16">
+          {items.length === 0 ? (
+            <p className="mx-auto mt-24 max-w-xs rounded-2xl bg-surface/85 p-4 text-center text-[15px] text-ink">
+              Hier wachsen deine Bäume, sobald du eine Gewohnheit anlegst.
+            </p>
+          ) : (
+            <ul className="grid grid-cols-3 gap-x-1 gap-y-5">
+              {items.map(({ habit, summary }, idx) => {
+                const wilted = summary.health.wilted && !isBare(summary)
+                const shadow = habit.metaphor === 'schatten'
+                const status = shadow ? TERRITORY_STATUS[summary.shadow.status].label : wilted ? 'welkt' : stageLabel(summary, habit.species)
+                const warn = shadow ? summary.shadow.status <= 1 : wilted
+                const seed = habit.seed % 997
+                return (
+                  <motion.li
+                    key={habit.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(idx, 12) * 0.03 }}
+                    style={{ marginTop: idx % 3 === 1 ? 22 : idx % 3 === 2 ? 6 : 0 }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => navigate(paths.habit(habit.id))}
+                      className="flex w-full flex-col items-center rounded-3xl pb-1 active:opacity-75"
                     >
-                      {summary.health.wilted && !isBare(summary) ? 'welkt' : stageLabel(summary, habit.species)}
-                    </span>
-                  )}
-                </button>
-              </motion.li>
-            ))}
-          </ul>
-        )}
-      </main>
+                      <span className="relative block aspect-square w-full" style={{ scale: String(0.95 + rnd(seed, 3) * 0.1) }}>
+                        {!shadow && <PlantGround seed={habit.seed} spread={summary.g >= 7 ? 1.3 : summary.g >= 3 ? 1 : 0.7} p={p} />}
+                        {/* jede Pflanze wiegt sich in ihrem eigenen Takt */}
+                        <span className="sway plant-lit absolute inset-0 block" style={{ animationDuration: `${8 + (idx % 5) * 1.3}s`, animationDelay: `${-idx * 1.7}s` }}>
+                          <HabitVisual habit={habit} summary={summary} ground={false} className="size-full" />
+                        </span>
+                        {!shadow && idx < 12 && <PlantLife index={idx} g={summary.g} wilted={wilted} color={colorHex(habit.color)} phase={p.phase} />}
+                      </span>
+                      <span
+                        className="relative mt-1 flex max-w-full items-center justify-center gap-1 rounded-full px-2 py-0.5 text-[13px] leading-tight font-semibold"
+                        style={{ background: p.labelBg, color: p.labelInk }}
+                      >
+                        <span aria-hidden>{habit.emoji}</span>
+                        <span className="truncate">{habit.name}</span>
+                      </span>
+                      <span
+                        className={`relative mt-0.5 max-w-full text-center text-[11px] leading-tight ${warn ? 'rounded-full bg-warn px-1.5 font-semibold text-white' : ''}`}
+                        style={warn ? undefined : { color: p.subInk, textShadow: p.phase === 'tag' ? undefined : '0 1px 3px rgba(0,0,0,0.55)' }}
+                      >
+                        {status}
+                      </span>
+                    </button>
+                  </motion.li>
+                )
+              })}
+            </ul>
+          )}
+        </main>
 
-      <Fab onClick={() => navigate(paths.new)} />
-    </div>
+        <Fab onClick={() => navigate(paths.new)} />
+      </div>
     </GardenScene>
   )
 }

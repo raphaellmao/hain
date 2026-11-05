@@ -16,6 +16,8 @@ interface Props {
   animated?: boolean
   /** Detailfülle des Schatten-Ichs */
   density?: 'small' | 'normal' | 'rich'
+  /** Erde unter der Pflanze (im Garten kommt der Boden von der Landschaft) */
+  ground?: boolean
   className?: string
 }
 
@@ -24,7 +26,7 @@ export function HabitVisual(props: Props) {
   return props.animated ? <AnimatedPlant {...props} /> : <StaticPlant {...props} />
 }
 
-function plantProps({ habit, summary, className }: Props) {
+function plantProps({ habit, summary, ground, className }: Props) {
   return {
     seed: habit.seed,
     color: habit.color,
@@ -32,6 +34,7 @@ function plantProps({ habit, summary, className }: Props) {
     g: summary.g,
     wilted: summary.health.wilted,
     dormant: summary.health.dormant,
+    ground,
     className,
   }
 }
