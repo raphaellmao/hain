@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence } from 'motion/react'
 import { useSettings, useToday } from '../db/hooks'
 import { createTodo, deleteTodo, skipTodo, TODO_MAX_LENGTH, updateTodo } from '../db/repo'
 import { addDays, diffDays, formatDayMonth, maxDate, startOfWeek, type DateStr } from '../domain/dates'
@@ -12,6 +12,7 @@ import { tick } from '../lib/haptics'
 import { requestNotifications } from '../lib/reminders'
 import { showToast } from '../lib/toast'
 import { closeTodoSheet, useTodoSheetRequest, type TodoSheetRequest } from '../lib/todoSheet'
+import { BottomSheet } from './BottomSheet'
 
 const TIME_PRESETS = ['08:00', '12:00', '18:00', '20:00']
 
@@ -93,25 +94,20 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
   }
 
   return (
-    <motion.div
-      className="fixed inset-0 z-40 flex items-end justify-center"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <BottomSheet
+      labelledBy="todo-title"
+      onClose={closeTodoSheet}
+      onSubmit={onSubmit}
+      footer={
+        <button
+          type="submit"
+          disabled={!title.trim()}
+          className="h-13 w-full rounded-2xl bg-accent text-[17px] font-semibold text-accent-ink transition-opacity disabled:opacity-40"
+        >
+          {todo ? 'Speichern' : 'Hinzufügen'}
+        </button>
+      }
     >
-      <button type="button" aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeTodoSheet} />
-      <motion.form
-        onSubmit={onSubmit}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="todo-title"
-        className="relative max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-surface px-5 pt-3 pb-safe"
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', stiffness: 420, damping: 38 }}
-      >
-        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line" aria-hidden />
         <h2 id="todo-title" className="text-[22px] font-bold leading-tight">
           {todo ? 'To-do bearbeiten' : 'Neues To-do'}
         </h2>
@@ -281,14 +277,7 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
           </p>
         )}
 
-        <div className="mt-4 mb-3 flex flex-col gap-2">
-          <button
-            type="submit"
-            disabled={!title.trim()}
-            className="h-13 rounded-2xl bg-accent text-[17px] font-semibold text-accent-ink transition-opacity disabled:opacity-40"
-          >
-            {todo ? 'Speichern' : 'Hinzufügen'}
-          </button>
+        <div className="mt-4 flex flex-col gap-2 empty:hidden">
           {hasUpcoming && (
             <button
               type="button"
@@ -326,8 +315,7 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
             </button>
           )}
         </div>
-      </motion.form>
-    </motion.div>
+    </BottomSheet>
   )
 }
 

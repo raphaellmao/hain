@@ -4,6 +4,7 @@
  * ihren Auftritten – man entdeckt sie, statt ständig von ihnen umgeben zu sein.
  */
 import type { CSSProperties, ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import type { Sky } from '../lib/sky'
 import { mix, rnd, type ScenePalette } from './palette'
 import { tuft } from './meadow'
@@ -296,8 +297,9 @@ export function Wildlife({ sky, p }: { sky: Sky; p: ScenePalette }) {
   const { season, phase, weather } = sky
   const warm = season === 'fruehling' || season === 'sommer'
   const dry = weather !== 'regen'
-  return (
-    // Fest im Bild: Die Tiere bleiben beim Scrollen im Sichtfeld
+  // Fest im Bild: Die Tiere bleiben beim Scrollen im Sichtfeld. Direkt im body,
+  // damit Gras und Tiere beim Wischen zwischen den Ansichten nicht verrutschen.
+  return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[3] overflow-hidden" aria-hidden>
       <Weather sky={sky} />
       {warm && phase === 'tag' && dry && <Butterflies />}
@@ -306,6 +308,7 @@ export function Wildlife({ sky, p }: { sky: Sky; p: ScenePalette }) {
       {phase === 'nacht' && season !== 'winter' && <Hedgehog p={p} />}
       <Foreground p={p} />
       {phase === 'nacht' && <Owl p={p} />}
-    </div>
+    </div>,
+    document.body,
   )
 }

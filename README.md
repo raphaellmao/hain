@@ -85,6 +85,7 @@ src/
   garden/      Gartenszene: Licht und Farben, Himmel, Wiese, Tiere
   screens/     Heute, To-dos, Garten, Erfolge, Detail, Formular, Einstellungen
   components/  wiederverwendbare Bausteine (Zeile, Heatmap, Kalender …)
+    BottomSheet.tsx  Blatt von unten: Griff, Esc, Zurück-Geste, bleibt über der Tastatur
   app/         Router (Hash-URLs) und Aktionen mit Feedback
   lib/         Haptik, Hinweise, Dialoge, Installation
 ```
@@ -210,7 +211,7 @@ sie geschlossen ist; geplante Benachrichtigungen gibt es im Web nicht.
 
 | App-Zustand | Was passiert |
 |---|---|
-| offen | Banner zur Uhrzeit (Erledigt, 1 Std., Morgen, OK), `components/ReminderHost.tsx` |
+| offen | Banner zur Uhrzeit (Erledigt, 1 Std., Morgen, OK), wird nach 12 s oder per Wischen zur kleinen Glocke, `components/ReminderHost.tsx` |
 | läuft noch im Hintergrund | zusätzlich Benachrichtigung, falls erlaubt (Klick-Verhalten in `public/sw-extra.js`) |
 | geschlossen | nichts; Verpasstes kommt beim nächsten Öffnen |
 | geschlossen, Kalender genutzt | der Kalender des Handys erinnert (`domain/ics.ts`, `lib/calendar.ts`) |
