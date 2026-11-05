@@ -374,7 +374,7 @@ button {
 @keyframes duck-drift { from { transform: translateX(-26px); } to { transform: translateX(34px); } }
 .duck-drift { animation: duck-drift 42s ease-in-out infinite alternate; }
 @keyframes deer-graze { 0%, 58%, 100% { transform: rotate(0deg); } 66%, 90% { transform: rotate(66deg); } }
-.deer-head { animation: deer-graze 15s ease-in-out infinite; transform-box: view-box; transform-origin: 90px 196px; }
+.deer-head { animation: deer-graze 15s ease-in-out infinite; transform-box: fill-box; transform-origin: 15% 92%; }
 
 /* Pflanzen wiegen sich im Wind: mit Böen statt gleichmäßig hin und her */
 @keyframes sway {

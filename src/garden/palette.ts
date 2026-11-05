@@ -76,7 +76,7 @@ const PLANT_FILTER: Record<Phase, string> = {
   tag: 'saturate(1.06)',
   morgen: 'brightness(0.97) sepia(0.14) saturate(1.05)',
   abend: 'brightness(0.84) sepia(0.28) saturate(1.1)',
-  nacht: 'brightness(0.5) saturate(0.62) hue-rotate(12deg)',
+  nacht: 'brightness(0.6) saturate(0.68) hue-rotate(10deg)',
 }
 
 export function scenePalette(phase: Phase, season: Season, weather: Weather, dark: boolean): ScenePalette {

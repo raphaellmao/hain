@@ -31,7 +31,7 @@ export function WeekStrip({
             onClick={() => onSelect(d)}
             aria-pressed={isSel}
             aria-label={d === today ? 'Heute' : d}
-            className={`flex min-h-16 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-2xl transition-colors ${
+            className={`flex min-h-16 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl transition-colors ${
               isSel ? 'bg-ink text-bg' : 'text-ink'
             }`}
           >

@@ -33,6 +33,8 @@ export function BottomSheet({
   children: ReactNode
 }) {
   const dialog = useRef<HTMLDivElement>(null)
+  // Schon beim ersten Zeichnen merken: autoFocus im Blatt greift, bevor Effekte laufen
+  const focusedBefore = useRef(document.activeElement as HTMLElement | null)
   const drag = useDragControls()
   const reduced = useReducedMotion()
   const present = useIsPresent()
@@ -43,8 +45,8 @@ export function BottomSheet({
 
   // Fokus ins Blatt und beim Schließen wieder zurück, wo er herkam
   useEffect(() => {
-    const before = document.activeElement as HTMLElement | null
     if (!dialog.current?.contains(document.activeElement)) dialog.current?.focus({ preventScroll: true })
+    const before = focusedBefore.current
     return () => before?.focus?.({ preventScroll: true })
   }, [])
 

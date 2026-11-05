@@ -12,6 +12,7 @@
  */
 import { buildIcs, type CalendarItem } from '../domain/ics'
 import { isIos } from './install'
+import { sheetHistorySettled } from './sheetEffects'
 import { showToast } from './toast'
 
 const CALENDAR_CACHE = 'hain-kalender'
@@ -32,6 +33,7 @@ async function openOnIphone(file: File, saved: Promise<unknown>): Promise<boolea
     const probe = await fetch(url, { cache: 'no-store' })
     if (!probe.headers.get('Content-Type')?.startsWith('text/calendar')) return false
     await saved // Die Seite wird gleich verlassen: Das To-do muss vorher sicher gespeichert sein
+    await sheetHistorySettled() // Sonst bricht das Zurückblättern des Blatts diesen Aufruf ab
     showToast('Kalender wird geöffnet …', '📅')
     Object.assign(document.createElement('a'), { href: url, target: '_self' }).click()
     return true

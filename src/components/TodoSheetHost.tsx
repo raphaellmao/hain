@@ -22,7 +22,11 @@ export function TodoSheetHost() {
   return <AnimatePresence>{req && <Sheet key="todo" req={req} />}</AnimatePresence>
 }
 
-const nextFullHour = () => `${String((new Date().getHours() + 1) % 24).padStart(2, '0')}:00`
+/** Vorschlag für die eigene Uhrzeit. Nach 23 Uhr nicht 00:00: Das läge heute in der Vergangenheit */
+function nextFullHour(): string {
+  const hour = new Date().getHours()
+  return hour === 23 ? '23:59' : `${String(hour + 1).padStart(2, '0')}:00`
+}
 
 function Sheet({ req }: { req: TodoSheetRequest }) {
   const today = useToday()

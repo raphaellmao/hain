@@ -66,6 +66,11 @@ window.addEventListener('popstate', () => {
   if (id && !openSheets.has(id)) history.back()
 })
 
+/** Wartet, bis ein gerade geschlossenes Blatt seinen Verlaufseintrag entfernt hat. */
+export async function sheetHistorySettled(): Promise<void> {
+  for (let i = 0; i < 20 && history.state?.sheet; i++) await new Promise((r) => setTimeout(r, 20))
+}
+
 /**
  * Solange das Blatt offen ist, liegt dafür ein eigener Eintrag im Verlauf. Zurück
  * entfernt nur diesen und schließt das Blatt, die Seite darunter bleibt. Wird es

@@ -89,6 +89,23 @@ describe('Serie und Aufstieg', () => {
     expect(r.advanced[0].habit.id).toBe('h1')
   })
 
+  it('ein verpasster Sonntag davor zählt: Der Aufstieg danach wird erkannt', () => {
+    // Bis Samstag H = 7 (Stufe 3), Sonntag verpasst → H = 6 (Stufe 2), die Woche führt wieder über die 7
+    const earlier = [...eachDay(addDays(MONDAY, -8), addDays(MONDAY, -2))]
+    const start = { startDate: earlier[0], schedule: [{ from: earlier[0], days: ALL }] }
+    const r = buildWeekReview([item([...earlier, ...week], start)], [], MONDAY, NEXT_MONDAY)
+    expect(r.advanced).toHaveLength(1)
+  })
+
+  it('ein am Sonntag der Woche verlorener Aufstieg zählt nicht', () => {
+    // Bis Samstag der Woche genau H = 7, der verpasste Sonntag fällt wieder auf 6
+    const days = [...eachDay(addDays(MONDAY, -1), addDays(SUNDAY, -1))]
+    const start = { startDate: days[0], schedule: [{ from: days[0], days: ALL }] }
+    const r = buildWeekReview([item(days, start)], [], MONDAY, NEXT_MONDAY)
+    expect(r.advanced.filter((a) => a.habit.id === 'h1').length).toBe(1) // Stufe 1 → 2 bleibt ein Aufstieg
+    expect(r.advanced[0].label).not.toBe(buildWeekReview([item(days, start)], [], MONDAY, SUNDAY).advanced[0].label)
+  })
+
   it('wer gleich bleibt oder fällt, steht nicht in der Liste', () => {
     expect(buildWeekReview([item([])], [], MONDAY, NEXT_MONDAY).advanced).toEqual([])
   })

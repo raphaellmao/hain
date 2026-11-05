@@ -148,6 +148,8 @@ export async function updateTodo(id: string, input: TodoInput): Promise<void> {
     date: input.date,
     reminders: cleanReminders(input.reminders),
     repeat: input.repeat,
+    // Ohne Wiederholung gehört es nicht mehr zur Reihe: Zurücknehmen eines früheren Termins lässt es dann in Ruhe
+    ...(input.repeat ? {} : { seriesId: undefined }),
     updatedAt: Date.now(),
   })
 }

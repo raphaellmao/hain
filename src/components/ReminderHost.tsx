@@ -37,8 +37,8 @@ export function ReminderHost() {
     }
   }, [])
 
-  // Pro To-do ein Banner, auch wenn mehrere seiner Erinnerungen verpasst wurden.
-  // Angezeigt wird die jüngste davon.
+  // Pro To-do ein Banner, auch wenn mehrere seiner Erinnerungen verpasst wurden. Angezeigt
+  // wird jeweils die jüngste, die neueste steht vorn: Sie soll nicht hinter älteren warten.
   const ringing = useMemo(
     () =>
       (todos ?? [])
@@ -46,15 +46,19 @@ export function ReminderHost() {
           const due = dueReminders(todo, now)
           return due.length > 0 ? [{ todo, at: due[due.length - 1] }] : []
         })
-        .sort((a, b) => a.at.localeCompare(b.at)),
+        .sort((a, b) => b.at.localeCompare(a.at)),
     [todos, now],
   )
+
+  // Eingeklappt gilt für genau diese Erinnerung: Die nächste klappt wieder auf
+  const [collapsed, setCollapsed] = useState<string | null>(null)
 
   // Jede Erinnerung meldet sich nur einmal (Banner bleibt, bis sie weggeklickt ist)
   const announced = useRef(new Set<string>())
   useEffect(() => {
     const fresh = ringing.filter((r) => !announced.current.has(`${r.todo.id}|${r.at}`))
     if (fresh.length === 0) return
+    setCollapsed(null)
     for (const r of fresh) {
       announced.current.add(`${r.todo.id}|${r.at}`)
       if (document.visibilityState === 'hidden') void notifyTodo(r.todo)
@@ -71,8 +75,6 @@ export function ReminderHost() {
 
   const first = ringing[0]
   const key = first ? `${first.todo.id}|${first.at}` : null
-  // Eingeklappt gilt für genau diese Erinnerung: Die nächste klappt wieder auf
-  const [collapsed, setCollapsed] = useState<string | null>(null)
   const expanded = key !== null && collapsed !== key
 
   useEffect(() => {

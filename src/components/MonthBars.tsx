@@ -84,18 +84,20 @@ export function MonthBars({ data, color }: { data: MonthRate[]; color: string })
         ))}
       </div>
 
-      {/* Tabelle für Screenreader */}
-      <table className="sr-only">
-        <caption>Erfolgsquote je Monat</caption>
-        <tbody>
-          {data.map((m) => (
-            <tr key={m.month}>
-              <th scope="row">{formatMonthYear(`${m.month}-01`)}</th>
-              <td>{m.rate === null ? 'nichts fällig' : `${pct(m.rate)} (${m.done} von ${m.due})`}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Für Screenreader. Das div verbirgt sie: Eine Tabelle selbst ignoriert die 1-px-Breite */}
+      <div className="sr-only">
+        <table>
+          <caption>Erfolgsquote je Monat</caption>
+          <tbody>
+            {data.map((m) => (
+              <tr key={m.month}>
+                <th scope="row">{formatMonthYear(`${m.month}-01`)}</th>
+                <td>{m.rate === null ? 'nichts fällig' : `${pct(m.rate)} (${m.done} von ${m.due})`}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

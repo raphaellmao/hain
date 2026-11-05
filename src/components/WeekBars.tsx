@@ -68,18 +68,20 @@ export function WeekBars({ days }: { days: ReviewDay[] }) {
         ))}
       </div>
 
-      {/* Tabelle für Screenreader */}
-      <table className="sr-only">
-        <caption>Quote je Wochentag</caption>
-        <tbody>
-          {days.map((d) => (
-            <tr key={d.date}>
-              <th scope="row">{formatLong(d.date)}</th>
-              <td>{describe(d)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Für Screenreader. Das div verbirgt sie: Eine Tabelle selbst ignoriert die 1-px-Breite und machte die Seite zu breit */}
+      <div className="sr-only">
+        <table>
+          <caption>Quote je Wochentag</caption>
+          <tbody>
+            {days.map((d) => (
+              <tr key={d.date}>
+                <th scope="row">{formatLong(d.date)}</th>
+                <td>{describe(d)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

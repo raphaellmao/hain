@@ -44,7 +44,7 @@ export function TodayScreen() {
 
   if (!habits || !doneMap) return null
 
-  if (habits.length === 0) return <EmptyState />
+  if (habits.length === 0) return <EmptyState today={today} />
 
   const isToday = selected === today
   const active = items.filter((i) => i.habit.startDate <= selected)
@@ -182,9 +182,14 @@ function needsBackup(habits: { createdAt: number }[], lastBackupAt: number | nul
   return Date.now() - oldest > 14 * DAY_MS
 }
 
-function EmptyState() {
+function EmptyState({ today }: { today: DateStr }) {
   return (
     <div className="px-safe pt-safe pb-nav flex min-h-dvh flex-col items-center justify-center text-center">
+      {/* Wer nur To-dos nutzt, soll sie hier trotzdem sehen */}
+      <div className="w-full text-left">
+        <ReviewCard today={today} />
+        <TodayTodos today={today} />
+      </div>
       <div className="size-44">
         <Tree seed={7} color="koralle" g={1.5} className="size-full" />
       </div>

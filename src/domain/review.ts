@@ -56,9 +56,15 @@ export interface WeekReview {
 
 const rateOf = (done: number, due: number) => (due > 0 ? done / due : null)
 
-/** Stand einer Gewohnheit als Zahl: Stufe der Pflanze bzw. Lage im Kampf gegen den Schatten */
-function levelAt({ habit, done, excused }: ReviewItem, date: DateStr): { level: number; label: string } {
-  const s = summarize(habit, done, date, excused)
+/**
+ * Stand am Ende von `date` als Zahl: Stufe der Pflanze bzw. Lage im Kampf gegen den
+ * Schatten. Ein vergangener Stichtag ist vorbei, dort zählt auch ein Verpassen. Als
+ * „heute“ gerechnet ließe die Berechnung ihn noch offen.
+ */
+function levelAt({ habit, done, excused }: ReviewItem, date: DateStr, today: DateStr): { level: number; label: string } {
+  const past = date < today
+  const upTo = past ? new Set([...done].filter((d) => d <= date)) : done
+  const s = summarize(habit, upTo, past ? addDays(date, 1) : date, excused)
   if (habit.metaphor === 'schatten') return { level: s.shadow.status, label: TERRITORY_STATUS[s.shadow.status].label }
   return { level: s.stage, label: stageName(habit.species, s.stage) }
 }
@@ -118,8 +124,8 @@ export function buildWeekReview(
     if (item.habit.startDate > last) continue
     const current = summarize(item.habit, item.done, last, item.excused).streaks.current
     if (current > 0 && current > (streak?.days ?? 0)) streak = { habit: item.habit, days: current }
-    const before = levelAt(item, addDays(monday, -1))
-    const after = levelAt(item, last)
+    const before = levelAt(item, addDays(monday, -1), today)
+    const after = levelAt(item, last, today)
     if (after.level > before.level) advanced.push({ habit: item.habit, label: after.label })
   }
 

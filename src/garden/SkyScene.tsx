@@ -298,7 +298,8 @@ function LandscapeLife({ sky, p }: { sky: Sky; p: ScenePalette }) {
   const glint = phase === 'nacht' ? '#c9d8ff' : phase === 'tag' ? '#ffffff' : '#ffd9a8'
   const ducks = phase === 'tag' && (season === 'fruehling' || season === 'sommer') && sky.weather !== 'regen'
   const deer = (phase === 'morgen' || phase === 'abend') && season !== 'winter'
-  const deerX = 84
+  // in der Lücke zwischen den ersten Pflanzen, sonst stünde es meist dahinter
+  const deerX = 136
   const body = p.lit('#7a5636')
   return (
     <svg {...VIEW} className={LAYER} aria-hidden>
