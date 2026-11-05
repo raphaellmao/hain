@@ -10,6 +10,7 @@ import { UpdateToast } from './components/UpdateToast'
 import { GardenScreen } from './screens/GardenScreen'
 import { HabitDetailScreen } from './screens/HabitDetailScreen'
 import { HabitFormScreen } from './screens/HabitFormScreen'
+import { ReviewScreen } from './screens/ReviewScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { TodayScreen } from './screens/TodayScreen'
 import { TodosScreen } from './screens/TodosScreen'
@@ -35,6 +36,9 @@ export default function App() {
       break
     case 'erfolge':
       screen = <AchievementsScreen />
+      break
+    case 'review':
+      screen = <ReviewScreen week={route.week} />
       break
     case 'habit':
       screen = <HabitDetailScreen key={route.id} id={route.id} />

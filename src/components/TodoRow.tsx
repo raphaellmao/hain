@@ -1,7 +1,9 @@
 import { useState, type Ref } from 'react'
 import { motion } from 'motion/react'
+import { finishTodo } from '../app/actions'
 import { setTodoDone } from '../db/repo'
 import type { DateStr } from '../domain/dates'
+import { repeatLabel } from '../domain/repeat'
 import { isOverdue, remindLabel, whenLabel } from '../domain/todos'
 import type { Todo } from '../domain/types'
 import { tick } from '../lib/haptics'
@@ -29,13 +31,14 @@ export function TodoRow({ todo, today, showWhen = false, compact = false, ref }:
   const overdue = isOverdue(todo, today)
 
   function toggle() {
+    if (leaving) return
     tick()
     if (todo.done) {
-      void setTodoDone(todo.id, false)
+      void setTodoDone(todo.id, false, today)
       return
     }
     setLeaving(true)
-    window.setTimeout(() => void setTodoDone(todo.id, true), LEAVE_DELAY_MS)
+    window.setTimeout(() => void finishTodo(todo.id, today), LEAVE_DELAY_MS)
   }
 
   // Steht der Tag schon davor, reicht bei Erinnerungen an diesem Tag die Uhrzeit
@@ -45,6 +48,7 @@ export function TodoRow({ todo, today, showWhen = false, compact = false, ref }:
   const meta = [
     showWhen ? whenLabel(todo, today) : null,
     times.length > 0 ? `🔔 ${times.join(', ')}${more > 0 ? ` +${more}` : ''}` : null,
+    todo.repeat && !todo.done ? `🔁 ${repeatLabel(todo.repeat.rule, todo.repeat.from, todo.scope)}` : null,
   ].filter(Boolean)
 
   return (

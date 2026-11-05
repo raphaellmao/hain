@@ -68,6 +68,23 @@ export interface DayEntry {
 
 export type TodoScope = 'tag' | 'woche'
 
+export type RepeatRule = 'taeglich' | 'woechentlich' | 'zweiwoechentlich' | 'monatlich' | 'jaehrlich'
+
+/** Erinnerung relativ zum Termin: `days` Tage davor oder danach, um `time` Uhr */
+export interface RepeatReminder {
+  days: number
+  time: string
+}
+
+/** Wie ein To-do wiederkommt (Logik: repeat.ts) */
+export interface TodoRepeat {
+  rule: RepeatRule
+  /** Erster Termin: Daran hängen Wochentag und Monatstag, auch nach kurzen Monaten */
+  from: DateStr
+  /** Die Erinnerungen jedes Termins, auch wenn die aktuellen schon weggeklickt sind */
+  reminders: RepeatReminder[]
+}
+
 /** To-do für einen bestimmten Tag oder „irgendwann in dieser Woche“ (Logik: todos.ts). */
 export interface Todo {
   id: string
@@ -80,6 +97,9 @@ export interface Todo {
    * wie im Kalender), aufsteigend sortiert. Weggeklickte fallen heraus.
    */
   reminders: string[]
+  repeat?: TodoRepeat
+  /** Kennung der Reihe = id des ersten Termins; fehlt beim ersten Termin selbst */
+  seriesId?: string
   done: boolean
   doneAt?: number
   /** Gelöschte To-dos bleiben als „Grabstein“ liegen (für späteren Sync) */

@@ -1,14 +1,16 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useSettings, useToday } from '../db/hooks'
-import { createTodo, deleteTodo, TODO_MAX_LENGTH, updateTodo } from '../db/repo'
+import { createTodo, deleteTodo, skipTodo, TODO_MAX_LENGTH, updateTodo } from '../db/repo'
 import { addDays, diffDays, formatDayMonth, maxDate, startOfWeek, type DateStr } from '../domain/dates'
 import { calendarItems } from '../domain/ics'
-import { dayChipLabel, reminderDays, remindAtFor, remindLabel, shiftRemindAt, toRemindAt } from '../domain/todos'
-import type { TodoScope } from '../domain/types'
+import { buildRepeat, repeatLabel, restingReminders, rulesFor } from '../domain/repeat'
+import { dayChipLabel, reminderDays, remindAtFor, remindLabel, shiftRemindAt, toRemindAt, whenLabel } from '../domain/todos'
+import type { RepeatRule, TodoScope } from '../domain/types'
 import { addToCalendar } from '../lib/calendar'
 import { tick } from '../lib/haptics'
 import { requestNotifications } from '../lib/reminders'
+import { showToast } from '../lib/toast'
 import { closeTodoSheet, useTodoSheetRequest, type TodoSheetRequest } from '../lib/todoSheet'
 
 const TIME_PRESETS = ['08:00', '12:00', '18:00', '20:00']
@@ -35,6 +37,10 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
   // Für welchen Tag die Uhrzeiten unten gelten; null = der erste passende
   const [remindDay, setRemindDay] = useState<DateStr | null>(null)
   const [customTime, setCustomTime] = useState(nextFullHour)
+  const [rule, setRule] = useState<RepeatRule | null>(todo?.repeat?.rule ?? null)
+  const [showRepeat, setShowRepeat] = useState(!!todo?.repeat)
+  // Erinnerungen der Reihe, die heute schon geklingelt haben: kommen beim nächsten Termin wieder
+  const [resting, setResting] = useState(() => (todo ? restingReminders(todo) : []))
 
   const anchor = (d: DateStr) => maxDate(today, d)
   const day = remindDay ?? anchor(date)
@@ -56,6 +62,7 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
     setScope(s)
     setDate(d)
     setRemindDay(null)
+    setRule((r) => (r && rulesFor(s).includes(r) ? r : null))
   }
 
   const toggle = (at: string) =>
@@ -69,7 +76,9 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
     const text = title.trim()
     if (!text) return
     const id = todo?.id ?? crypto.randomUUID()
-    const input = { title: text, scope, date, reminders }
+    // Bereits erledigte Termine behalten ihre Wiederholung, nur so lässt sich das Abhaken zurücknehmen
+    const repeat = todo?.done ? todo.repeat : rule ? buildRepeat(rule, date, reminders, resting, todo) : undefined
+    const input = { title: text, scope, date, reminders, repeat }
     const saved = todo ? updateTodo(id, input) : createTodo(id, input)
     tick()
     closeTodoSheet()
@@ -142,6 +151,37 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
           />
         </div>
 
+        {!todo?.done && (
+          <>
+            <button
+              type="button"
+              onClick={() => setShowRepeat((v) => !v)}
+              aria-expanded={showRepeat}
+              className="mt-4 flex min-h-8 w-full items-center justify-between gap-3 text-left"
+            >
+              <span className="text-[13px] font-semibold tracking-wide text-muted uppercase">Wiederholen</span>
+              <span className="flex min-w-0 items-center gap-1.5 text-[14px] font-medium">
+                <span className="truncate">{rule ? `🔁 ${repeatLabel(rule, date, scope)}` : 'Nie'}</span>
+                <span className={`text-muted transition-transform ${showRepeat ? 'rotate-90' : ''}`} aria-hidden>
+                  ›
+                </span>
+              </span>
+            </button>
+            {showRepeat && (
+              <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Wie oft wiederholen">
+                <Chip small active={rule === null} onClick={() => setRule(null)}>
+                  Nie
+                </Chip>
+                {rulesFor(scope).map((r) => (
+                  <Chip key={r} small active={rule === r} onClick={() => setRule(r)}>
+                    {repeatLabel(r, date, scope)}
+                  </Chip>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         <Label>{reminders.length > 1 ? `${reminders.length} Erinnerungen` : 'Erinnern'}</Label>
         {reminders.length > 0 ? (
           <ul className="mb-3 flex flex-wrap gap-1.5" aria-label="Eingestellte Erinnerungen">
@@ -165,6 +205,25 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
           </ul>
         ) : (
           <p className="mb-2 text-[13px] text-muted">Tippe eine oder mehrere Uhrzeiten an – auch an verschiedenen Tagen.</p>
+        )}
+        {rule && resting.length > 0 && (
+          <ul className="mb-3 flex flex-wrap gap-1.5" aria-label="Erinnerungen ab dem nächsten Termin">
+            {resting.map((p) => (
+              <li key={`${p.days}|${p.time}`}>
+                <button
+                  type="button"
+                  onClick={() => setResting((list) => list.filter((x) => x !== p))}
+                  aria-label={`Erinnerung ${p.time} aus der Reihe entfernen`}
+                  className="flex h-10 items-center gap-1.5 rounded-full bg-surface-2 pr-2.5 pl-3 text-[14px] text-muted tabular-nums"
+                >
+                  🔁 nächstes Mal {p.time}
+                  <span className="text-[12px]" aria-hidden>
+                    ✕
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
 
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Erinnern an welchem Tag">
@@ -240,6 +299,20 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
               📅 {todo ? 'Speichern' : 'Hinzufügen'} und in den Kalender
             </button>
           )}
+          {todo?.repeat && !todo.done && (
+            <button
+              type="button"
+              onClick={() => {
+                closeTodoSheet()
+                void skipTodo(todo.id, today).then((d) => {
+                  if (d) showToast(`Nächster Termin: ${whenLabel({ scope: todo.scope, date: d }, today)}`, '🔁')
+                })
+              }}
+              className="h-12 rounded-2xl bg-surface-2 text-[16px] font-medium"
+            >
+              Diesen Termin überspringen
+            </button>
+          )}
           {todo && (
             <button
               type="button"
@@ -249,7 +322,7 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
               }}
               className="h-12 rounded-2xl text-[16px] font-medium text-danger"
             >
-              To-do löschen
+              {todo.repeat && !todo.done ? 'Wiederholung beenden und löschen' : 'To-do löschen'}
             </button>
           )}
         </div>

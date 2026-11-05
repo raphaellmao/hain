@@ -109,6 +109,9 @@ export function shiftMonth(ym: string, n: number): string {
   return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, '0')}`
 }
 
+/** Anzahl der Tage im Monat 'JJJJ-MM' */
+export const daysInMonth = (ym: string) => dayOfMonth(addDays(`${shiftMonth(ym, 1)}-01`, -1))
+
 const fmtMonthShort = fmt({ month: 'short' })
 /** „Okt“ (ohne Punkt) */
 export const formatMonthShort = (d: DateStr) => fmtMonthShort.format(toUtcMs(d)).replace('.', '')

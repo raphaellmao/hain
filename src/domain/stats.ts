@@ -28,10 +28,36 @@ export function dayState(
 }
 
 /**
- * Erfolgsquote der letzten `days` Tage (inkl. heute):
- * erledigte fällige Tage / fällige Tage. Heute zählt nur mit, wenn schon
- * erledigt – sonst würde die Quote morgens immer schlechter aussehen.
- * Gibt null zurück, wenn es im Zeitraum keinen fälligen Tag gab.
+ * Erledigte und fällige Tage eines Zeitraums. Ausgesetzte Tage zählen nicht, heute
+ * nur, wenn schon erledigt – sonst würde die Quote morgens immer schlechter aussehen.
+ */
+export function tallyDays(
+  habit: Pick<Habit, 'schedule' | 'startDate'>,
+  done: DoneSet,
+  from: DateStr,
+  to: DateStr,
+  today: DateStr,
+  excused: DoneSet = NO_DAYS,
+): { hit: number; due: number } {
+  const first = maxDate(from, habit.startDate)
+  const last = minDate(to, today)
+  let due = 0
+  let hit = 0
+  if (first <= last) {
+    for (const d of eachDay(first, last)) {
+      if (!isDue(habit, d)) continue
+      if (excused.has(d) && !done.has(d)) continue
+      if (d === today && !done.has(d)) continue
+      due++
+      if (done.has(d)) hit++
+    }
+  }
+  return { hit, due }
+}
+
+/**
+ * Erfolgsquote der letzten `days` Tage (inkl. heute): erledigte fällige Tage /
+ * fällige Tage. Gibt null zurück, wenn es im Zeitraum keinen fälligen Tag gab.
  */
 export function successRate(
   habit: Pick<Habit, 'schedule' | 'startDate'>,
@@ -40,17 +66,7 @@ export function successRate(
   days = 30,
   excused: DoneSet = NO_DAYS,
 ): { rate: number; done: number; due: number } | null {
-  const from = maxDate(addDays(today, -(days - 1)), habit.startDate)
-  if (from > today) return null
-  let due = 0
-  let hit = 0
-  for (const d of eachDay(from, today)) {
-    if (!isDue(habit, d)) continue
-    if (excused.has(d) && !done.has(d)) continue
-    if (d === today && !done.has(d)) continue
-    due++
-    if (done.has(d)) hit++
-  }
+  const { hit, due } = tallyDays(habit, done, addDays(today, -(days - 1)), today, today, excused)
   return due === 0 ? null : { rate: hit / due, done: hit, due }
 }
 
@@ -86,19 +102,7 @@ export function monthlyRates(
 ): MonthRate[] {
   const current = today.slice(0, 7)
   return Array.from({ length: months }, (_, i) => shiftMonth(current, i - (months - 1))).map((month) => {
-    const first = maxDate(`${month}-01`, habit.startDate)
-    const last = minDate(addDays(`${shiftMonth(month, 1)}-01`, -1), today)
-    let due = 0
-    let hit = 0
-    if (first <= last) {
-      for (const d of eachDay(first, last)) {
-        if (!isDue(habit, d)) continue
-        if (excused.has(d) && !done.has(d)) continue
-        if (d === today && !done.has(d)) continue
-        due++
-        if (done.has(d)) hit++
-      }
-    }
+    const { hit, due } = tallyDays(habit, done, `${month}-01`, addDays(`${shiftMonth(month, 1)}-01`, -1), today, excused)
     return { month, rate: due ? hit / due : null, done: hit, due, partial: month === current }
   })
 }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useToday, useTodos } from '../db/hooks'
-import { dismissDueReminders, setTodoDone, snoozeDueReminders } from '../db/repo'
+import { finishTodo } from '../app/actions'
+import { dismissDueReminders, snoozeDueReminders } from '../db/repo'
 import { addDays, toDateStr } from '../domain/dates'
 import { dueReminders, remindLabel, toRemindAt, urgentTodos } from '../domain/todos'
 import { celebrate, tick } from '../lib/haptics'
@@ -93,7 +94,7 @@ export function ReminderHost() {
                 type="button"
                 onClick={() => {
                   tick()
-                  void setTodoDone(first.todo.id, true)
+                  void finishTodo(first.todo.id, today)
                 }}
                 className="h-11 rounded-xl bg-accent text-[14px] font-semibold text-accent-ink"
               >

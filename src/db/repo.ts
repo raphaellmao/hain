@@ -4,11 +4,12 @@
  * (z. B. Supabase) ergänzt, hängt er sich hier ein.
  */
 import { db } from './schema'
-import type { DateStr } from '../domain/dates'
+import { addDays, type DateStr } from '../domain/dates'
 import type { ColorKey } from '../domain/colors'
 import type { SpeciesKey } from '../domain/species'
 import type { ExcuseReason } from '../domain/excuse'
-import { type Checkin, type DayEntry, type Habit, type Metaphor, type Settings, type Todo, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
+import { nextDateOf, nextInstance, nextOccurrence, remindersOn } from '../domain/repeat'
+import { type Checkin, type DayEntry, type Habit, type Metaphor, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
 import { daysAt, withNewDays } from '../domain/schedule'
 import { cleanReminders, withoutDue } from '../domain/todos'
 
@@ -120,6 +121,7 @@ export interface TodoInput {
   scope: TodoScope
   date: DateStr
   reminders: string[]
+  repeat?: TodoRepeat
 }
 
 export async function createTodo(id: string, input: TodoInput): Promise<void> {
@@ -130,6 +132,7 @@ export async function createTodo(id: string, input: TodoInput): Promise<void> {
     scope: input.scope,
     date: input.date,
     reminders: cleanReminders(input.reminders),
+    ...(input.repeat ? { repeat: input.repeat } : {}),
     done: false,
     deleted: false,
     createdAt: now,
@@ -144,13 +147,44 @@ export async function updateTodo(id: string, input: TodoInput): Promise<void> {
     scope: input.scope,
     date: input.date,
     reminders: cleanReminders(input.reminders),
+    repeat: input.repeat,
     updatedAt: Date.now(),
   })
 }
 
-export async function setTodoDone(id: string, done: boolean): Promise<void> {
-  const now = Date.now()
-  await db.todos.update(id, { done, doneAt: done ? now : undefined, updatedAt: now })
+/**
+ * Abhaken oder zurücknehmen. Bei einer Reihe entsteht beim Abhaken der nächste
+ * Termin (wird zurückgegeben), beim Zurücknehmen verschwindet er wieder: Eine
+ * Reihe hat immer genau einen offenen Termin.
+ */
+export async function setTodoDone(id: string, done: boolean, today: DateStr): Promise<Todo | null> {
+  return db.transaction('rw', db.todos, async () => {
+    const todo = await db.todos.get(id)
+    if (!todo || todo.done === done) return null
+    const now = new Date()
+    const stamp = now.getTime()
+    await db.todos.update(id, { done, doneAt: done ? stamp : undefined, updatedAt: stamp })
+    if (!todo.repeat) return null
+    if (done) {
+      const next = nextInstance(todo, todo.repeat, today, now, crypto.randomUUID())
+      await db.todos.add(next)
+      return next
+    }
+    const series = todo.seriesId ?? todo.id
+    await db.todos
+      .filter((t) => t.id !== id && !t.done && !t.deleted && (t.seriesId === series || t.id === series))
+      .modify({ deleted: true, updatedAt: stamp })
+    return null
+  })
+}
+
+/** Diesen Termin einer Reihe auslassen: Das To-do springt zum nächsten, ohne als erledigt zu zählen. */
+export async function skipTodo(id: string, today: DateStr): Promise<DateStr | null> {
+  const todo = await db.todos.get(id)
+  if (!todo?.repeat) return null
+  const date = nextDateOf(todo, todo.repeat, today)
+  await db.todos.update(id, { date, reminders: remindersOn(todo.repeat, date, new Date()), updatedAt: Date.now() })
+  return date
 }
 
 /** Weiches Löschen, wie bei den Habits. */
@@ -176,6 +210,22 @@ export async function snoozeDueReminders(id: string, remindAt: string): Promise<
 export async function moveTodosToNow(todos: Todo[], today: DateStr, monday: DateStr): Promise<void> {
   const now = Date.now()
   await db.todos.bulkPut(todos.map((t) => ({ ...t, date: t.scope === 'tag' ? today : monday, updatedAt: now })))
+}
+
+/**
+ * Offenes aus dem Wochenrückblick in eine neue Woche legen: Einmalige To-dos
+ * werden Wochenaufgaben, eine Reihe springt auf ihren ersten Termin in dieser Woche.
+ */
+export async function moveTodosToWeek(todos: Todo[], monday: DateStr): Promise<void> {
+  const now = new Date()
+  const stamp = now.getTime()
+  await db.todos.bulkPut(
+    todos.map((t) => {
+      if (!t.repeat) return { ...t, scope: 'woche' as const, date: monday, updatedAt: stamp }
+      const date = t.scope === 'woche' ? monday : nextOccurrence(t.repeat, addDays(monday, -1))
+      return { ...t, date, reminders: remindersOn(t.repeat, date, now), updatedAt: stamp }
+    }),
+  )
 }
 
 // ── Einstellungen ───────────────────────────────────────────────────────────

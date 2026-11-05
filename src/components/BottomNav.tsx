@@ -14,8 +14,8 @@ export const TABS = [
 
 /** Untere Navigationsleiste – im Daumenbereich, über dem Home-Indicator. */
 export function BottomNav({ route }: { route: Route }) {
-  // Detailansicht gehört optisch zum Garten
-  const active = route.name === 'habit' ? 'garden' : route.name
+  // Detailansicht gehört optisch zum Garten, der Rückblick zu den Erfolgen
+  const active = route.name === 'habit' ? 'garden' : route.name === 'review' ? 'erfolge' : route.name
   const todos = useTodos()
   const today = useToday()
   const urgent = todos ? urgentTodos(todos, today).length : 0

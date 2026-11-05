@@ -8,13 +8,14 @@ import { db } from './schema'
 import { COLORS } from '../domain/colors'
 import { isSpecies } from '../domain/species'
 import { isExcuseReason } from '../domain/excuse'
+import { parseRepeat } from '../domain/repeat'
 import { cleanReminders } from '../domain/todos'
 import { type Checkin, type DayEntry, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
 import { NOTE_MAX_LENGTH, TODO_MAX_LENGTH } from './repo'
 import { startOfWeek, toDateStr } from '../domain/dates'
 
-/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do */
-export const BACKUP_VERSION = 4
+/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos */
+export const BACKUP_VERSION = 5
 
 export interface BackupFile {
   app: 'hain'
@@ -158,12 +159,15 @@ export function parseBackup(text: string): BackupFile {
     // Bis Format 3 gab es genau eine Erinnerung; eine weggeklickte war erledigt
     const old = t as Todo & { remindAt?: unknown; remindedAt?: unknown }
     const reminders = Array.isArray(t.reminders) ? t.reminders : old.remindedAt ? [] : [old.remindAt]
+    const repeat = parseRepeat(t.repeat)
     todos.push({
       id: t.id,
       title: t.title.slice(0, TODO_MAX_LENGTH),
       scope: t.scope,
       date: t.scope === 'woche' ? startOfWeek(t.date) : t.date,
       reminders: cleanReminders(reminders),
+      ...(repeat ? { repeat } : {}),
+      ...(typeof t.seriesId === 'string' ? { seriesId: t.seriesId } : {}),
       done,
       ...(done && typeof t.doneAt === 'number' ? { doneAt: t.doneAt } : {}),
       deleted: false,

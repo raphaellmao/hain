@@ -100,6 +100,11 @@ export async function hainDemo() {
     todo(6, 'Geburtstagsgeschenk kaufen', 'tag', addDays(today, 2), { reminders: [`${addDays(today, 1)}T18:00`, `${addDays(today, 2)}T08:00`, `${addDays(today, 2)}T12:00`, `${addDays(today, 2)}T18:00`] }),
     todo(7, 'Versicherung kündigen', 'woche', addDays(monday, 7)),
     todo(8, 'Wäsche abholen', 'tag', today, { done: true, doneAt: now }),
+    todo(9, 'Müll rausbringen', 'tag', addDays(today, 3), {
+      reminders: [`${addDays(today, 3)}T18:00`],
+      repeat: { rule: 'woechentlich', from: addDays(today, 3), reminders: [{ days: 0, time: '18:00' }] },
+    }),
+    todo(10, 'Wochenplan machen', 'woche', monday, { repeat: { rule: 'woechentlich', from: monday, reminders: [] } }),
   ]
 
   await db.transaction('rw', db.habits, db.checkins, db.todos, async () => {

@@ -82,6 +82,7 @@ src/
   tree/        Pflanzen: Zufallsgenerator, Formen, Farben, SVG-Komponente
     species/     ein Erzeuger je Art (recursive.ts = gemeinsamer Baumkern)
     grove.ts     Begleitpflanzen des Hains ab H = 100
+  garden/      Gartenszene: Licht und Farben, Himmel, Wiese, Tiere
   screens/     Heute, To-dos, Garten, Erfolge, Detail, Formular, Einstellungen
   components/  wiederverwendbare Bausteine (Zeile, Heatmap, Kalender …)
   app/         Router (Hash-URLs) und Aktionen mit Feedback
@@ -152,9 +153,36 @@ Das Blatt zeigt, wie viele Ausnahmen es in den letzten 30 Tagen gab.
   im Tab „Erfolge“ (`monthlyRates` in `domain/stats.ts`).
 - **Drohungen des Schattens**: Sprechblase in der Detailansicht, wechselt täglich
   und reagiert auf Lage, Abhaken und Ausnahmen (`domain/taunts.ts`).
-- **Lebendiger Garten**: Himmel, Licht und Wetter nach echter Tages- und
-  Jahreszeit (`lib/sky.ts`, `components/GardenScene.tsx`). In der Entwicklung
-  lässt sich das mit `?zeit=nacht&saison=winter` ausprobieren.
+- **Lebendiger Garten**: siehe unten.
+
+## Wochenrückblick
+
+Am Sonntag und Montag wartet auf „Heute“ eine Karte, bis der Rückblick einmal geöffnet
+wurde (Sonntag: die laufende Woche, Montag: die vergangene). Dauerhaft erreichbar über
+den Tab „Erfolge“, ältere Wochen über die Pfeile. Er zeigt Quote mit Vergleich zur
+Vorwoche, die Tage als Balken, längste laufende Serie, erledigte To-dos, was eine Stufe
+aufgestiegen ist und jede Gewohnheit Tag für Tag. Offenes lässt sich gesammelt in die
+neue Woche legen. Berechnet in `domain/review.ts`, gespeichert wird nichts außer der
+Merkhilfe, welcher Rückblick schon gesehen wurde.
+
+## Lebendiger Garten
+
+Eine Landschaft in Schichten, in der man nichts tun muss: Berge, Hügel, Wälder und ein
+See, davor eine Wiese mit Gras und Blumen, die zur Jahreszeit passen. Alles folgt der
+echten Tageszeit, Jahreszeit und Mondphase; das Wetter wird pro Tag fest gewürfelt
+(meist klar, manchmal wolkig, selten Regen mit Regenbogen).
+
+- **Licht:** `garden/palette.ts` färbt Landschaft und Tiere mit dem Licht der Tageszeit
+  ein, die Pflanzen bekommen dazu einen passenden CSS-Filter.
+- **Leben:** Vogelzüge, Enten, grasende Rehe, Hase, Bienen, Schmetterlinge, Fledermäuse,
+  Igel, Eule, Glühwürmchen, Sternschnuppen, fallendes Laub, Schnee und Regen. Pflanzen, denen
+  es gut geht, verlieren ab und zu eine Blüte, welkende ein trockenes Blatt.
+- **Leistung:** Unbewegtes liegt in eigenen SVGs und die Wiese ist ein Kachelbild, beides
+  zeichnet der Browser nur einmal. Bewegtes sind eigene Elemente mit CSS-Animation auf
+  `transform`/`opacity`, die auf dem Grafikchip laufen. Bei „Bewegung reduzieren“ bleibt das
+  Bild stehen und die Tiere fehlen.
+
+In der Entwicklung zum Ausprobieren: `?zeit=nacht&saison=winter&wetter=regen&mond=0.5`.
 
 ## To-dos für Tag und Woche
 
@@ -169,6 +197,13 @@ wandert nicht von selbst weiter, sondern bleibt als überfällig sichtbar, bis e
 erledigt oder neu gelegt ist. Wochenaufgaben werden am Sonntag dringend. Was dringend
 ist, zeigt auch die Karte auf „Heute“, der Zähler an der Leiste und (falls das Gerät
 es kann) die Zahl am App-Symbol. Gespeichert in der Tabelle `todos`, im Backup enthalten.
+
+**Wiederkehrend:** Täglich, wöchentlich, alle 2 Wochen, monatlich oder jährlich; Wochenaufgaben
+wöchentlich oder alle 2 Wochen (`domain/repeat.ts`). Eine Reihe hat immer genau einen offenen
+Termin. Beim Abhaken entsteht der nächste, bleibt er liegen, steht er als überfällig da, statt
+dass sich Termine stapeln. Monatstage hängen am ersten Termin: Der 31. wird im Februar zum 28.
+und danach wieder zum 31. Weggeklickte Erinnerungen kommen beim nächsten Termin wieder, ein
+„1 Std.“ aus dem Banner gilt nur einmal. In der Kalenderdatei steht nur der jeweils aktuelle Termin.
 
 **Erinnerungen und ihre Grenze:** Ohne Server kann eine Web-App nichts auslösen, solange
 sie geschlossen ist; geplante Benachrichtigungen gibt es im Web nicht.

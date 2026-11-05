@@ -13,6 +13,7 @@ import { HabitRow } from '../components/HabitRow'
 import { WeekStrip } from '../components/WeekStrip'
 import { Fab } from '../components/Fab'
 import { DayNote } from '../components/DayNote'
+import { ReviewCard } from '../components/ReviewCard'
 import { TodayTodos } from '../components/TodayTodos'
 import { Tree } from '../tree/Tree'
 
@@ -106,6 +107,7 @@ export function TodayScreen() {
       </header>
 
       <main className="px-safe mt-4">
+        {isToday && <ReviewCard today={today} />}
         {isToday && <TodayTodos today={today} />}
 
         <AnimatePresence>

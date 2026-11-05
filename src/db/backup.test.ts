@@ -90,6 +90,22 @@ describe('Backup mit To-dos', () => {
     expect(b.todos[2].reminders).toEqual([])
   })
 
+  it('übernimmt Wiederholungen', () => {
+    const base = { scope: 'tag', date: '2026-11-06' }
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        version: 5,
+        todos: [
+          { ...base, id: 'a', title: 'x', seriesId: 'r', repeat: { rule: 'woechentlich', from: '2026-10-30', reminders: [{ days: 0, time: '18:00' }] } },
+          { ...base, id: 'b', title: 'x', repeat: { rule: 'stuendlich', from: '2026-10-30' } },
+        ],
+      }),
+    )
+    expect(b.todos[0]).toMatchObject({ seriesId: 'r', repeat: { rule: 'woechentlich', from: '2026-10-30', reminders: [{ days: 0, time: '18:00' }] } })
+    expect(b.todos[1]).not.toHaveProperty('repeat')
+  })
+
   it('übernimmt die einzelne Erinnerung aus Format 3', () => {
     const base = { scope: 'tag', date: '2026-11-04' }
     const b = parseBackup(

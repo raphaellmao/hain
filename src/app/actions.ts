@@ -6,8 +6,9 @@ import { computeHealth, stageOf } from '../domain/health'
 import { stageName } from '../domain/species'
 import { TERRITORY_STATUS, computeShadowPower, shadowState } from '../domain/shadow'
 import { type ExcuseReason, reasonInfo } from '../domain/excuse'
+import { whenLabel } from '../domain/todos'
 import { type DoneSet, type Habit, NO_DAYS } from '../domain/types'
-import { setCheckin, setExcused } from '../db/repo'
+import { setCheckin, setExcused, setTodoDone } from '../db/repo'
 import { celebrate, tick } from '../lib/haptics'
 import { showToast } from '../lib/toast'
 
@@ -55,6 +56,12 @@ export async function toggleDay(
       habit.emoji,
     )
   }
+}
+
+/** To-do abhaken. Kommt es wieder, sagt ein Hinweis, wann. */
+export async function finishTodo(id: string, today: DateStr) {
+  const next = await setTodoDone(id, true, today)
+  if (next) showToast(`Kommt wieder: ${whenLabel(next, today)}`, '🔁', 3200)
 }
 
 /** „Heute nicht möglich“: Tag mit Grund aussetzen. */

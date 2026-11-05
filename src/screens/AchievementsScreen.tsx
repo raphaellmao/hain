@@ -4,6 +4,8 @@ import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, u
 import { combineMonthly, monthlyRates } from '../domain/stats'
 import { CATEGORIES, TIERS, type Achievement, type Category, type Tier } from '../domain/achievements'
 import { useAchievements } from '../app/achievements'
+import { navigate, paths } from '../app/router'
+import { IconChevronRight } from '../components/icons'
 import { MonthBars } from '../components/MonthBars'
 
 const TIER_ORDER: Tier[] = ['bronze', 'silber', 'gold', 'legendaer']
@@ -73,6 +75,18 @@ export function AchievementsScreen() {
       </header>
 
       <main className="px-safe mt-4 flex flex-col gap-5">
+        <button
+          type="button"
+          onClick={() => navigate(paths.review())}
+          className="flex min-h-14 w-full items-center gap-3 rounded-3xl bg-surface px-4 py-3 text-left text-[16px] font-semibold"
+        >
+          <span className="text-[24px] leading-none" aria-hidden>
+            📊
+          </span>
+          <span className="flex-1">Wochenrückblick</span>
+          <IconChevronRight width={20} height={20} className="text-muted" />
+        </button>
+
         {monthly.length > 0 && (
           <section className="rounded-3xl bg-surface p-4">
             <h2 className="mb-2 text-[13px] font-semibold tracking-wide text-muted uppercase">Erfolgsquote je Monat · alle Gewohnheiten</h2>
