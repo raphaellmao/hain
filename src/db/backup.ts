@@ -11,13 +11,14 @@ import { isExcuseReason } from '../domain/excuse'
 import { parseRepeat } from '../domain/repeat'
 import { parseGoal, roundAmount } from '../domain/goal'
 import { absenceProblem } from '../domain/absence'
+import { isMood } from '../domain/mood'
 import { cleanReminders } from '../domain/todos'
 import { type Absence, type Checkin, type DayEntry, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
 import { NOTE_MAX_LENGTH, TODO_MAX_LENGTH } from './repo'
 import { startOfWeek, toDateStr } from '../domain/dates'
 
-/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos · 6 = Tagesziele mit Menge oder Dauer · 7 = Abwesenheiten · 8 = Archiv */
-export const BACKUP_VERSION = 8
+/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos · 6 = Tagesziele mit Menge oder Dauer · 7 = Abwesenheiten · 8 = Archiv · 9 = Stimmung */
+export const BACKUP_VERSION = 9
 
 export interface BackupFile {
   app: 'hain'
@@ -35,7 +36,7 @@ export async function createBackup(): Promise<BackupFile> {
   const habits = (await db.habits.toArray()).filter((h) => !h.deleted)
   const ids = new Set(habits.map((h) => h.id))
   const checkins = (await db.checkins.toArray()).filter((c) => (c.done || c.excused || (c.amount ?? 0) > 0) && ids.has(c.habitId))
-  const dayEntries = (await db.dayEntries.toArray()).filter((e) => e.note !== '')
+  const dayEntries = (await db.dayEntries.toArray()).filter((e) => e.note !== '' || e.mood)
   const todos = (await db.todos.toArray()).filter((t) => !t.deleted)
   const absences = (await db.absences.toArray()).filter((a) => !a.deleted)
   const settings = { ...DEFAULT_SETTINGS, ...((await db.meta.get('settings'))?.value as Partial<Settings>) }
@@ -147,12 +148,14 @@ export function parseBackup(text: string): BackupFile {
   for (const e of Array.isArray(b.dayEntries) ? b.dayEntries : []) {
     if (!e || !isDate(e.date) || seen.has(e.date)) continue
     const note = typeof e.note === 'string' ? e.note.slice(0, NOTE_MAX_LENGTH) : ''
-    if (note.trim() === '') continue
+    const mood = isMood(e.mood) ? e.mood : undefined
+    if (note.trim() === '' && !mood) continue
     seen.add(e.date)
     dayEntries.push({
       id: e.date,
       date: e.date,
-      note,
+      note: note.trim() === '' ? '' : note,
+      ...(mood ? { mood } : {}),
       updatedAt: typeof e.updatedAt === 'number' ? e.updatedAt : now,
     })
   }

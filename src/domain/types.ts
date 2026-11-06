@@ -93,13 +93,18 @@ export interface Absence {
   updatedAt: number
 }
 
-/** Notiz zu einem Tag – unabhängig von einzelnen Habits, höchstens eine pro Tag. */
+/** Stimmung eines Tages: 1 = schlecht … 5 = super (mood.ts) */
+export type Mood = 1 | 2 | 3 | 4 | 5
+
+/** Notiz und Stimmung zu einem Tag – unabhängig von einzelnen Habits, höchstens eine pro Tag. */
 export interface DayEntry {
   /** = `date` – damit gibt es pro Tag höchstens einen Eintrag (auch nach einem Sync) */
   id: DateStr
   date: DateStr
   /** Leeren = note: '' statt Löschen (für späteren Sync) */
   note: string
+  /** fehlt = nicht bewertet */
+  mood?: Mood
   updatedAt: number
 }
 

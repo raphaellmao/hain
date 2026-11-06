@@ -1,7 +1,8 @@
 import { useEffect, type ReactNode } from 'react'
 import { markReviewSeen, useWeekReview } from '../app/review'
 import { goBack, navigate, paths } from '../app/router'
-import { useToday } from '../db/hooks'
+import { useMoodMap, useToday } from '../db/hooks'
+import { formatMood, moodEmoji, moodSummary } from '../domain/mood'
 import { moveTodosToWeek } from '../db/repo'
 import { addDays, formatDayMonth, startOfWeek, WEEKDAYS_MON0, type DateStr } from '../domain/dates'
 import { nextReviewWeek, reviewVerdict, weekToReview, type ReviewHabit, type WeekReview } from '../domain/review'
@@ -86,6 +87,7 @@ function Content({ review, today }: { review: WeekReview; today: DateStr }) {
         </div>
         <p className="mt-1.5 text-[14px] leading-snug text-muted tabular-nums">
           {review.done} von {review.due} fälligen Tagen erledigt
+          <WeekMood monday={review.monday} />
           {verdict.detail && (
             <>
               <br />
@@ -127,6 +129,20 @@ function Content({ review, today }: { review: WeekReview; today: DateStr }) {
 
       <LeftOver review={review} today={today} />
     </main>
+  )
+}
+
+/** Stimmung der Woche, falls bewertet */
+function WeekMood({ monday }: { monday: DateStr }) {
+  const moods = useMoodMap()
+  if (!moods) return null
+  const s = moodSummary(moods, monday, addDays(monday, 6))
+  if (s.average === null) return null
+  return (
+    <>
+      <br />
+      Stimmung Ø {formatMood(s.average)} {moodEmoji(s.average)} ({s.count} {s.count === 1 ? 'Tag' : 'Tage'} bewertet)
+    </>
   )
 }
 

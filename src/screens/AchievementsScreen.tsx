@@ -7,6 +7,7 @@ import { useAchievements } from '../app/achievements'
 import { navigate, paths } from '../app/router'
 import { IconChevronRight } from '../components/icons'
 import { MonthBars } from '../components/MonthBars'
+import { MoodInsights } from '../components/MoodInsights'
 
 const TIER_ORDER: Tier[] = ['bronze', 'silber', 'gold', 'legendaer']
 const tierRank = (t: Tier) => TIER_ORDER.indexOf(t)
@@ -86,6 +87,8 @@ export function AchievementsScreen() {
           <span className="flex-1">Wochenrückblick</span>
           <IconChevronRight width={20} height={20} className="text-muted" />
         </button>
+
+        <MoodInsights />
 
         {monthly.length > 0 && (
           <section className="rounded-3xl bg-surface p-4">

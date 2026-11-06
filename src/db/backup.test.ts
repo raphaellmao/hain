@@ -124,6 +124,28 @@ describe('Backup mit To-dos', () => {
   })
 })
 
+describe('Backup mit Stimmung', () => {
+  it('übernimmt Stimmungen, auch ohne Notiz, und verwirft Unsinn', () => {
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        version: 9,
+        dayEntries: [
+          { date: '2026-10-01', note: 'Guter Tag', mood: 5 },
+          { date: '2026-10-02', note: '', mood: 2 },
+          { date: '2026-10-03', note: '', mood: 9 },
+          { date: '2026-10-04', note: 'Nur Text' },
+        ],
+      }),
+    )
+    expect(b.dayEntries.map((e) => [e.date, e.mood ?? null, e.note])).toEqual([
+      ['2026-10-01', 5, 'Guter Tag'],
+      ['2026-10-02', 2, ''],
+      ['2026-10-04', null, 'Nur Text'],
+    ])
+  })
+})
+
 describe('Backup mit Archiv', () => {
   it('übernimmt archivierte Gewohnheiten, verwirft kaputte Angaben', () => {
     const b = parseBackup(

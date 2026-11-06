@@ -15,6 +15,7 @@ import { HabitRow } from '../components/HabitRow'
 import { WeekStrip } from '../components/WeekStrip'
 import { Fab } from '../components/Fab'
 import { DayNote } from '../components/DayNote'
+import { MoodPicker } from '../components/MoodPicker'
 import { ReviewCard } from '../components/ReviewCard'
 import { TodayTodos } from '../components/TodayTodos'
 import { Tree } from '../tree/Tree'
@@ -170,6 +171,7 @@ export function TodayScreen() {
           </section>
         )}
 
+        <MoodPicker date={selected} isToday={isToday} />
         <DayNote date={selected} isToday={isToday} />
       </main>
 

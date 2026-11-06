@@ -72,6 +72,7 @@ git push -u origin main
 ```
 src/
   domain/      reine Fachlogik ohne React/Datenbank – hier wird gerechnet
+    mood.ts      Stimmung: Schnitt, Verteilung, Zusammenhang mit Gewohnheiten
     dates.ts     Datumsrechnung auf 'JJJJ-MM-TT'-Texten (keine Zeitzonenfehler)
     schedule.ts  fällig an welchem Tag? (Häufigkeit mit Versionsliste)
     streaks.ts   aktuelle und längste Serie
@@ -280,10 +281,25 @@ auch für vergangene Tage). Gespeichert wird automatisch in der Tabelle `dayEntr
 Notizen sind im Backup enthalten (Backup-Format 2; ältere Backups lassen sich weiter
 einspielen).
 
+## Stimmung pro Tag
+
+Unter „Heute“ über der Notiz: fünf Gesichter (😞 🙁 😐 🙂 😄), ein Tipp speichert,
+nochmal tippen nimmt es zurück – auch für vergangene Tage über die Wochenleiste.
+Gespeichert als `mood` (1–5) im `DayEntry` des Tages, zusammen mit der Notiz; keine
+neue Schema-Version nötig, weil das Feld nicht indiziert ist. Backup-Format 9
+(Einträge mit nur Stimmung, ohne Notiz, bleiben erhalten).
+
+Auswertung in `domain/mood.ts`:
+
+- **Erfolge → „Stimmung · letzte 30 Tage“:** Schnitt und Verteilung über die Gesichter.
+- **„Was deinen Tagen guttut“:** je Gewohnheit der Schnitt an erledigten Tagen gegen
+  den an fälligen, nicht ausgesetzten, verpassten Tagen (heute zählt noch nicht).
+  Erst ab je 4 bewerteten Tagen auf beiden Seiten und einem Unterschied ab 0,3; die
+  drei größten werden gezeigt. Ausdrücklich als Zusammenhang, nicht als Ursache.
+- **Wochenrückblick:** Stimmungs-Schnitt der Woche unter der Quote.
+
 ## Erweiterungen (vorbereitet)
 
-- **Stimmung pro Tag:** als zusätzliches Feld in `DayEntry` (`domain/types.ts`) –
-  da nur ein neues, nicht indiziertes Feld, ist dafür keine neue Schema-Version nötig.
 - **Sync (z. B. Supabase):** IDs sind UUIDs, jeder Datensatz hat `updatedAt`,
   gelöschte Habits bleiben als Grabstein (`deleted: true`), abgehakte Tage werden
   mit `done: false` statt gelöscht zurückgenommen – damit lässt sich „neuester

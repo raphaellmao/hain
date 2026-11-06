@@ -10,7 +10,7 @@ import type { SpeciesKey } from '../domain/species'
 import type { ExcuseReason } from '../domain/excuse'
 import { nextDateOf, nextInstance, nextOccurrence, remindersOn } from '../domain/repeat'
 import { endedEarly } from '../domain/absence'
-import { type Absence, type Checkin, type DayEntry, type Habit, type HabitGoal, type Metaphor, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
+import { type Absence, type Checkin, type DayEntry, type Habit, type HabitGoal, type Metaphor, type Mood, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
 import { reached, roundAmount } from '../domain/goal'
 import { archivedSchedule, daysAt, restoredSchedule, withNewDays } from '../domain/schedule'
 import { cleanReminders, withoutDue } from '../domain/todos'
@@ -197,10 +197,21 @@ export const NOTE_MAX_LENGTH = 2000
 /** Notiz eines Tages speichern. Leerer Text bleibt als Eintrag mit note: '' liegen (für späteren Sync). */
 export async function setDayNote(date: DateStr, note: string): Promise<void> {
   const text = note.trimEnd().slice(0, NOTE_MAX_LENGTH)
-  const current = await db.dayEntries.get(date)
-  if ((current?.note ?? '') === text) return
-  const entry: DayEntry = { id: date, date, note: text, updatedAt: Date.now() }
-  await db.dayEntries.put(entry)
+  await db.transaction('rw', db.dayEntries, async () => {
+    const current = await db.dayEntries.get(date)
+    if ((current?.note ?? '') === text) return
+    const entry: DayEntry = { id: date, date, note: text, ...(current?.mood ? { mood: current.mood } : {}), updatedAt: Date.now() }
+    await db.dayEntries.put(entry)
+  })
+}
+
+/** Stimmung eines Tages setzen oder (null) zurücknehmen; die Notiz bleibt. */
+export async function setDayMood(date: DateStr, mood: Mood | null): Promise<void> {
+  await db.transaction('rw', db.dayEntries, async () => {
+    const current = await db.dayEntries.get(date)
+    const entry: DayEntry = { id: date, date, note: current?.note ?? '', ...(mood ? { mood } : {}), updatedAt: Date.now() }
+    await db.dayEntries.put(entry)
+  })
 }
 
 // ── To-dos ──────────────────────────────────────────────────────────────────

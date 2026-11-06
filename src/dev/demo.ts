@@ -122,12 +122,21 @@ export async function hainDemo() {
     todo(10, 'Wochenplan machen', 'woche', monday, { repeat: { rule: 'woechentlich', from: monday, reminders: [] } }),
   ]
 
+  // Stimmung: an Tagen mit „Früh aufstehen“ (demo-12) spürbar besser – für die Auswertung
+  const early = new Set(checkins.filter((c) => c.habitId === 'demo-12' && c.done).map((c) => c.date))
+  const moods = Array.from({ length: 40 }, (_, i) => {
+    const date = addDays(today, -i - 1)
+    const mood = Math.min(5, Math.max(1, (early.has(date) ? 4 : 2) + ((i * 7) % 3) - 1)) as 1 | 2 | 3 | 4 | 5
+    return { id: date, date, note: '', mood, updatedAt: now }
+  })
+
   const absence = {
     id: 'demo-absence-1', from: addDays(today, -26), to: addDays(today, -22), reason: 'lehrgang' as const, note: 'Führungslehrgang',
     deleted: false, createdAt: now, updatedAt: now,
   }
 
-  await db.transaction('rw', [db.habits, db.checkins, db.todos, db.absences], async () => {
+  await db.transaction('rw', [db.habits, db.checkins, db.todos, db.absences, db.dayEntries], async () => {
+    for (const m of moods) if (!(await db.dayEntries.get(m.id))) await db.dayEntries.put(m)
     await db.habits.bulkAdd(habits)
     await db.checkins.bulkAdd(checkins)
     await db.todos.bulkPut(todos)

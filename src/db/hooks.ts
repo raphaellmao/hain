@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './schema'
 import { type DateStr, eachDay, logicalToday } from '../domain/dates'
-import { type Absence, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
+import { type Absence, type Habit, type Mood, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
 import type { ExcuseReason } from '../domain/excuse'
 import type { TickStats } from '../domain/achievements'
 
@@ -161,6 +161,23 @@ export function useDayNote(date: DateStr): string | undefined {
 /** Alle nicht gelöschten To-dos (undefined = lädt noch). */
 export function useTodos(): Todo[] | undefined {
   return useLiveQuery(async () => (await db.todos.toArray()).filter((t) => !t.deleted))
+}
+
+/** Stimmung eines Tages: undefined = lädt noch, null = nicht bewertet */
+export function useDayMood(date: DateStr): Mood | null | undefined {
+  const result = useLiveQuery(async () => ({ date, mood: (await db.dayEntries.get(date))?.mood ?? null }), [date])
+  return result?.date === date ? result.mood : undefined
+}
+
+/** Alle bewerteten Tage */
+export function useMoodMap(): Map<DateStr, Mood> | undefined {
+  return useLiveQuery(async () => {
+    const map = new Map<DateStr, Mood>()
+    await db.dayEntries.each((e) => {
+      if (e.mood) map.set(e.date, e.mood)
+    })
+    return map
+  })
 }
 
 export function useSettings(): Settings {
