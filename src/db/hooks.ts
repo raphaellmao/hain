@@ -7,8 +7,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './schema'
-import { type DateStr, logicalToday } from '../domain/dates'
-import { type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
+import { type DateStr, eachDay, logicalToday } from '../domain/dates'
+import { type Absence, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
 import type { ExcuseReason } from '../domain/excuse'
 import type { TickStats } from '../domain/achievements'
 
@@ -51,21 +51,43 @@ export const doneFor = (map: Map<string, Set<DateStr>> | undefined, id: string) 
 export interface ExcuseInfo {
   reason?: ExcuseReason
   note?: string
+  /** Tag gehört zu dieser Abwesenheit (statt eines einzeln gesetzten Grunds) */
+  absenceId?: string
 }
 export type ExcuseDays = ReadonlyMap<DateStr, ExcuseInfo>
 
-/** Ausgesetzte Tage pro Habit (mit Grund): Map<habitId, Map<Datum, Grund>> */
+/**
+ * Ausgesetzte Tage pro Habit (mit Grund): Map<habitId, Map<Datum, Grund>>.
+ * Enthält auch die Tage von Abwesenheiten; ein einzeln gesetzter Grund für
+ * denselben Tag hat Vorrang.
+ */
 export function useExcuseMap(): Map<string, Map<DateStr, ExcuseInfo>> | undefined {
   return useLiveQuery(async () => {
     const map = new Map<string, Map<DateStr, ExcuseInfo>>()
+    const put = (habitId: string, date: DateStr, info: ExcuseInfo) => {
+      let m = map.get(habitId)
+      if (!m) map.set(habitId, (m = new Map()))
+      m.set(date, info)
+    }
+    const absences = (await db.absences.toArray()).filter((a) => !a.deleted)
+    if (absences.length) {
+      const all = (await db.habits.toArray()).filter((h) => !h.deleted).map((h) => h.id)
+      for (const a of absences) {
+        const info: ExcuseInfo = { reason: a.reason, note: a.note, absenceId: a.id }
+        for (const date of eachDay(a.from, a.to)) for (const id of a.habitIds ?? all) put(id, date, info)
+      }
+    }
     await db.checkins.each((c) => {
       if (c.done || !c.excused) return
-      let m = map.get(c.habitId)
-      if (!m) map.set(c.habitId, (m = new Map()))
-      m.set(c.date, { reason: c.reason, note: c.reasonNote })
+      put(c.habitId, c.date, { reason: c.reason, note: c.reasonNote })
     })
     return map
   })
+}
+
+/** Alle Abwesenheiten (ohne gelöschte), undefined = lädt noch */
+export function useAbsences(): Absence[] | undefined {
+  return useLiveQuery(async () => (await db.absences.toArray()).filter((a) => !a.deleted))
 }
 
 const NO_EXCUSES: ExcuseDays = new Map()

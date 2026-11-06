@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { addDays, dayOfMonth, diffDays, formatDayMonth, formatMonthYear, shiftMonth, startOfWeek, WEEKDAYS_MON0, type DateStr } from '../domain/dates'
 import { dayState, type DayState } from '../domain/stats'
 import type { DoneSet, Habit } from '../domain/types'
-import { excusesInWindow, reasonInfo } from '../domain/excuse'
+import { excusesInWindow, ownExcuses, reasonInfo } from '../domain/excuse'
 import { excusedSet, type ExcuseDays } from '../db/hooks'
 import { toggleDay } from '../app/actions'
 import { openExcuseSheet } from '../lib/excuseSheet'
@@ -90,7 +90,7 @@ export function MonthCalendar({
                   today,
                   current: excuses.get(d),
                   done: done.has(d),
-                  recent: excusesInWindow(excused, today),
+                  recent: excusesInWindow(ownExcuses(excuses), today),
                 })
               }
             />

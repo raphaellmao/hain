@@ -143,6 +143,19 @@ Wird er doch erledigt, gilt „erledigt“. Gespeichert als Abhak-Eintrag mit
 `excused: true`, `reason` und optional `reasonNote` (Logik: `domain/excuse.ts`).
 Das Blatt zeigt, wie viele Ausnahmen es in den letzten 30 Tagen gab.
 
+## Abwesenheit (Urlaub, Lehrgang, Übung)
+
+Einmal von–bis eintragen statt Tag für Tag (Einstellungen → „Abwesenheit“, oder im Blatt
+„Heute nicht möglich?“ über „Länger weg?“). Gilt für alle Gewohnheiten, auch später angelegte,
+oder für ausgewählte; Gründe zusätzlich Urlaub und Lehrgang. Jeder Tag darin zählt wie eine
+Ausnahme: nichts welkt, die Serie läuft weiter, der Schatten wird nicht stärker. Rückwirkend
+eingetragen holt sich ein welkender Baum davon wieder. Abhaken geht trotzdem, ein einzeln
+gesetzter Grund hat Vorrang. Solange sie läuft, steht auf „Heute“ ein Hinweis mit „Früher
+zurück“. Für „Ausnahmen in den letzten 30 Tagen“ zählen Abwesenheiten nicht mit.
+
+Gespeichert als eigener Zeitraum (Tabelle `absences`, `version(5)`), `useExcuseMap` mischt die
+Tage zu den Ausnahmen. Logik in `domain/absence.ts`, Backup-Format 7.
+
 ## Erfolge, Monatsquote, lebendiger Garten
 
 - **Erfolge** (Tab „Erfolge“): 49 Abzeichen in sieben Kategorien und vier

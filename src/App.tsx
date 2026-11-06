@@ -3,6 +3,7 @@ import { BottomNav } from './components/BottomNav'
 import { ConfirmHost } from './components/ConfirmHost'
 import { ExcuseHost } from './components/ExcuseHost'
 import { ReminderHost } from './components/ReminderHost'
+import { AbsenceHost } from './components/AbsenceHost'
 import { SwipePager } from './components/SwipePager'
 import { Toaster } from './components/Toaster'
 import { TodoSheetHost } from './components/TodoSheetHost'
@@ -62,6 +63,7 @@ export default function App() {
       <UpdateToast />
       <ExcuseHost />
       <TodoSheetHost />
+      <AbsenceHost />
       <ReminderHost />
       <AchievementWatcher />
       <ConfirmHost />

@@ -1,7 +1,7 @@
 import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabit, useToday, type ExcuseDays } from '../db/hooks'
 import { amountStats, formatAmount, goalLabel } from '../domain/goal'
 import { GoalEditor } from '../components/GoalEditor'
-import { excusesInWindow, reasonInfo } from '../domain/excuse'
+import { excusesInWindow, ownExcuses, reasonInfo } from '../domain/excuse'
 import { openExcuseSheet } from '../lib/excuseSheet'
 import { colorHex } from '../domain/colors'
 import { type DateStr } from '../domain/dates'
@@ -73,7 +73,7 @@ function Detail({ habit, done, excuses, amounts, today }: { habit: Habit; done: 
   const { h, wilted, missRun } = s.health
   const next = nextStage(h)
   const rate = successRate(habit, done, today, 30, excused)
-  const recent = excusesInWindow(excused, today)
+  const recent = excusesInWindow(ownExcuses(excuses), today)
   const todayExcuse = done.has(today) ? undefined : excuses.get(today)
   const dueToday = isDue(habit, today)
   const doneToday = done.has(today)

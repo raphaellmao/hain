@@ -9,22 +9,41 @@
 import { type DateStr, addDays, eachDay } from './dates'
 import type { DoneSet } from './types'
 
-export const EXCUSE_REASONS = [
+const REASONS = [
   { key: 'krank', label: 'Krank', emoji: '🤒' },
   { key: 'dienst', label: 'Dienst', emoji: '🎖️' },
   { key: 'unterwegs', label: 'Unterwegs', emoji: '🧳' },
   { key: 'familie', label: 'Familie', emoji: '👨‍👩‍👧' },
   { key: 'ruhetag', label: 'Ruhetag', emoji: '🛌' },
+  { key: 'urlaub', label: 'Urlaub', emoji: '🏖️' },
+  { key: 'lehrgang', label: 'Lehrgang', emoji: '📚' },
   { key: 'sonst', label: 'Anderer Grund', emoji: '✏️' },
 ] as const
 
-export type ExcuseReason = (typeof EXCUSE_REASONS)[number]['key']
+export type ExcuseReason = (typeof REASONS)[number]['key']
+type ReasonInfo = (typeof REASONS)[number]
 
-export const isExcuseReason = (v: unknown): v is ExcuseReason =>
-  typeof v === 'string' && EXCUSE_REASONS.some((r) => r.key === v)
+const pick = (keys: ExcuseReason[]): ReasonInfo[] => keys.map((k) => REASONS.find((r) => r.key === k)!)
 
-export const reasonInfo = (key: ExcuseReason | undefined) =>
-  EXCUSE_REASONS.find((r) => r.key === key) ?? EXCUSE_REASONS[EXCUSE_REASONS.length - 1]
+/** Für einen einzelnen Tag („heute nicht möglich“) */
+export const EXCUSE_REASONS = pick(['krank', 'dienst', 'unterwegs', 'familie', 'ruhetag', 'sonst'])
+/** Für längere Abwesenheiten */
+export const ABSENCE_REASONS = pick(['urlaub', 'dienst', 'lehrgang', 'krank', 'unterwegs', 'familie', 'sonst'])
+
+export const isExcuseReason = (v: unknown): v is ExcuseReason => typeof v === 'string' && REASONS.some((r) => r.key === v)
+
+export const reasonInfo = (key: ExcuseReason | undefined): ReasonInfo =>
+  REASONS.find((r) => r.key === key) ?? REASONS[REASONS.length - 1]
+
+/**
+ * Nur selbst gesetzte Ausnahmen, ohne Abwesenheiten: Für die ehrliche Selbstkontrolle
+ * zählt ein geplanter Urlaub nicht als dreißig Ausreden.
+ */
+export function ownExcuses(days: ReadonlyMap<DateStr, { absenceId?: string }>): Set<DateStr> {
+  const own = new Set<DateStr>()
+  for (const [d, info] of days) if (!info.absenceId) own.add(d)
+  return own
+}
 
 /** Ausnahmen in den letzten `days` Tagen (inkl. heute) – zur ehrlichen Selbstkontrolle */
 export function excusesInWindow(excused: DoneSet, today: DateStr, days = 30): number {

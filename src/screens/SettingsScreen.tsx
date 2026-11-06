@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { saveSettings } from '../db/repo'
-import { useMeta, useSettings } from '../db/hooks'
+import { useAbsences, useMeta, useSettings, useToday } from '../db/hooks'
+import { formatRange, phaseOf, sortAbsences } from '../domain/absence'
+import { reasonInfo } from '../domain/excuse'
+import { openAbsenceSheet } from '../lib/absenceSheet'
 import { BackupError, exportBackup, parseBackup, restoreBackup } from '../db/backup'
 import { confirmDialog } from '../lib/confirm'
 import { showToast } from '../lib/toast'
@@ -36,7 +39,7 @@ export function SettingsScreen() {
           'abgehakten Tagen',
         )}${backup.dayEntries.length ? `, ${plural(backup.dayEntries.length, 'Notiz', 'Notizen')}` : ''}${
           backup.todos.length ? `, ${plural(backup.todos.length, 'To-do', 'To-dos')}` : ''
-        }${
+        }${backup.absences.length ? `, ${plural(backup.absences.length, 'Abwesenheit', 'Abwesenheiten')}` : ''}${
           backup.exportedAt ? ` (Stand ${new Date(backup.exportedAt).toLocaleDateString('de-DE')})` : ''
         }.`,
         confirm: 'Ersetzen',
@@ -125,6 +128,10 @@ export function SettingsScreen() {
           )}
         </Section>
 
+        <Section title="Abwesenheit" hint="Urlaub, Lehrgang, Übung: einmal von–bis eintragen, und die Gewohnheiten pausieren – nichts welkt.">
+          <Absences />
+        </Section>
+
         <Section
           title="Tageswechsel"
           hint="Bis zu dieser Uhrzeit zählt ein Haken noch für den Vortag – praktisch bei Spät- und Nachtdienst."
@@ -151,6 +158,51 @@ export function SettingsScreen() {
           <p className="mt-1">Kein Konto, kein Server – alles bleibt auf diesem Gerät.</p>
         </section>
       </main>
+    </div>
+  )
+}
+
+const PHASE_LABEL = { laeuft: 'läuft', geplant: 'geplant', vorbei: 'vorbei' } as const
+
+/** Laufende und geplante Abwesenheiten, dazu die letzten vergangenen */
+function Absences() {
+  const absences = useAbsences()
+  const today = useToday()
+  if (!absences) return null
+  const sorted = sortAbsences(absences, today)
+  const shown = [...sorted.filter((a) => phaseOf(a, today) !== 'vorbei'), ...sorted.filter((a) => phaseOf(a, today) === 'vorbei').slice(0, 3)]
+
+  return (
+    <div className="rounded-2xl bg-surface">
+      {shown.map((a) => {
+        const r = reasonInfo(a.reason)
+        const phase = phaseOf(a, today)
+        return (
+          <button
+            key={a.id}
+            type="button"
+            onClick={() => openAbsenceSheet({ absence: a })}
+            className={`flex min-h-14 w-full items-center gap-3 border-b border-line px-4 py-2 text-left ${phase === 'vorbei' ? 'opacity-60' : ''}`}
+          >
+            <span className="text-[22px] leading-none" aria-hidden>
+              {r.emoji}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[15px] font-medium">
+                {r.label}
+                {a.note && ` · ${a.note}`}
+              </span>
+              <span className="block text-[13px] text-muted">
+                {formatRange(a.from, a.to)} · {a.habitIds ? `${a.habitIds.length} ${a.habitIds.length === 1 ? 'Gewohnheit' : 'Gewohnheiten'}` : 'alle Gewohnheiten'}
+              </span>
+            </span>
+            <span className={`shrink-0 text-[12px] font-semibold ${phase === 'laeuft' ? 'text-accent' : 'text-muted'}`}>{PHASE_LABEL[phase]}</span>
+          </button>
+        )
+      })}
+      <button type="button" onClick={() => openAbsenceSheet()} className="flex h-12 w-full items-center px-4 text-[16px] font-semibold text-accent">
+        + Abwesenheit planen
+      </button>
     </div>
   )
 }

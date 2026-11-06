@@ -73,6 +73,21 @@ export interface Checkin {
   updatedAt: number
 }
 
+/** Abwesenheit von–bis, z. B. Urlaub (Logik: absence.ts). Jeder Tag darin zählt als Ausnahme. */
+export interface Absence {
+  id: string
+  from: DateStr
+  /** letzter Tag, einschließlich */
+  to: DateStr
+  reason: ExcuseReason
+  note?: string
+  /** nur diese Gewohnheiten; fehlt = alle, auch später angelegte */
+  habitIds?: string[]
+  deleted: boolean
+  createdAt: number
+  updatedAt: number
+}
+
 /** Notiz zu einem Tag – unabhängig von einzelnen Habits, höchstens eine pro Tag. */
 export interface DayEntry {
   /** = `date` – damit gibt es pro Tag höchstens einen Eintrag (auch nach einem Sync) */

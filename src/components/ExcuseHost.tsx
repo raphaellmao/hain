@@ -5,6 +5,9 @@ import { formatLong } from '../domain/dates'
 import { clearExcuse, excuseDay } from '../app/actions'
 import { navigate, paths } from '../app/router'
 import { closeExcuseSheet, useExcuseRequest } from '../lib/excuseSheet'
+import { openAbsenceSheetAfterClose } from '../lib/absenceSheet'
+import { useAbsences } from '../db/hooks'
+import { formatRange } from '../domain/absence'
 import { BottomSheet } from './BottomSheet'
 import { GoalEditor } from './GoalEditor'
 import { IconChevronRight } from './icons'
@@ -15,6 +18,7 @@ import { IconChevronRight } from './icons'
  */
 export function ExcuseHost() {
   const req = useExcuseRequest()
+  const absences = useAbsences()
   const [note, setNote] = useState('')
 
   // Beim Öffnen die vorhandene Notiz übernehmen
@@ -55,7 +59,28 @@ export function ExcuseHost() {
             {req.habit.metaphor === 'schatten' ? ': dein Schatten wird nicht stärker.' : ': nichts welkt, die Serie bleibt.'}
           </p>
 
-          {req.current && !req.done && (
+          {req.current?.absenceId && !req.done && (() => {
+            const absence = absences?.find((a) => a.id === req.current?.absenceId)
+            if (!absence) return null
+            return (
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-surface-2 p-3">
+                <span className="text-[15px] leading-snug">
+                  Abwesend: {reasonInfo(absence.reason).emoji} {reasonInfo(absence.reason).label} · {formatRange(absence.from, absence.to)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeExcuseSheet()
+                    openAbsenceSheetAfterClose({ absence })
+                  }}
+                  className="h-11 shrink-0 rounded-xl px-3 text-[15px] font-semibold text-accent"
+                >
+                  Bearbeiten
+                </button>
+              </div>
+            )
+          })()}
+          {req.current && !req.current.absenceId && !req.done && (
             <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-surface-2 p-3">
               <span className="text-[15px]">
                 Ausgesetzt: {reasonInfo(req.current.reason).emoji} {reasonInfo(req.current.reason).label}
@@ -110,6 +135,20 @@ export function ExcuseHost() {
           </div>
 
           <p className={`mt-3 text-center text-[13px] ${req.recent >= 8 ? 'text-warn' : 'text-muted'}`}>Ausnahmen in den letzten 30 Tagen: {req.recent}</p>
+
+          <button
+            type="button"
+            onClick={() => {
+              closeExcuseSheet()
+              openAbsenceSheetAfterClose({ from: req.date })
+            }}
+            className="mt-2 flex h-12 w-full items-center justify-between rounded-2xl px-1 text-[16px] font-medium"
+          >
+            <span>
+              Länger weg? <span className="text-accent">Abwesenheit planen</span>
+            </span>
+            <IconChevronRight width={20} height={20} className="text-muted" />
+          </button>
 
           {req.showDetails && (
             <button

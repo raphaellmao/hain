@@ -9,7 +9,8 @@ import type { ColorKey } from '../domain/colors'
 import type { SpeciesKey } from '../domain/species'
 import type { ExcuseReason } from '../domain/excuse'
 import { nextDateOf, nextInstance, nextOccurrence, remindersOn } from '../domain/repeat'
-import { type Checkin, type DayEntry, type Habit, type HabitGoal, type Metaphor, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
+import { endedEarly } from '../domain/absence'
+import { type Absence, type Checkin, type DayEntry, type Habit, type HabitGoal, type Metaphor, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
 import { reached, roundAmount } from '../domain/goal'
 import { daysAt, withNewDays } from '../domain/schedule'
 import { cleanReminders, withoutDue } from '../domain/todos'
@@ -286,6 +287,46 @@ export async function moveTodosToWeek(todos: Todo[], monday: DateStr): Promise<v
       return { ...t, date, reminders: remindersOn(t.repeat, date, now), updatedAt: stamp }
     }),
   )
+}
+
+// ── Abwesenheiten ───────────────────────────────────────────────────────────
+
+export interface AbsenceInput {
+  from: DateStr
+  to: DateStr
+  reason: ExcuseReason
+  note?: string
+  /** fehlt = alle Gewohnheiten */
+  habitIds?: string[]
+}
+
+export async function saveAbsence(id: string | undefined, input: AbsenceInput): Promise<void> {
+  const now = Date.now()
+  const note = input.note?.trim().slice(0, 140)
+  const current = id ? await db.absences.get(id) : undefined
+  const absence: Absence = {
+    id: id ?? crypto.randomUUID(),
+    from: input.from,
+    to: input.to,
+    reason: input.reason,
+    ...(note ? { note } : {}),
+    ...(input.habitIds ? { habitIds: input.habitIds } : {}),
+    deleted: false,
+    createdAt: current?.createdAt ?? now,
+    updatedAt: now,
+  }
+  await db.absences.put(absence)
+}
+
+export async function deleteAbsence(id: string): Promise<void> {
+  await db.absences.update(id, { deleted: true, updatedAt: Date.now() })
+}
+
+/** „Früher zurück“: endet gestern; hat sie erst heute oder noch gar nicht begonnen, fällt sie weg. */
+export async function endAbsence(absence: Absence, today: DateStr): Promise<void> {
+  const ended = endedEarly(absence, today)
+  if (ended) await db.absences.update(absence.id, { to: ended.to, updatedAt: Date.now() })
+  else await deleteAbsence(absence.id)
 }
 
 // ── Einstellungen ───────────────────────────────────────────────────────────

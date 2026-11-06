@@ -10,13 +10,14 @@ import { isSpecies } from '../domain/species'
 import { isExcuseReason } from '../domain/excuse'
 import { parseRepeat } from '../domain/repeat'
 import { parseGoal, roundAmount } from '../domain/goal'
+import { absenceProblem } from '../domain/absence'
 import { cleanReminders } from '../domain/todos'
-import { type Checkin, type DayEntry, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
+import { type Absence, type Checkin, type DayEntry, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
 import { NOTE_MAX_LENGTH, TODO_MAX_LENGTH } from './repo'
 import { startOfWeek, toDateStr } from '../domain/dates'
 
-/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos · 6 = Tagesziele mit Menge oder Dauer */
-export const BACKUP_VERSION = 6
+/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos · 6 = Tagesziele mit Menge oder Dauer · 7 = Abwesenheiten */
+export const BACKUP_VERSION = 7
 
 export interface BackupFile {
   app: 'hain'
@@ -27,6 +28,7 @@ export interface BackupFile {
   checkins: Checkin[]
   dayEntries: DayEntry[]
   todos: Todo[]
+  absences: Absence[]
 }
 
 export async function createBackup(): Promise<BackupFile> {
@@ -35,8 +37,9 @@ export async function createBackup(): Promise<BackupFile> {
   const checkins = (await db.checkins.toArray()).filter((c) => (c.done || c.excused || (c.amount ?? 0) > 0) && ids.has(c.habitId))
   const dayEntries = (await db.dayEntries.toArray()).filter((e) => e.note !== '')
   const todos = (await db.todos.toArray()).filter((t) => !t.deleted)
+  const absences = (await db.absences.toArray()).filter((a) => !a.deleted)
   const settings = { ...DEFAULT_SETTINGS, ...((await db.meta.get('settings'))?.value as Partial<Settings>) }
-  return { app: 'hain', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), settings, habits, checkins, dayEntries, todos }
+  return { app: 'hain', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), settings, habits, checkins, dayEntries, todos, absences }
 }
 
 /** Backup speichern: auf dem Handy über das Teilen-Menü („In Dateien sichern“), sonst als Download. */
@@ -181,23 +184,45 @@ export function parseBackup(text: string): BackupFile {
     })
   }
 
+  // Abwesenheiten gibt es erst ab Backup-Version 7
+  const absences: Absence[] = []
+  for (const a of Array.isArray(b.absences) ? b.absences : []) {
+    if (!a || typeof a.id !== 'string' || !isDate(a.from) || !isDate(a.to) || absenceProblem(a.from, a.to)) continue
+    // Nur Gewohnheiten, die es im Backup gibt; bleibt keine übrig, gilt sie für niemanden mehr
+    const habitIds = Array.isArray(a.habitIds) ? a.habitIds.filter((id) => typeof id === 'string' && ids.has(id)) : undefined
+    if (habitIds && habitIds.length === 0) continue
+    absences.push({
+      id: a.id,
+      from: a.from,
+      to: a.to,
+      reason: isExcuseReason(a.reason) ? a.reason : 'sonst',
+      ...(typeof a.note === 'string' && a.note.trim() ? { note: a.note.slice(0, 140) } : {}),
+      ...(habitIds ? { habitIds } : {}),
+      deleted: false,
+      createdAt: typeof a.createdAt === 'number' ? a.createdAt : now,
+      updatedAt: typeof a.updatedAt === 'number' ? a.updatedAt : now,
+    })
+  }
+
   const hour = b.settings?.dayStartHour
   const settings: Settings = { dayStartHour: Number.isInteger(hour) && hour! >= 0 && hour! <= 4 ? hour! : 0 }
 
-  return { app: 'hain', version: b.version, exportedAt: String(b.exportedAt ?? ''), settings, habits, checkins, dayEntries, todos }
+  return { app: 'hain', version: b.version, exportedAt: String(b.exportedAt ?? ''), settings, habits, checkins, dayEntries, todos, absences }
 }
 
 /** Ersetzt ALLE vorhandenen Daten durch das Backup (in einer Transaktion: ganz oder gar nicht). */
 export async function restoreBackup(backup: BackupFile): Promise<void> {
-  await db.transaction('rw', [db.habits, db.checkins, db.dayEntries, db.todos, db.meta], async () => {
+  await db.transaction('rw', [db.habits, db.checkins, db.dayEntries, db.todos, db.absences, db.meta], async () => {
     await db.habits.clear()
     await db.checkins.clear()
     await db.dayEntries.clear()
     await db.todos.clear()
+    await db.absences.clear()
     await db.habits.bulkAdd(backup.habits)
     await db.checkins.bulkPut(backup.checkins)
     await db.dayEntries.bulkPut(backup.dayEntries)
     await db.todos.bulkPut(backup.todos)
+    await db.absences.bulkPut(backup.absences)
     await db.meta.put({ key: 'settings', value: backup.settings })
   })
 }

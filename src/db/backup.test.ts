@@ -124,6 +124,34 @@ describe('Backup mit To-dos', () => {
   })
 })
 
+describe('Backup mit Abwesenheiten', () => {
+  it('liest alte Backups ohne Abwesenheiten', () => {
+    expect(parseBackup(JSON.stringify(valid)).absences).toEqual([])
+  })
+
+  it('übernimmt Abwesenheiten und räumt auf', () => {
+    const base = { from: '2026-11-03', to: '2026-11-14', reason: 'urlaub' }
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        version: 7,
+        absences: [
+          { ...base, id: 'alle', note: 'Ostsee' },
+          { ...base, id: 'eine', habitIds: ['h1', 'gibt-es-nicht'] },
+          { ...base, id: 'niemand', habitIds: ['gibt-es-nicht'] },
+          { ...base, id: 'falschrum', from: '2026-11-20' },
+          { ...base, id: 'grund', reason: 'quatsch' },
+        ],
+      }),
+    )
+    expect(b.absences.map((a) => a.id)).toEqual(['alle', 'eine', 'grund'])
+    expect(b.absences[0]).toMatchObject({ note: 'Ostsee', reason: 'urlaub' })
+    expect(b.absences[0]).not.toHaveProperty('habitIds')
+    expect(b.absences[1].habitIds).toEqual(['h1'])
+    expect(b.absences[2].reason).toBe('sonst')
+  })
+})
+
 describe('Backup mit Tageszielen', () => {
   it('übernimmt Ziele und Mengen, auch Teilfortschritt', () => {
     const b = parseBackup(

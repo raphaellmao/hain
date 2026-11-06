@@ -122,10 +122,16 @@ export async function hainDemo() {
     todo(10, 'Wochenplan machen', 'woche', monday, { repeat: { rule: 'woechentlich', from: monday, reminders: [] } }),
   ]
 
-  await db.transaction('rw', db.habits, db.checkins, db.todos, async () => {
+  const absence = {
+    id: 'demo-absence-1', from: addDays(today, -26), to: addDays(today, -22), reason: 'lehrgang' as const, note: 'Führungslehrgang',
+    deleted: false, createdAt: now, updatedAt: now,
+  }
+
+  await db.transaction('rw', [db.habits, db.checkins, db.todos, db.absences], async () => {
     await db.habits.bulkAdd(habits)
     await db.checkins.bulkAdd(checkins)
     await db.todos.bulkPut(todos)
+    await db.absences.put(absence)
   })
   return `${habits.length} Habits, ${checkins.length} Einträge, ${todos.length} To-dos angelegt`
 }

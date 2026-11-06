@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabits, useMeta, useSettings, useTimers, useToday } from '../db/hooks'
 import { effectiveAmount } from '../domain/goal'
-import { excusesInWindow } from '../domain/excuse'
+import { excusesInWindow, ownExcuses } from '../domain/excuse'
+import { AbsenceBanner } from '../components/AbsenceBanner'
 import { openExcuseSheet } from '../lib/excuseSheet'
 import { GREETING, useSky } from '../lib/sky'
 import { formatLong, type DateStr } from '../domain/dates'
@@ -58,7 +59,8 @@ export function TodayScreen() {
   const isOff = (i: (typeof items)[number], date: DateStr) => i.excused.has(date) && !i.done.has(date)
   const countable = due.filter((i) => !isOff(i, selected))
   const doneCount = countable.filter((i) => i.done.has(selected)).length
-  const allDone = due.length > 0 && doneCount === countable.length
+  // Sind alle ausgesetzt (z. B. Urlaub), ist nichts erledigt – dann kein Lob
+  const allDone = countable.length > 0 && doneCount === countable.length
 
   const progress = (date: DateStr) => {
     const d = items.filter((i) => isDue(i.habit, date) && !isOff(i, date))
@@ -76,7 +78,7 @@ export function TodayScreen() {
         today,
         current: i.excuses.get(selected),
         done: i.done.has(selected),
-        recent: excusesInWindow(i.excused, today),
+        recent: excusesInWindow(ownExcuses(i.excuses), today),
         showDetails: true,
       })
     // Tippen: abhaken · Menge: eins dazu · Dauer: Timer (für vergangene Tage Minuten im Blatt eintragen)
@@ -126,6 +128,7 @@ export function TodayScreen() {
       </header>
 
       <main className="px-safe mt-4">
+        {isToday && <AbsenceBanner today={today} />}
         {isToday && <ReviewCard today={today} />}
         {isToday && <TodayTodos today={today} />}
 
