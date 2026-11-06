@@ -45,6 +45,12 @@ export const IconSettings = (p: P) => (
   </svg>
 )
 
+export const IconGrip = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M5 8h14M5 12h14M5 16h14" />
+  </svg>
+)
+
 export const IconPlus = (p: P) => (
   <svg {...base} {...p}>
     <path d="M12 5v14M5 12h14" />

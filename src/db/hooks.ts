@@ -12,12 +12,23 @@ import { type Absence, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } 
 import type { ExcuseReason } from '../domain/excuse'
 import type { TickStats } from '../domain/achievements'
 
-/** Alle nicht gelöschten Habits in Listenreihenfolge (undefined = lädt noch). */
+/** Aktive Habits in Listenreihenfolge, ohne gelöschte und archivierte (undefined = lädt noch). */
 export function useHabits(): Habit[] | undefined {
   return useLiveQuery(async () => {
     const all = await db.habits.orderBy('order').toArray()
-    return all.filter((h) => !h.deleted)
+    return all.filter((h) => !h.deleted && !h.archived)
   })
+}
+
+/** Auch archivierte – für Erfolge, die nicht verschwinden sollen, nur weil etwas pausiert */
+export function useAllHabits(): Habit[] | undefined {
+  return useLiveQuery(async () => (await db.habits.orderBy('order').toArray()).filter((h) => !h.deleted))
+}
+
+export function useArchivedHabits(): Habit[] | undefined {
+  return useLiveQuery(async () =>
+    (await db.habits.toArray()).filter((h) => !h.deleted && h.archived).sort((a, b) => b.archived!.since.localeCompare(a.archived!.since)),
+  )
 }
 
 export function useHabit(id: string): Habit | null | undefined {

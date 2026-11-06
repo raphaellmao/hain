@@ -124,6 +124,23 @@ describe('Backup mit To-dos', () => {
   })
 })
 
+describe('Backup mit Archiv', () => {
+  it('übernimmt archivierte Gewohnheiten, verwirft kaputte Angaben', () => {
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        version: 8,
+        habits: [
+          { ...valid.habits[0], archived: { since: '2026-10-20', days: [1, 3] } },
+          { ...valid.habits[0], id: 'h2', archived: { since: 'gestern', days: [1] } },
+        ],
+      }),
+    )
+    expect(b.habits[0].archived).toEqual({ since: '2026-10-20', days: [1, 3] })
+    expect(b.habits[1]).not.toHaveProperty('archived')
+  })
+})
+
 describe('Backup mit Abwesenheiten', () => {
   it('liest alte Backups ohne Abwesenheiten', () => {
     expect(parseBackup(JSON.stringify(valid)).absences).toEqual([])

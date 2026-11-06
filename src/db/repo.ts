@@ -12,7 +12,7 @@ import { nextDateOf, nextInstance, nextOccurrence, remindersOn } from '../domain
 import { endedEarly } from '../domain/absence'
 import { type Absence, type Checkin, type DayEntry, type Habit, type HabitGoal, type Metaphor, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
 import { reached, roundAmount } from '../domain/goal'
-import { daysAt, withNewDays } from '../domain/schedule'
+import { archivedSchedule, daysAt, restoredSchedule, withNewDays } from '../domain/schedule'
 import { cleanReminders, withoutDue } from '../domain/todos'
 
 export interface HabitInput {
@@ -85,6 +85,38 @@ export async function updateHabit(id: string, input: HabitInput, today: DateStr)
 /** Weiches Löschen: Das Habit verschwindet aus der App, bleibt aber als Grabstein. */
 export async function deleteHabit(id: string): Promise<void> {
   await db.habits.update(id, { deleted: true, updatedAt: Date.now() })
+}
+
+/** Ins Archiv legen: aus „Heute“ und dem Garten weg, ab heute nicht mehr fällig, nichts welkt. */
+export async function archiveHabit(id: string, today: DateStr): Promise<void> {
+  const habit = await db.habits.get(id)
+  if (!habit || habit.archived) return
+  await db.habits.update(id, {
+    archived: { since: today, days: daysAt(habit.schedule, today) },
+    schedule: archivedSchedule(habit.schedule, today),
+    updatedAt: Date.now(),
+  })
+}
+
+/** Aus dem Archiv zurückholen: ab heute wieder an den alten Tagen fällig, ans Ende der Liste. */
+export async function unarchiveHabit(id: string, today: DateStr): Promise<void> {
+  const habit = await db.habits.get(id)
+  if (!habit?.archived) return
+  const last = await db.habits.orderBy('order').last()
+  await db.habits.update(id, {
+    archived: undefined,
+    schedule: restoredSchedule(habit.schedule, habit.archived.days, today),
+    order: (last?.order ?? 0) + 1,
+    updatedAt: Date.now(),
+  })
+}
+
+/** Neue Reihenfolge der aktiven Gewohnheiten */
+export async function saveHabitOrder(ids: string[]): Promise<void> {
+  const now = Date.now()
+  await db.transaction('rw', db.habits, async () => {
+    for (const [i, id] of ids.entries()) await db.habits.update(id, { order: i + 1, updatedAt: now })
+  })
 }
 
 /** Erledigt setzen bzw. zurücknehmen. Überschreibt eine evtl. Ausnahme des Tages. */

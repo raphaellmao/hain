@@ -1,6 +1,9 @@
 import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabit, useToday, type ExcuseDays } from '../db/hooks'
 import { amountStats, formatAmount, goalLabel } from '../domain/goal'
 import { GoalEditor } from '../components/GoalEditor'
+import { unarchiveHabit } from '../db/repo'
+import { formatDayMonth } from '../domain/dates'
+import { showToast } from '../lib/toast'
 import { excusesInWindow, ownExcuses, reasonInfo } from '../domain/excuse'
 import { openExcuseSheet } from '../lib/excuseSheet'
 import { colorHex } from '../domain/colors'
@@ -90,7 +93,19 @@ function Detail({ habit, done, excuses, amounts, today }: { habit: Habit; done: 
   return (
     <div className="pb-nav">
       <div className="px-safe pt-safe">
-        <TopBar onEdit={() => navigate(paths.edit(habit.id))} />
+        <TopBar onEdit={habit.archived ? undefined : () => navigate(paths.edit(habit.id))} />
+        {habit.archived && (
+          <div className="mt-1 flex items-center justify-between gap-3 rounded-2xl bg-surface p-3">
+            <span className="text-[15px]">📦 Im Archiv seit {formatDayMonth(habit.archived.since)}</span>
+            <button
+              type="button"
+              onClick={() => void unarchiveHabit(habit.id, today).then(() => showToast(`„${habit.name}“ ist zurück`, habit.emoji))}
+              className="h-11 shrink-0 rounded-xl bg-accent px-3 text-[15px] font-semibold text-accent-ink"
+            >
+              Zurückholen
+            </button>
+          </div>
+        )}
 
         <h1 className="mt-1 flex items-center gap-2 text-[28px] font-bold leading-tight">
           <span aria-hidden>{habit.emoji}</span>

@@ -15,6 +15,7 @@ export type Route =
   | { name: 'settings' }
   | { name: 'erfolge' }
   | { name: 'review'; week?: string }
+  | { name: 'habits' }
   | { name: 'habit'; id: string }
   | { name: 'new' }
   | { name: 'edit'; id: string }
@@ -26,6 +27,7 @@ export const paths = {
   settings: '/einstellungen',
   erfolge: '/erfolge',
   review: (week?: string) => (week ? `/rueckblick/${week}` : '/rueckblick'),
+  habits: '/gewohnheiten',
   habit: (id: string) => `/habit/${id}`,
   new: '/neu',
   edit: (id: string) => `/habit/${id}/bearbeiten`,
@@ -39,6 +41,7 @@ export function parseHash(hash: string): Route {
   if (parts[0] === 'einstellungen') return { name: 'settings' }
   if (parts[0] === 'erfolge') return { name: 'erfolge' }
   if (parts[0] === 'rueckblick') return { name: 'review', week: parts[1] }
+  if (parts[0] === 'gewohnheiten') return { name: 'habits' }
   if (parts[0] === 'neu') return { name: 'new' }
   if (parts[0] === 'habit' && parts[1]) {
     return parts[2] === 'bearbeiten' ? { name: 'edit', id: parts[1] } : { name: 'habit', id: parts[1] }

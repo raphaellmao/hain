@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { archivedSchedule, restoredSchedule, isDue as dueOn } from './schedule'
+import { computeHealth as healthOf } from './health'
 import { addDays } from './dates'
 import { ALL_DAYS } from './schedule'
 import { combineMonthly, monthlyRates } from './stats'
@@ -156,5 +158,33 @@ describe('Neue Erfolge', () => {
     const list = ctx([{ habit: mk('a', '2026-10-01'), done: new Set<string>() }], '2026-10-21')
     expect(new Set(list.map((a) => a.id)).size).toBe(list.length)
     expect(list.length).toBeGreaterThanOrEqual(45)
+  })
+})
+
+describe('Archiv', () => {
+  const start = '2026-10-01'
+  const habit = { startDate: start, schedule: [{ from: start, days: [1, 3, 5] }] }
+
+  it('im Archiv ist nichts fällig, danach wieder die alten Tage', () => {
+    const archived = archivedSchedule(habit.schedule, '2026-10-12')
+    const back = restoredSchedule(archived, [1, 3, 5], '2026-10-26')
+    const h = { startDate: start, schedule: back }
+    expect(dueOn(h, '2026-10-09')).toBe(true) // Fr vorher
+    expect(dueOn(h, '2026-10-14')).toBe(false) // Mi im Archiv
+    expect(dueOn(h, '2026-10-26')).toBe(true) // Mo nach dem Zurückholen
+  })
+
+  it('in der Pause welkt nichts', () => {
+    const done = new Set(['2026-10-05', '2026-10-07', '2026-10-09'])
+    const archived = { startDate: start, schedule: archivedSchedule(habit.schedule, '2026-10-10') }
+    const h = healthOf(archived, done, '2026-11-20')
+    expect(h.missRun).toBe(0)
+    expect(h.h).toBe(3)
+  })
+
+  it('am selben Tag zurückgeholt: alles wie vorher', () => {
+    const roundTrip = restoredSchedule(archivedSchedule(habit.schedule, '2026-10-12'), [1, 3, 5], '2026-10-12')
+    expect(roundTrip).toEqual(habit.schedule.concat({ from: '2026-10-12', days: [1, 3, 5] }).slice(0, roundTrip.length))
+    expect(dueOn({ startDate: start, schedule: roundTrip }, '2026-10-12')).toBe(true)
   })
 })

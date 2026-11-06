@@ -16,8 +16,8 @@ import { type Absence, type Checkin, type DayEntry, type Habit, type Settings, t
 import { NOTE_MAX_LENGTH, TODO_MAX_LENGTH } from './repo'
 import { startOfWeek, toDateStr } from '../domain/dates'
 
-/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos · 6 = Tagesziele mit Menge oder Dauer · 7 = Abwesenheiten */
-export const BACKUP_VERSION = 7
+/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos · 6 = Tagesziele mit Menge oder Dauer · 7 = Abwesenheiten · 8 = Archiv */
+export const BACKUP_VERSION = 8
 
 export interface BackupFile {
   app: 'hain'
@@ -108,6 +108,7 @@ export function parseBackup(text: string): BackupFile {
       ...(isSpecies(h.species) ? { species: h.species } : {}),
       ...(h.metaphor === 'schatten' || h.metaphor === 'pflanze' ? { metaphor: h.metaphor } : {}),
       ...(parseGoal(h.goal) ? { goal: parseGoal(h.goal) } : {}),
+      ...(h.archived && isDate(h.archived.since) && isDays(h.archived.days) ? { archived: { since: h.archived.since, days: h.archived.days } } : {}),
       order: typeof h.order === 'number' ? h.order : i + 1,
       deleted: false,
       createdAt: typeof h.createdAt === 'number' ? h.createdAt : now,

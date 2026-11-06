@@ -2,13 +2,14 @@
  * Erfolge aus den aktuellen Daten berechnen und neu freigeschaltete melden.
  */
 import { useEffect, useMemo } from 'react'
-import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, useMeta, useNoteCount, useSettings, useTickStats, useToday } from '../db/hooks'
+import { doneFor, excusedSet, excusesFor, useAllHabits, useDoneMap, useExcuseMap, useMeta, useNoteCount, useSettings, useTickStats, useToday } from '../db/hooks'
 import { TIERS, computeAchievements, type Achievement } from '../domain/achievements'
 import { summarize } from '../domain/summary'
 import { showToast } from '../lib/toast'
 
 export function useAchievements(): Achievement[] | undefined {
-  const habits = useHabits()
+  // Archivierte zählen mit: Ein Erfolg soll nicht verschwinden, nur weil etwas pausiert
+  const habits = useAllHabits()
   const doneMap = useDoneMap()
   const excuseMap = useExcuseMap()
   const notes = useNoteCount()

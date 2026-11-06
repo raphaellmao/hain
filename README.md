@@ -143,6 +143,15 @@ Wird er doch erledigt, gilt „erledigt“. Gespeichert als Abhak-Eintrag mit
 `excused: true`, `reason` und optional `reasonNote` (Logik: `domain/excuse.ts`).
 Das Blatt zeigt, wie viele Ausnahmen es in den letzten 30 Tagen gab.
 
+## Reihenfolge und Archiv
+
+Einstellungen → „Gewohnheiten“ (`#/gewohnheiten`): Reihenfolge per Ziehen am Griff (oder mit
+den Pfeiltasten), so stehen sie auf „Heute“ und im Garten. Pausieren statt löschen: beim
+Bearbeiten „Ins Archiv legen“. Archivierte verschwinden aus „Heute“, Garten und Rückblick,
+Erfolge bleiben. Technisch bekommt der Zeitplan ab dem Archiv-Tag eine Version „an keinem
+Tag fällig“, die alten Tage merkt sich `archived.days`. Dadurch welkt in der Pause nichts,
+und nach dem Zurückholen gelten wieder die alten Tage. Backup-Format 8.
+
 ## Abwesenheit (Urlaub, Lehrgang, Übung)
 
 Einmal von–bis eintragen statt Tag für Tag (Einstellungen → „Abwesenheit“, oder im Blatt

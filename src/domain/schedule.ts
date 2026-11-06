@@ -31,6 +31,16 @@ export function withNewDays(schedule: ScheduleVersion[], days: number[], today: 
   return [...kept, { from: today, days: sorted }]
 }
 
+/**
+ * Ins Archiv: ab `today` an keinem Tag mehr fällig. So welkt in der Pause nichts, und
+ * die Vergangenheit bleibt, wie sie war.
+ */
+export const archivedSchedule = (schedule: ScheduleVersion[], today: DateStr) => withNewDays(schedule, [], today)
+
+/** Zurückholen: ab `today` wieder an den gemerkten Tagen fällig */
+export const restoredSchedule = (schedule: ScheduleVersion[], days: number[], today: DateStr) =>
+  withNewDays(schedule, days.length ? days : ALL_DAYS, today)
+
 function sameDays(a: number[], b: number[]): boolean {
   return a.length === b.length && [...a].sort().every((d, i) => d === [...b].sort()[i])
 }

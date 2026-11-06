@@ -65,30 +65,34 @@
   padding-right: max(env(safe-area-inset-right), 16px);
 }
 
-/* ── App-Gefühl ─────────────────────────────────────────────────────────── */
-html,
-body {
-  background: var(--bg);
-  color: var(--ink);
-}
-body {
-  /* kein Gummiband-Effekt am Seitenende, kein grauer Tap-Blitz,
-     kein Markieren/Kontextmenü bei langem Drücken */
-  overscroll-behavior-y: none;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-font-smoothing: antialiased;
-}
-input,
-textarea {
-  -webkit-user-select: text;
-  user-select: text;
-}
-button {
-  cursor: pointer;
-  touch-action: manipulation; /* kein 300-ms-Doppeltipp-Zoom */
+/* ── App-Gefühl ─────────────────────────────────────────────────────────────
+   In der Ebene „base“: Ungeschichtete Regeln schlagen sonst jede Tailwind-Klasse –
+   etwa touch-none an einem Ziehgriff, der dann nicht ziehen ließ. */
+@layer base {
+  html,
+  body {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  body {
+    /* kein Gummiband-Effekt am Seitenende, kein grauer Tap-Blitz,
+       kein Markieren/Kontextmenü bei langem Drücken */
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  button {
+    cursor: pointer;
+    touch-action: manipulation; /* kein 300-ms-Doppeltipp-Zoom */
+  }
 }
 
 /* ── Baum-Animationen ───────────────────────────────────────────────────────

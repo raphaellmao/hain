@@ -32,6 +32,11 @@ export interface Habit {
   metaphor?: Metaphor
   /** Tagesziel (Menge oder Dauer) statt einfachem Abhaken; fehlt = abhaken */
   goal?: HabitGoal
+  /**
+   * Im Archiv: verschwindet aus „Heute“ und dem Garten. Ab `since` ist sie an keinem
+   * Tag fällig (eigene Version in `schedule`), `days` sind die Tage für das Zurückholen.
+   */
+  archived?: { since: DateStr; days: number[] }
   /** Sortierung in Listen */
   order: number
   /** Gelöschte Habits bleiben als „Grabstein“ liegen (für späteren Sync) */

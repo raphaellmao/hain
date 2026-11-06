@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { motion } from 'motion/react'
 import { useHabit, useToday } from '../db/hooks'
-import { createHabit, deleteHabit, newSeed, updateHabit, type HabitInput } from '../db/repo'
+import { archiveHabit, createHabit, deleteHabit, newSeed, updateHabit, type HabitInput } from '../db/repo'
+import { showToast } from '../lib/toast'
 import { COLOR_KEYS, COLORS, colorHex, type ColorKey } from '../domain/colors'
 import { type DateStr, WEEKDAYS_MON0 } from '../domain/dates'
 import { ALL_DAYS, daysAt } from '../domain/schedule'
@@ -401,11 +402,30 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
           </p>
         </Field>
 
+        {habit && !habit.archived && (
+          <>
+            <button
+              type="button"
+              onClick={async () => {
+                await archiveHabit(habit.id, today)
+                navigate(paths.today, { replace: true })
+                showToast(`„${habit.name}“ liegt im Archiv – zurückholen unter Einstellungen › Gewohnheiten`, '📦', 4200)
+              }}
+              className="mt-8 flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[17px] font-medium"
+            >
+              📦 Ins Archiv legen
+            </button>
+            <p className="mt-1.5 px-1 text-[13px] text-muted">
+              Verschwindet aus „Heute“ und dem Garten, nichts welkt, der Verlauf bleibt. Jederzeit zurückholbar.
+            </p>
+          </>
+        )}
+
         {habit && (
           <button
             type="button"
             onClick={remove}
-            className="mt-8 flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[17px] font-medium text-danger"
+            className="mt-4 flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-surface text-[17px] font-medium text-danger"
           >
             <IconTrash width={20} height={20} />
             Gewohnheit löschen

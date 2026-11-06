@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { saveSettings } from '../db/repo'
-import { useAbsences, useMeta, useSettings, useToday } from '../db/hooks'
+import { useAbsences, useArchivedHabits, useMeta, useSettings, useToday } from '../db/hooks'
+import { navigate, paths } from '../app/router'
 import { formatRange, phaseOf, sortAbsences } from '../domain/absence'
 import { reasonInfo } from '../domain/excuse'
 import { openAbsenceSheet } from '../lib/absenceSheet'
@@ -128,6 +129,10 @@ export function SettingsScreen() {
           )}
         </Section>
 
+        <Section title="Gewohnheiten">
+          <HabitsLink />
+        </Section>
+
         <Section title="Abwesenheit" hint="Urlaub, Lehrgang, Übung: einmal von–bis eintragen, und die Gewohnheiten pausieren – nichts welkt.">
           <Absences />
         </Section>
@@ -159,6 +164,27 @@ export function SettingsScreen() {
         </section>
       </main>
     </div>
+  )
+}
+
+function HabitsLink() {
+  const archived = useArchivedHabits()
+  return (
+    <button
+      type="button"
+      onClick={() => navigate(paths.habits)}
+      className="flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2 text-left"
+    >
+      <span>
+        <span className="block text-[16px] font-medium">Reihenfolge & Archiv</span>
+        <span className="block text-[13px] text-muted">
+          {archived?.length ? `${archived.length} im Archiv` : 'Sortieren per Ziehen, Pausiertes zurückholen'}
+        </span>
+      </span>
+      <span className="text-muted" aria-hidden>
+        ›
+      </span>
+    </button>
   )
 }
 
