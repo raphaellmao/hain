@@ -232,6 +232,24 @@ trägt iOS nicht von selbst ein. Hain ruft deshalb im selben Fenster `…/kalend
 auf, dort antwortet der Service Worker (`public/sw-extra.js`) mit `text/calendar` aus
 einem Cache. Antwortet er nicht, bleibt der Weg über die Datei.
 
+## Tagesziele: Menge oder Dauer
+
+Statt nur abzuhaken kann eine Gewohnheit ein Tagesziel haben (Formular, „Ziel pro Tag“):
+
+- **Menge**, z. B. 8 Gläser oder 2 Liter. Ein Tipp auf die Zeile in „Heute“ zählt den
+  eingestellten Schritt dazu (auch 0,25), der Ring füllt sich.
+- **Dauer**, z. B. 30 Minuten. Ein Tipp startet bzw. stoppt einen Timer. Gespeichert wird nur
+  der Startzeitpunkt (Meta `timer.<id>`), er läuft also auch bei geschlossener App weiter.
+  Die Minuten zählen für den Tag, an dem er gestartet wurde; mehr als 12 h gelten als
+  vergessen und werden mit Hinweis auf 12 h begrenzt.
+
+Genau eintragen, abziehen oder für vergangene Tage nachtragen: „⋯“ bzw. lange drücken, oder in
+der Detailansicht (dort auch Durchschnitt, Gesamt und bester Tag). Gespeichert wird pro Tag die
+Menge (`Checkin.amount`); erreicht heißt `done: true`, damit rechnen Baum, Serien und Schatten
+unverändert. Ein geändertes Ziel gilt ab dann, erledigte Tage bleiben erledigt. Ein Haken ohne
+Menge (Kalender, frühere Tage) zählt als erreichtes Ziel. Logik in `domain/goal.ts`,
+Backup-Format 6.
+
 ## Notizen pro Tag
 
 Unter „Heute“ gibt es ein Notizfeld zum ausgewählten Tag (über die Wochenleiste

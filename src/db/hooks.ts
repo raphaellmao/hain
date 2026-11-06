@@ -80,6 +80,44 @@ export function excusedSet(days: ExcuseDays): ReadonlySet<DateStr> {
   return s
 }
 
+/** Eingetragene Mengen pro Habit: Map<habitId, Map<Datum, Menge>> */
+export function useAmountMap(): Map<string, Map<DateStr, number>> | undefined {
+  return useLiveQuery(async () => {
+    const map = new Map<string, Map<DateStr, number>>()
+    await db.checkins.each((c) => {
+      if (c.amount === undefined) return
+      let m = map.get(c.habitId)
+      if (!m) map.set(c.habitId, (m = new Map()))
+      m.set(c.date, c.amount)
+    })
+    return map
+  })
+}
+
+const NO_AMOUNTS: ReadonlyMap<DateStr, number> = new Map()
+export const amountsFor = (map: Map<string, Map<DateStr, number>> | undefined, id: string): ReadonlyMap<DateStr, number> =>
+  map?.get(id) ?? NO_AMOUNTS
+
+/** Eintrag eines Tages für ein Habit: undefined = lädt noch */
+export function useDayCheckin(habitId: string, date: DateStr): { amount?: number; done: boolean } | undefined {
+  const result = useLiveQuery(async () => {
+    const c = await db.checkins.get(`${habitId}_${date}`)
+    return { key: `${habitId}_${date}`, amount: c?.amount, done: !!c?.done }
+  }, [habitId, date])
+  return result?.key === `${habitId}_${date}` ? result : undefined
+}
+
+/** Laufende Timer: Map<habitId, Startzeit> */
+export function useTimers(): Map<string, number> | undefined {
+  return useLiveQuery(async () => {
+    const map = new Map<string, number>()
+    for (const m of await db.meta.where('key').startsWith('timer.').toArray()) {
+      if (typeof m.value === 'number') map.set(m.key.slice(6), m.value)
+    }
+    return map
+  })
+}
+
 /** Notiz eines Tages: undefined = lädt noch, '' = keine Notiz. */
 export function useDayNote(date: DateStr): string | undefined {
   const result = useLiveQuery(async () => ({ date, note: (await db.dayEntries.get(date))?.note ?? '' }), [date])

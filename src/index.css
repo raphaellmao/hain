@@ -580,6 +580,11 @@ button {
 @keyframes owl-blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
 .owl-blink { animation: owl-blink 6.5s linear infinite; transform-box: fill-box; transform-origin: center; }
 
+/* Laufender Timer: das Stopp-Zeichen pulsiert ruhig */
+@keyframes timer-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.timer-pulse { animation: timer-pulse 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .timer-pulse { animation: none; } }
+
 /* Gras im Vordergrund: Die Spitzen wandern, der Boden bleibt stehen */
 .fg-layer { transform-origin: 50% 100%; animation: fg-sway 7.5s ease-in-out infinite alternate; }
 .fg-near { animation-duration: 5.5s; animation-delay: -2s; }

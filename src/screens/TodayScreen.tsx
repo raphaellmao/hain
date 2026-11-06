@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, useMeta, useToday } from '../db/hooks'
+import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabits, useMeta, useSettings, useTimers, useToday } from '../db/hooks'
+import { effectiveAmount } from '../domain/goal'
 import { excusesInWindow } from '../domain/excuse'
 import { openExcuseSheet } from '../lib/excuseSheet'
 import { GREETING, useSky } from '../lib/sky'
 import { formatLong, type DateStr } from '../domain/dates'
 import { isDue } from '../domain/schedule'
 import { summarize } from '../domain/summary'
-import { toggleDay } from '../app/actions'
+import { changeAmount, toggleDay, toggleTimer } from '../app/actions'
 import { navigate, paths } from '../app/router'
 import { HabitRow } from '../components/HabitRow'
 import { WeekStrip } from '../components/WeekStrip'
@@ -21,6 +22,9 @@ export function TodayScreen() {
   const habits = useHabits()
   const doneMap = useDoneMap()
   const excuseMap = useExcuseMap()
+  const amountMap = useAmountMap()
+  const timers = useTimers()
+  const { dayStartHour } = useSettings()
   const today = useToday()
   const sky = useSky()
   const [selected, setSelected] = useState<DateStr>(today)
@@ -61,29 +65,44 @@ export function TodayScreen() {
     return d.length === 0 ? null : d.filter((i) => i.done.has(date)).length / d.length
   }
 
-  const row = (i: (typeof items)[number], dimmed = false) => (
-    <HabitRow
-      key={i.habit.id}
-      habit={i.habit}
-      summary={i.summary}
-      done={i.done.has(selected)}
-      excuse={i.excuses.get(selected)}
-      showWilt={isToday}
-      dimmed={dimmed}
-      onToggle={() => toggleDay(i.habit, i.done, selected, today, i.excused)}
-      onMore={() =>
-        openExcuseSheet({
-          habit: i.habit,
-          date: selected,
-          today,
-          current: i.excuses.get(selected),
-          done: i.done.has(selected),
-          recent: excusesInWindow(i.excused, today),
-          showDetails: true,
-        })
-      }
-    />
-  )
+  const row = (i: (typeof items)[number], dimmed = false) => {
+    const goal = i.habit.goal
+    const amount = goal ? effectiveAmount(amountsFor(amountMap, i.habit.id).get(selected), i.done.has(selected), goal) : 0
+    const running = goal?.kind === 'dauer' && isToday ? timers?.get(i.habit.id) : undefined
+    const openSheet = () =>
+      openExcuseSheet({
+        habit: i.habit,
+        date: selected,
+        today,
+        current: i.excuses.get(selected),
+        done: i.done.has(selected),
+        recent: excusesInWindow(i.excused, today),
+        showDetails: true,
+      })
+    // Tippen: abhaken · Menge: eins dazu · Dauer: Timer (für vergangene Tage Minuten im Blatt eintragen)
+    const onToggle = !goal
+      ? () => toggleDay(i.habit, i.done, selected, today, i.excused)
+      : goal.kind === 'menge'
+        ? () => changeAmount(i.habit, selected, today, amount, amount + goal.step)
+        : isToday
+          ? () => toggleTimer(i.habit, running, today, dayStartHour)
+          : openSheet
+    return (
+      <HabitRow
+        key={i.habit.id}
+        habit={i.habit}
+        summary={i.summary}
+        done={i.done.has(selected)}
+        excuse={i.excuses.get(selected)}
+        showWilt={isToday}
+        dimmed={dimmed}
+        amount={amount}
+        timerStart={running}
+        onToggle={onToggle}
+        onMore={openSheet}
+      />
+    )
+  }
 
   return (
     <div className="pb-nav">

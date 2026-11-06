@@ -9,13 +9,14 @@ import { COLORS } from '../domain/colors'
 import { isSpecies } from '../domain/species'
 import { isExcuseReason } from '../domain/excuse'
 import { parseRepeat } from '../domain/repeat'
+import { parseGoal, roundAmount } from '../domain/goal'
 import { cleanReminders } from '../domain/todos'
 import { type Checkin, type DayEntry, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
 import { NOTE_MAX_LENGTH, TODO_MAX_LENGTH } from './repo'
 import { startOfWeek, toDateStr } from '../domain/dates'
 
-/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos */
-export const BACKUP_VERSION = 5
+/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos · 6 = Tagesziele mit Menge oder Dauer */
+export const BACKUP_VERSION = 6
 
 export interface BackupFile {
   app: 'hain'
@@ -31,7 +32,7 @@ export interface BackupFile {
 export async function createBackup(): Promise<BackupFile> {
   const habits = (await db.habits.toArray()).filter((h) => !h.deleted)
   const ids = new Set(habits.map((h) => h.id))
-  const checkins = (await db.checkins.toArray()).filter((c) => (c.done || c.excused) && ids.has(c.habitId))
+  const checkins = (await db.checkins.toArray()).filter((c) => (c.done || c.excused || (c.amount ?? 0) > 0) && ids.has(c.habitId))
   const dayEntries = (await db.dayEntries.toArray()).filter((e) => e.note !== '')
   const todos = (await db.todos.toArray()).filter((t) => !t.deleted)
   const settings = { ...DEFAULT_SETTINGS, ...((await db.meta.get('settings'))?.value as Partial<Settings>) }
@@ -103,6 +104,7 @@ export function parseBackup(text: string): BackupFile {
       seed: h.seed,
       ...(isSpecies(h.species) ? { species: h.species } : {}),
       ...(h.metaphor === 'schatten' || h.metaphor === 'pflanze' ? { metaphor: h.metaphor } : {}),
+      ...(parseGoal(h.goal) ? { goal: parseGoal(h.goal) } : {}),
       order: typeof h.order === 'number' ? h.order : i + 1,
       deleted: false,
       createdAt: typeof h.createdAt === 'number' ? h.createdAt : now,
@@ -114,7 +116,9 @@ export function parseBackup(text: string): BackupFile {
   const checkins: Checkin[] = []
   for (const c of b.checkins) {
     if (!c || typeof c.habitId !== 'string' || !isDate(c.date) || !ids.has(c.habitId)) continue
-    const done = c.done !== false && c.excused !== true
+    const amount = typeof c.amount === 'number' && Number.isFinite(c.amount) && c.amount >= 0 ? roundAmount(c.amount) : undefined
+    // Ein Teilfortschritt ohne Haken ist nicht erledigt; alte Backups ohne done-Feld schon
+    const done = c.done !== false && c.excused !== true && !(c.done === undefined && amount !== undefined)
     checkins.push({
       id: `${c.habitId}_${c.date}`,
       habitId: c.habitId,
@@ -128,6 +132,7 @@ export function parseBackup(text: string): BackupFile {
             ...(typeof c.reasonNote === 'string' && c.reasonNote.trim() ? { reasonNote: c.reasonNote.slice(0, 140) } : {}),
           }
         : {}),
+      ...(amount !== undefined ? { amount } : {}),
       updatedAt: typeof c.updatedAt === 'number' ? c.updatedAt : now,
     })
   }

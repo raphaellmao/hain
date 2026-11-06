@@ -9,7 +9,8 @@ import type { ColorKey } from '../domain/colors'
 import type { SpeciesKey } from '../domain/species'
 import type { ExcuseReason } from '../domain/excuse'
 import { nextDateOf, nextInstance, nextOccurrence, remindersOn } from '../domain/repeat'
-import { type Checkin, type DayEntry, type Habit, type Metaphor, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
+import { type Checkin, type DayEntry, type Habit, type HabitGoal, type Metaphor, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
+import { reached, roundAmount } from '../domain/goal'
 import { daysAt, withNewDays } from '../domain/schedule'
 import { cleanReminders, withoutDue } from '../domain/todos'
 
@@ -22,6 +23,7 @@ export interface HabitInput {
   seed: number
   species: SpeciesKey
   metaphor: Metaphor
+  goal?: HabitGoal
 }
 
 export const newSeed = () => Math.floor(Math.random() * 2 ** 31)
@@ -39,6 +41,7 @@ export async function createHabit(input: HabitInput): Promise<string> {
     seed: input.seed,
     species: input.species,
     metaphor: input.metaphor,
+    ...(input.goal ? { goal: input.goal } : {}),
     order: (last?.order ?? 0) + 1,
     deleted: false,
     createdAt: now,
@@ -71,6 +74,7 @@ export async function updateHabit(id: string, input: HabitInput, today: DateStr)
     seed: input.seed,
     species: input.species,
     metaphor: input.metaphor,
+    goal: input.goal,
     startDate: input.startDate,
     schedule,
     updatedAt: Date.now(),
@@ -88,15 +92,69 @@ export async function setCheckin(habitId: string, date: DateStr, done: boolean):
   await db.checkins.put(checkin)
 }
 
-/** „Heute nicht möglich“: Tag aussetzen, mit Grund und optionaler Notiz. */
+/** „Heute nicht möglich“: Tag aussetzen, mit Grund und optionaler Notiz. Eine schon eingetragene Menge bleibt. */
 export async function setExcused(habitId: string, date: DateStr, reason: ExcuseReason, note?: string): Promise<void> {
   const text = note?.trim().slice(0, 140)
-  const checkin: Checkin = {
-    id: `${habitId}_${date}`, habitId, date, done: false, excused: true, reason,
-    ...(text ? { reasonNote: text } : {}),
-    updatedAt: Date.now(),
-  }
-  await db.checkins.put(checkin)
+  const id = `${habitId}_${date}`
+  await db.transaction('rw', db.checkins, async () => {
+    const amount = (await db.checkins.get(id))?.amount
+    const checkin: Checkin = {
+      id, habitId, date, done: false, excused: true, reason,
+      ...(text ? { reasonNote: text } : {}),
+      ...(amount ? { amount } : {}),
+      updatedAt: Date.now(),
+    }
+    await db.checkins.put(checkin)
+  })
+}
+
+/** Ausnahme aufheben: Der Tag ist wieder offen bzw. verpasst, eine eingetragene Menge bleibt. */
+export async function clearExcused(habitId: string, date: DateStr): Promise<void> {
+  const id = `${habitId}_${date}`
+  await db.transaction('rw', db.checkins, async () => {
+    const current = await db.checkins.get(id)
+    if (!current) return
+    const { excused: _e, reason: _r, reasonNote: _n, ...rest } = current
+    await db.checkins.put({ ...rest, updatedAt: Date.now() })
+  })
+}
+
+/**
+ * Menge bzw. Minuten eines Tages setzen. Erreicht heißt erledigt; ein
+ * „heute nicht möglich“ bleibt stehen, solange das Ziel nicht erreicht ist.
+ */
+export async function setAmount(habitId: string, date: DateStr, amount: number, goal: HabitGoal): Promise<void> {
+  const value = roundAmount(Math.max(0, amount))
+  const id = `${habitId}_${date}`
+  await db.transaction('rw', db.checkins, async () => {
+    const current = await db.checkins.get(id)
+    const done = reached(value, goal)
+    const keepExcuse = !done && current?.excused
+    const checkin: Checkin = {
+      id, habitId, date, done, amount: value,
+      ...(keepExcuse ? { excused: true, reason: current.reason, ...(current.reasonNote ? { reasonNote: current.reasonNote } : {}) } : {}),
+      updatedAt: Date.now(),
+    }
+    await db.checkins.put(checkin)
+  })
+}
+
+// ── Timer für Gewohnheiten mit Dauer ────────────────────────────────────────
+// Gespeichert wird nur der Startzeitpunkt: Der Timer läuft so auch weiter, wenn die App zu ist.
+
+export const timerKey = (habitId: string) => `timer.${habitId}`
+
+export async function startTimer(habitId: string): Promise<void> {
+  await db.meta.put({ key: timerKey(habitId), value: Date.now() })
+}
+
+/** Stoppt den Timer und gibt zurück, wann er gestartet wurde (null = lief nicht). */
+export async function stopTimer(habitId: string): Promise<number | null> {
+  return db.transaction('rw', db.meta, async () => {
+    const started = (await db.meta.get(timerKey(habitId)))?.value
+    await db.meta.delete(timerKey(habitId))
+    return typeof started === 'number' ? started : null
+  })
 }
 
 // ── Notizen pro Tag ─────────────────────────────────────────────────────────

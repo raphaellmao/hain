@@ -8,6 +8,9 @@ import { useLongPress } from '../lib/useLongPress'
 import { HabitVisual } from './HabitVisual'
 import { TERRITORY_STATUS } from '../domain/shadow'
 import { CheckCircle } from './CheckCircle'
+import { GoalRing } from './GoalRing'
+import { clock, progressText, stepLabel } from '../domain/goal'
+import { useRunningMinutes } from './GoalEditor'
 import { IconMore } from './icons'
 
 /**
@@ -25,6 +28,8 @@ export function HabitRow({
   dimmed = false,
   onToggle,
   onMore,
+  amount = 0,
+  timerStart,
 }: {
   habit: Habit
   summary: HabitSummary
@@ -34,14 +39,22 @@ export function HabitRow({
   /** Welk-Hinweis zeigen (nur, wenn heute angezeigt wird) */
   showWilt: boolean
   dimmed?: boolean
+  /** Tippen auf die Zeile: abhaken, bei Zielen dazuzählen bzw. Timer */
   onToggle: () => void
   onMore: () => void
+  /** Menge bzw. Minuten am angezeigten Tag (nur mit Ziel) */
+  amount?: number
+  /** Start des laufenden Timers (nur mit Ziel „Dauer“, nur heute) */
+  timerStart?: number
 }) {
   const color = colorHex(habit.color)
   const { current } = summary.streaks
   const wilted = summary.health.wilted
   const excused = !!excuse && !done
   const longPress = useLongPress(onMore)
+  const goal = habit.goal
+  const running = timerStart !== undefined
+  const live = amount + useRunningMinutes(timerStart)
 
   const stage = stageLabel(summary, habit.species)
   let sub: string
@@ -49,6 +62,11 @@ export function HabitRow({
   if (excused) {
     const r = reasonInfo(excuse.reason)
     sub = `Ausgesetzt · ${r.label}${excuse.note ? ` – ${excuse.note}` : ''}`
+  } else if (goal) {
+    // Mit Ziel zählt vor allem, wie weit es heute ist
+    const streak = current > 0 ? ` · ${current} ${current === 1 ? 'Tag' : 'Tage'} in Folge` : ''
+    sub = `${wilted && showWilt ? 'welkt · ' : ''}${progressText(live, goal)}${running ? '' : streak}`
+    if (wilted && showWilt) subClass = 'text-warn'
   } else if (habit.metaphor === 'schatten') {
     // Schatten-Ich: Lage im Kampf statt Wachstumsstufe
     const sh = summary.shadow
@@ -81,7 +99,11 @@ export function HabitRow({
         }}
         whileTap={{ scale: 0.97 }}
         aria-pressed={done}
-        aria-label={`${habit.name} ${done ? 'erledigt' : excused ? 'ausgesetzt – trotzdem abhaken' : 'abhaken'}`}
+        aria-label={
+          goal
+            ? `${habit.name}: ${progressText(live, goal)}. ${goal.kind === 'menge' ? `Tippen: ${stepLabel(goal)}` : running ? 'Timer stoppen' : 'Timer starten'}`
+            : `${habit.name} ${done ? 'erledigt' : excused ? 'ausgesetzt – trotzdem abhaken' : 'abhaken'}`
+        }
         className="flex min-h-[76px] min-w-0 flex-1 touch-manipulation items-center gap-3 py-2 pl-2 pr-1 text-left select-none"
       >
         <span className="size-16 shrink-0">
@@ -92,7 +114,10 @@ export function HabitRow({
             <span aria-hidden>{habit.emoji}</span>
             <span className="truncate">{habit.name}</span>
           </span>
-          <span className={`mt-0.5 block truncate text-[13px] ${subClass}`}>{sub}</span>
+          <span className={`mt-0.5 block truncate text-[13px] ${subClass}`}>
+            {running && <TimerBadge since={timerStart} />}
+            {sub}
+          </span>
         </span>
         {excused ? (
           <span
@@ -101,6 +126,8 @@ export function HabitRow({
           >
             {reasonInfo(excuse.reason).emoji}
           </span>
+        ) : goal ? (
+          <GoalRing amount={live} goal={goal} done={done} running={running} color={color} />
         ) : (
           <CheckCircle done={done} color={color} />
         )}
@@ -114,5 +141,16 @@ export function HabitRow({
         <IconMore width={22} height={22} />
       </button>
     </motion.li>
+  )
+}
+
+/** „⏱ 05:12 ·“ vor dem Fortschritt, solange der Timer läuft */
+function TimerBadge({ since }: { since: number }) {
+  const ms = Date.now() - since
+  return (
+    <span className="font-semibold text-accent">
+      ⏱ {clock(ms)}
+      {' · '}
+    </span>
   )
 }

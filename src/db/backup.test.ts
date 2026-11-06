@@ -124,6 +124,34 @@ describe('Backup mit To-dos', () => {
   })
 })
 
+describe('Backup mit Tageszielen', () => {
+  it('übernimmt Ziele und Mengen, auch Teilfortschritt', () => {
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        version: 6,
+        habits: [{ ...valid.habits[0], goal: { kind: 'menge', target: 8, unit: 'Gläser', step: 1 } }],
+        checkins: [
+          { habitId: 'h1', date: '2026-10-02', done: true, amount: 8 },
+          { habitId: 'h1', date: '2026-10-03', done: false, amount: 3.333333 },
+          { habitId: 'h1', date: '2026-10-04', done: false, excused: true, reason: 'krank', amount: 2 },
+          { habitId: 'h1', date: '2026-10-05', done: false, amount: -4 },
+        ],
+      }),
+    )
+    expect(b.habits[0].goal).toEqual({ kind: 'menge', target: 8, unit: 'Gläser', step: 1 })
+    expect(b.checkins[0]).toMatchObject({ done: true, amount: 8 })
+    expect(b.checkins[1]).toMatchObject({ done: false, amount: 3.33 })
+    expect(b.checkins[2]).toMatchObject({ done: false, excused: true, amount: 2 })
+    expect(b.checkins[3]).not.toHaveProperty('amount')
+  })
+
+  it('verwirft kaputte Ziele', () => {
+    const b = parseBackup(JSON.stringify({ ...valid, habits: [{ ...valid.habits[0], goal: { kind: 'menge', target: 0, unit: 'x', step: 1 } }] }))
+    expect(b.habits[0]).not.toHaveProperty('goal')
+  })
+})
+
 describe('Backup mit Ausnahmetagen', () => {
   it('übernimmt ausgesetzte Tage samt Grund', () => {
     const b = parseBackup(

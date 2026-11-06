@@ -7,7 +7,7 @@
 import { db } from '../db/schema'
 import { addDays, logicalToday, startOfWeek, weekday, type DateStr } from '../domain/dates'
 import { ALL_DAYS } from '../domain/schedule'
-import type { Checkin, Habit, Todo } from '../domain/types'
+import type { Checkin, Habit, HabitGoal, Todo } from '../domain/types'
 import type { ColorKey } from '../domain/colors'
 import type { SpeciesKey } from '../domain/species'
 
@@ -22,14 +22,25 @@ interface DemoSpec {
   age: number
   /** ob Tag i (0 = Starttag) erledigt ist */
   done: (i: number, date: DateStr) => boolean
+  goal?: HabitGoal
+  /** Menge an Tag i (nur mit Ziel); Erreichen des Ziels ergibt den Haken */
+  amount?: (i: number, last: boolean) => number
 }
 
 export async function hainDemo() {
   const today = logicalToday(new Date(), 0)
   const specs: DemoSpec[] = [
-    { name: 'Lesen', emoji: '📖', color: 'koralle', species: 'laubbaum', days: ALL_DAYS, age: 400, done: (i) => i % 61 !== 5 },
+    {
+      name: 'Lesen', emoji: '📖', color: 'koralle', species: 'laubbaum', days: ALL_DAYS, age: 400, done: (i) => i % 61 !== 5,
+      goal: { kind: 'dauer', target: 20, unit: '', step: 5 },
+      amount: (i, last) => (last ? 12 : i % 61 === 5 ? 0 : 20 + ((i * 7) % 25)),
+    },
     { name: 'Laufen', emoji: '🏃', color: 'blau', species: 'tanne', days: [1, 3, 5], age: 330, done: () => true },
-    { name: 'Wasser trinken', emoji: '💧', color: 'tuerkis', species: 'birke', days: ALL_DAYS, age: 19, done: () => true },
+    {
+      name: 'Wasser trinken', emoji: '💧', color: 'tuerkis', species: 'birke', days: ALL_DAYS, age: 19, done: () => true,
+      goal: { kind: 'menge', target: 8, unit: 'Gläser', step: 1 },
+      amount: (i, last) => (last ? 3 : 8 + (i % 3)),
+    },
     { name: 'Meditieren', emoji: '🧘', color: 'flieder', species: 'kirsche', days: ALL_DAYS, age: 75, done: (i) => i < 73 },
     { name: 'Zahnseide', emoji: '🦷', color: 'rosa', species: 'weide', days: ALL_DAYS, age: 5, done: () => true },
     { name: 'Vokabeln', emoji: '🗣️', color: 'gold', species: 'apfel', days: ALL_DAYS, age: 42, done: (i) => i < 32 },
@@ -58,6 +69,7 @@ export async function hainDemo() {
       color: s.color,
       species: s.species,
       ...(s.metaphor ? { metaphor: s.metaphor } : {}),
+      ...(s.goal ? { goal: s.goal } : {}),
       schedule: [{ from: startDate, days: s.days }],
       startDate,
       seed: 1000 + idx * 97,
@@ -69,7 +81,10 @@ export async function hainDemo() {
     for (let i = 0; i < s.age; i++) {
       const date = addDays(startDate, i)
       if (!s.days.includes(weekday(date))) continue
-      if (s.done(i, date)) checkins.push({ id: `${id}_${date}`, habitId: id, date, done: true, updatedAt: now })
+      if (s.goal && s.amount) {
+        const amount = s.amount(i, i === s.age - 1)
+        if (amount > 0) checkins.push({ id: `${id}_${date}`, habitId: id, date, done: amount >= s.goal.target, amount, updatedAt: now })
+      } else if (s.done(i, date)) checkins.push({ id: `${id}_${date}`, habitId: id, date, done: true, updatedAt: now })
     }
   })
 

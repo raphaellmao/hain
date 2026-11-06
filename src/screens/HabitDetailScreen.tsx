@@ -1,4 +1,6 @@
-import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabit, useToday, type ExcuseDays } from '../db/hooks'
+import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabit, useToday, type ExcuseDays } from '../db/hooks'
+import { amountStats, formatAmount, goalLabel } from '../domain/goal'
+import { GoalEditor } from '../components/GoalEditor'
 import { excusesInWindow, reasonInfo } from '../domain/excuse'
 import { openExcuseSheet } from '../lib/excuseSheet'
 import { colorHex } from '../domain/colors'
@@ -26,6 +28,7 @@ export function HabitDetailScreen({ id }: { id: string }) {
   const habit = useHabit(id)
   const doneMap = useDoneMap()
   const excuseMap = useExcuseMap()
+  const amountMap = useAmountMap()
   const today = useToday()
 
   if (habit === undefined || !doneMap) return null
@@ -37,7 +40,7 @@ export function HabitDetailScreen({ id }: { id: string }) {
       </div>
     )
   }
-  return <Detail habit={habit} done={doneFor(doneMap, id)} excuses={excusesFor(excuseMap, id)} today={today} />
+  return <Detail habit={habit} done={doneFor(doneMap, id)} excuses={excusesFor(excuseMap, id)} amounts={amountsFor(amountMap, id)} today={today} />
 }
 
 function TopBar({ onEdit }: { onEdit?: () => void }) {
@@ -63,7 +66,7 @@ function TopBar({ onEdit }: { onEdit?: () => void }) {
 const fmt1 = (v: number) => v.toLocaleString('de-DE', { maximumFractionDigits: 1 })
 const days = (n: number) => `${n} ${n === 1 ? 'Tag' : 'Tage'}`
 
-function Detail({ habit, done, excuses, today }: { habit: Habit; done: DoneSet; excuses: ExcuseDays; today: DateStr }) {
+function Detail({ habit, done, excuses, amounts, today }: { habit: Habit; done: DoneSet; excuses: ExcuseDays; amounts: ReadonlyMap<DateStr, number>; today: DateStr }) {
   const excused = excusedSet(excuses)
   const s = summarize(habit, done, today, excused)
   const color = colorHex(habit.color)
@@ -93,7 +96,10 @@ function Detail({ habit, done, excuses, today }: { habit: Habit; done: DoneSet; 
           <span aria-hidden>{habit.emoji}</span>
           <span className="min-w-0 break-words">{habit.name}</span>
         </h1>
-        <p className="text-[15px] text-muted">{describeDays(daysAt(habit.schedule, today))}</p>
+        <p className="text-[15px] text-muted">
+          {describeDays(daysAt(habit.schedule, today))}
+          {habit.goal && ` · ${goalLabel(habit.goal)}`}
+        </p>
 
         {/* Pflanze bzw. Schatten-Ich */}
         <div className="relative mx-auto mt-2 aspect-square w-full max-w-[340px]">
@@ -147,8 +153,16 @@ function Detail({ habit, done, excuses, today }: { habit: Habit; done: DoneSet; 
         </section>
         )}
 
+        {/* Mit Ziel: Menge bzw. Minuten von heute eintragen */}
+        {habit.goal && (
+          <section className="mt-3 rounded-3xl bg-surface p-3">
+            <h2 className="mb-2 px-1 text-[13px] font-semibold tracking-wide text-muted uppercase">Heute</h2>
+            <GoalEditor habit={habit} goal={habit.goal} date={today} today={today} />
+          </section>
+        )}
+
         {/* Heute abhaken – auch aus der Detailansicht */}
-        {(dueToday || doneToday || todayExcuse) && (
+        {!habit.goal && (dueToday || doneToday || todayExcuse) && (
           <button
             type="button"
             onClick={() => toggleDay(habit, done, today, today, excused)}
@@ -185,6 +199,7 @@ function Detail({ habit, done, excuses, today }: { habit: Habit; done: DoneSet; 
             hint={rate ? `${rate.done} von ${rate.due} fälligen${recent ? ` · ${recent} ausgesetzt` : ''}` : undefined}
           />
           <Stat label="Erledigt gesamt" value={days(totalDone(habit, done, today))} />
+          {habit.goal && <GoalStats habit={habit} done={done} amounts={amounts} excused={excused} today={today} />}
         </section>
 
         {/* Erfolgsquote je Monat */}
@@ -202,11 +217,24 @@ function Detail({ habit, done, excuses, today }: { habit: Habit; done: DoneSet; 
         {/* Nachtragen & korrigieren */}
         <section className="mt-3 rounded-3xl bg-surface px-2 pt-2 pb-4">
           <h2 className="px-2 pt-2 text-[13px] font-semibold tracking-wide text-muted uppercase">Nachtragen & korrigieren</h2>
-          <p className="px-2 pt-0.5 text-[12px] text-muted">Tippen: erledigt ein/aus · lange drücken: Tag aussetzen</p>
+          <p className="px-2 pt-0.5 text-[12px] text-muted">
+            {habit.goal ? 'Tippen: Ziel erreicht ein/aus · lange drücken: Menge oder Ausnahme' : 'Tippen: erledigt ein/aus · lange drücken: Tag aussetzen'}
+          </p>
           <MonthCalendar habit={habit} done={done} excuses={excuses} today={today} color={color} />
         </section>
       </div>
     </div>
+  )
+}
+
+function GoalStats({ habit, done, amounts, excused, today }: { habit: Habit; done: DoneSet; amounts: ReadonlyMap<DateStr, number>; excused: DoneSet; today: DateStr }) {
+  const goal = habit.goal!
+  const s = amountStats(habit, goal, amounts, done, today, excused)
+  return (
+    <>
+      <Stat label="Ø pro Tag" value={s.average === null ? '–' : formatAmount(s.average, goal)} hint="fällige Tage, letzte 30" />
+      <Stat label="Gesamt" value={formatAmount(s.total, goal)} hint={s.best ? `bester Tag: ${formatAmount(s.best, goal)}` : undefined} />
+    </>
   )
 }
 

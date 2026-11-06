@@ -30,6 +30,8 @@ export interface Habit {
   species?: SpeciesKey
   /** Bild für den Fortschritt: wachsende Pflanze (Standard) oder Schatten-Ich */
   metaphor?: Metaphor
+  /** Tagesziel (Menge oder Dauer) statt einfachem Abhaken; fehlt = abhaken */
+  goal?: HabitGoal
   /** Sortierung in Listen */
   order: number
   /** Gelöschte Habits bleiben als „Grabstein“ liegen (für späteren Sync) */
@@ -39,6 +41,19 @@ export interface Habit {
 }
 
 export type Metaphor = 'pflanze' | 'schatten'
+
+export type GoalKind = 'menge' | 'dauer'
+
+/** Tagesziel einer Gewohnheit (Logik: goal.ts). Erreicht heißt erledigt. */
+export interface HabitGoal {
+  kind: GoalKind
+  /** pro Tag: Menge in `unit` bzw. Minuten */
+  target: number
+  /** Einheit der Menge („Gläser“, „Seiten“); bei Dauer leer, angezeigt wird „min“ */
+  unit: string
+  /** So viel bringt ein Tipp auf die Zeile (bei Dauer: Minuten der Schnelltaste) */
+  step: number
+}
 
 /** Ein Eintrag pro Habit und Tag. Fehlt er, gilt der Tag als nicht erledigt. */
 export interface Checkin {
@@ -53,6 +68,8 @@ export interface Checkin {
   reason?: ExcuseReason
   /** optionale kurze Notiz zur Ausnahme */
   reasonNote?: string
+  /** Menge bzw. Minuten an diesem Tag (nur bei Gewohnheiten mit Ziel) */
+  amount?: number
   updatedAt: number
 }
 

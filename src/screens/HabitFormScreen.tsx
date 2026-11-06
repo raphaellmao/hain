@@ -5,7 +5,8 @@ import { createHabit, deleteHabit, newSeed, updateHabit, type HabitInput } from 
 import { COLOR_KEYS, COLORS, colorHex, type ColorKey } from '../domain/colors'
 import { type DateStr, WEEKDAYS_MON0 } from '../domain/dates'
 import { ALL_DAYS, daysAt } from '../domain/schedule'
-import type { Habit, Metaphor } from '../domain/types'
+import type { GoalKind, Habit, HabitGoal, Metaphor } from '../domain/types'
+import { formatNumber, MINUTE_PRESETS, parseAmount, UNIT_SUGGESTIONS } from '../domain/goal'
 import { ShadowDuel } from '../shadow/ShadowDuel'
 import { SPECIES_INFO, SPECIES_KEYS, speciesOf, type SpeciesKey } from '../domain/species'
 import { goBack, navigate, paths } from '../app/router'
@@ -46,15 +47,22 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
   const [seed, setSeed] = useState(habit?.seed ?? newSeed())
   const [species, setSpecies] = useState<SpeciesKey>(habit ? speciesOf(habit) : randomSpecies())
   const [metaphor, setMetaphor] = useState<Metaphor>(habit?.metaphor ?? 'pflanze')
+  const [goalKind, setGoalKind] = useState<GoalKind | 'abhaken'>(habit?.goal?.kind ?? 'abhaken')
+  // Als Text, damit man beim Tippen „1,“ schreiben kann
+  const [target, setTarget] = useState(habit?.goal?.kind === 'menge' ? formatNumber(habit.goal.target) : '8')
+  const [unit, setUnit] = useState(habit?.goal?.kind === 'menge' ? habit.goal.unit : 'Gläser')
+  const [step, setStep] = useState(habit?.goal?.kind === 'menge' ? formatNumber(habit.goal.step) : '1')
+  const [minutes, setMinutes] = useState(habit?.goal?.kind === 'dauer' ? String(habit.goal.target) : '30')
   const [saving, setSaving] = useState(false)
 
+  const goal = buildGoal(goalKind, target, unit, step, minutes)
   const daily = days.length === 7
-  const valid = name.trim().length > 0 && days.length > 0 && startDate <= today
+  const valid = name.trim().length > 0 && days.length > 0 && startDate <= today && goal !== null
 
   async function save() {
     if (!valid || saving) return
     setSaving(true)
-    const input: HabitInput = { name, emoji, color, days, startDate, seed, species, metaphor }
+    const input: HabitInput = { name, emoji, color, days, startDate, seed, species, metaphor, goal: goal ?? undefined }
     if (habit) {
       await updateHabit(habit.id, input, today)
       goBack(paths.habit(habit.id))
@@ -273,6 +281,113 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
           {habit && <p className="mt-1.5 text-[13px] text-muted">Änderungen gelten ab heute, vergangene Tage bleiben, wie sie waren.</p>}
         </Field>
 
+        <Field label="Ziel pro Tag">
+          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1">
+            {(
+              [
+                ['abhaken', 'Abhaken'],
+                ['menge', 'Menge'],
+                ['dauer', 'Dauer'],
+              ] as const
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setGoalKind(k)}
+                aria-pressed={goalKind === k}
+                className={`h-11 rounded-xl text-[15px] font-medium transition-colors ${goalKind === k ? 'bg-ink text-bg' : 'text-muted'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {goalKind === 'menge' && (
+            <div className="mt-2 rounded-2xl bg-surface p-3">
+              <div className="flex gap-2">
+                <label className="w-24 shrink-0">
+                  <span className="mb-1 block text-[12px] text-muted">Ziel</span>
+                  <input
+                    value={target}
+                    onChange={(e) => setTarget(e.target.value)}
+                    inputMode="decimal"
+                    className="h-12 w-full rounded-xl bg-surface-2 px-3 text-[17px] tabular-nums outline-none focus:ring-2 focus:ring-accent"
+                  />
+                </label>
+                <label className="min-w-0 flex-1">
+                  <span className="mb-1 block text-[12px] text-muted">Einheit</span>
+                  <input
+                    value={unit}
+                    onChange={(e) => setUnit(e.target.value)}
+                    maxLength={20}
+                    placeholder="z. B. Gläser"
+                    className="h-12 w-full rounded-xl bg-surface-2 px-3 text-[17px] outline-none placeholder:text-muted focus:ring-2 focus:ring-accent"
+                  />
+                </label>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {UNIT_SUGGESTIONS.map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    onClick={() => setUnit(u)}
+                    aria-pressed={unit === u}
+                    className={`h-9 rounded-full px-3 text-[14px] ${unit === u ? 'bg-ink text-bg' : 'bg-surface-2 text-muted'}`}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
+              <label className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-[15px]">Ein Tipp auf „Heute“ zählt</span>
+                <input
+                  value={step}
+                  onChange={(e) => setStep(e.target.value)}
+                  inputMode="decimal"
+                  aria-label="So viel zählt ein Tipp"
+                  className="h-11 w-20 rounded-xl bg-surface-2 px-3 text-right text-[17px] tabular-nums outline-none focus:ring-2 focus:ring-accent"
+                />
+              </label>
+            </div>
+          )}
+
+          {goalKind === 'dauer' && (
+            <div className="mt-2 rounded-2xl bg-surface p-3">
+              <div className="flex flex-wrap gap-1.5">
+                {MINUTE_PRESETS.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMinutes(String(m))}
+                    aria-pressed={minutes === String(m)}
+                    className={`h-11 rounded-xl px-3.5 text-[15px] font-medium tabular-nums ${minutes === String(m) ? 'bg-ink text-bg' : 'bg-surface-2'}`}
+                  >
+                    {m} min
+                  </button>
+                ))}
+              </div>
+              <label className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-[15px]">Minuten am Tag</span>
+                <input
+                  value={minutes}
+                  onChange={(e) => setMinutes(e.target.value)}
+                  inputMode="numeric"
+                  aria-label="Minuten am Tag"
+                  className="h-11 w-20 rounded-xl bg-surface-2 px-3 text-right text-[17px] tabular-nums outline-none focus:ring-2 focus:ring-accent"
+                />
+              </label>
+              <p className="mt-2 text-[13px] text-muted">Auf „Heute“ startet und stoppt ein Tipp den Timer. Er läuft weiter, auch wenn die App zu ist.</p>
+            </div>
+          )}
+
+          {goalKind !== 'abhaken' && goal === null && <p className="mt-1.5 text-[13px] text-danger">Bitte ein Ziel größer als 0 angeben.</p>}
+          {goalKind !== 'abhaken' && goal && (
+            <p className="mt-1.5 text-[13px] text-muted">
+              Erreicht zählt als erledigt.{habit ? ' Ein geändertes Ziel gilt ab jetzt, erledigte Tage bleiben erledigt.' : ''}
+            </p>
+          )}
+        </Field>
+
         <Field label="Startdatum">
           <input
             type="date"
@@ -311,6 +426,18 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
       </div>
     </motion.div>
   )
+}
+
+/** Ziel aus den Eingaben; null = unvollständig, undefined bei „Abhaken“ als kein Ziel */
+function buildGoal(kind: GoalKind | 'abhaken', target: string, unit: string, step: string, minutes: string): HabitGoal | null | undefined {
+  if (kind === 'abhaken') return undefined
+  if (kind === 'dauer') {
+    const m = parseAmount(minutes)
+    return m && m >= 1 && m <= 24 * 60 ? { kind, target: Math.round(m), unit: '', step: 5 } : null
+  }
+  const t = parseAmount(target)
+  const s = parseAmount(step)
+  return t && s ? { kind, target: t, unit: unit.trim().slice(0, 20), step: s } : null
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {

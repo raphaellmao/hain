@@ -6,6 +6,7 @@ import { clearExcuse, excuseDay } from '../app/actions'
 import { navigate, paths } from '../app/router'
 import { closeExcuseSheet, useExcuseRequest } from '../lib/excuseSheet'
 import { BottomSheet } from './BottomSheet'
+import { GoalEditor } from './GoalEditor'
 import { IconChevronRight } from './icons'
 
 /**
@@ -36,9 +37,19 @@ export function ExcuseHost() {
             <span aria-hidden>{req.habit.emoji}</span>
             <span className="truncate">{req.habit.name}</span>
           </p>
-          <h2 id="excuse-title" className="mt-0.5 text-[22px] font-bold leading-tight">
-            {req.date === req.today ? 'Heute nicht möglich?' : `${formatLong(req.date)} nicht möglich?`}
-          </h2>
+          {req.habit.goal ? (
+            <>
+              <h2 id="excuse-title" className="mt-0.5 mb-2 text-[22px] font-bold leading-tight">
+                {req.date === req.today ? 'Heute' : formatLong(req.date)}
+              </h2>
+              <GoalEditor habit={req.habit} goal={req.habit.goal} date={req.date} today={req.today} />
+              <h3 className="mt-5 text-[17px] font-bold">Nicht möglich?</h3>
+            </>
+          ) : (
+            <h2 id="excuse-title" className="mt-0.5 text-[22px] font-bold leading-tight">
+              {req.date === req.today ? 'Heute nicht möglich?' : `${formatLong(req.date)} nicht möglich?`}
+            </h2>
+          )}
           <p className="mt-1 text-[14px] leading-snug text-muted">
             Wähle einen Grund – der Tag zählt dann nicht als verpasst
             {req.habit.metaphor === 'schatten' ? ': dein Schatten wird nicht stärker.' : ': nichts welkt, die Serie bleibt.'}
