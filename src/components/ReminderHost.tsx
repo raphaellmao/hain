@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { AnimatePresence, motion, useIsPresent } from 'motion/react'
 import { useToday, useTodos } from '../db/hooks'
 import { finishTodo } from '../app/actions'
 import { dismissDueReminders, snoozeDueReminders } from '../db/repo'
@@ -120,7 +120,7 @@ export function ReminderHost() {
           }}
           className="pointer-events-none fixed inset-x-0 top-0 z-30 touch-none px-safe pt-safe"
         >
-          <div className="pointer-events-auto mx-auto max-w-md rounded-3xl bg-ink px-3 pt-2.5 pb-3 text-bg shadow-xl">
+          <Card>
             <div className="flex items-start gap-2 px-0.5">
               <span className="bell-ring text-[20px] leading-tight" aria-hidden>
                 🔔
@@ -156,10 +156,20 @@ export function ReminderHost() {
               <BannerButton onClick={() => void snoozeDueReminders(first.todo.id, `${addDays(toDateStr(new Date()), 1)}T08:00`)}>Morgen</BannerButton>
               <BannerButton onClick={() => void dismissDueReminders(first.todo.id)}>OK</BannerButton>
             </div>
-          </div>
+          </Card>
         </motion.div>
       )}
     </AnimatePresence>
+  )
+}
+
+/** Die Karte des Banners. Fährt sie gerade weg, nimmt sie keine Tipps mehr an: Sonst träfe „OK“ die vorige Erinnerung. */
+function Card({ children }: { children: ReactNode }) {
+  const present = useIsPresent()
+  return (
+    <div inert={!present} className="pointer-events-auto mx-auto max-w-md rounded-3xl bg-ink px-3 pt-2.5 pb-3 text-bg shadow-xl">
+      {children}
+    </div>
   )
 }
 

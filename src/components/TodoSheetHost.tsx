@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { useSettings, useToday } from '../db/hooks'
 import { createTodo, deleteTodo, skipTodo, TODO_MAX_LENGTH, updateTodo } from '../db/repo'
@@ -46,6 +46,8 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
   const [showRepeat, setShowRepeat] = useState(!!todo?.repeat)
   // Erinnerungen der Reihe, die heute schon geklingelt haben: kommen beim nächsten Termin wieder
   const [resting, setResting] = useState(() => (todo ? restingReminders(todo) : []))
+  // Ein Blatt speichert genau einmal, auch bei schnellem Doppeltipp
+  const saved = useRef(false)
 
   const anchor = (d: DateStr) => maxDate(today, d)
   const day = remindDay ?? anchor(date)
@@ -79,16 +81,17 @@ function Sheet({ req }: { req: TodoSheetRequest }) {
 
   function save(withCalendar: boolean) {
     const text = title.trim()
-    if (!text) return
+    if (!text || saved.current) return
+    saved.current = true
     const id = todo?.id ?? crypto.randomUUID()
     // Bereits erledigte Termine behalten ihre Wiederholung, nur so lässt sich das Abhaken zurücknehmen
     const repeat = todo?.done ? todo.repeat : rule ? buildRepeat(rule, date, reminders, resting, todo) : undefined
     const input = { title: text, scope, date, reminders, repeat }
-    const saved = todo ? updateTodo(id, input) : createTodo(id, input)
+    const written = todo ? updateTodo(id, input) : createTodo(id, input)
     tick()
     closeTodoSheet()
     // Beides braucht das Tippen als Auslöser, deshalb direkt hier und ohne vorheriges Warten
-    if (withCalendar) void addToCalendar(calendarItems([{ id, title: text, done: false, reminders }], new Date()), saved)
+    if (withCalendar) void addToCalendar(calendarItems([{ id, title: text, done: false, reminders }], new Date()), written)
     else if (reminders.length > 0) void requestNotifications()
   }
 

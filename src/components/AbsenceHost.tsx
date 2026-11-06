@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { useHabits, useToday } from '../db/hooks'
 import { deleteAbsence, saveAbsence } from '../db/repo'
@@ -33,13 +33,15 @@ function Sheet({ req }: { req: AbsenceRequest }) {
   const [note, setNote] = useState(existing?.note ?? '')
   // undefined = alle Gewohnheiten, auch später angelegte
   const [habitIds, setHabitIds] = useState<string[] | undefined>(existing?.habitIds)
+  const saved = useRef(false)
 
   const problem = absenceProblem(from, to) ?? (habitIds?.length === 0 ? 'Mindestens eine Gewohnheit wählen.' : null)
   const days = problem ? 0 : lengthOf({ from, to })
 
   function save(e: FormEvent) {
     e.preventDefault()
-    if (problem) return
+    if (problem || saved.current) return
+    saved.current = true
     tick()
     void saveAbsence(existing?.id, { from, to, reason, note, habitIds })
     closeAbsenceSheet()

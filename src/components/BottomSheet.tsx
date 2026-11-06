@@ -92,6 +92,8 @@ export function BottomSheet({
       <button type="button" tabIndex={-1} aria-label="Schließen" className="absolute inset-0 touch-none bg-black/45" onClick={onClose} />
       <motion.div
         ref={dialog}
+        // Beim Wegfahren nicht mehr bedienbar: Ein zweiter schneller Tipp auf „Hinzufügen“ legte sonst doppelt an
+        inert={!present}
         role={role}
         aria-modal="true"
         aria-labelledby={labelledBy}
