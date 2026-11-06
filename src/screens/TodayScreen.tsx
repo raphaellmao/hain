@@ -16,6 +16,7 @@ import { WeekStrip } from '../components/WeekStrip'
 import { Fab } from '../components/Fab'
 import { DayNote } from '../components/DayNote'
 import { MoodPicker } from '../components/MoodPicker'
+import { HABIT_TEMPLATES } from '../domain/templates'
 import { ReviewCard } from '../components/ReviewCard'
 import { TodayTodos } from '../components/TodayTodos'
 import { Tree } from '../tree/Tree'
@@ -228,6 +229,20 @@ function EmptyState({ today }: { today: DateStr }) {
       >
         Erste Gewohnheit pflanzen
       </button>
+      <p className="mt-8 text-[13px] font-semibold tracking-wide text-muted uppercase">Oder mit einer Vorlage</p>
+      <div className="mt-2 flex max-w-sm flex-wrap justify-center gap-2">
+        {HABIT_TEMPLATES.slice(0, 6).map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => navigate(paths.newFrom(t.id))}
+            className="flex h-11 items-center gap-1.5 rounded-full bg-surface px-3.5 text-[15px] font-medium"
+          >
+            <span aria-hidden>{t.emoji}</span>
+            {t.name}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

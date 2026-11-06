@@ -1,6 +1,7 @@
 import { useRoute } from './app/router'
 import { BottomNav } from './components/BottomNav'
 import { ConfirmHost } from './components/ConfirmHost'
+import { ShareHost } from './components/ShareHost'
 import { ExcuseHost } from './components/ExcuseHost'
 import { ReminderHost } from './components/ReminderHost'
 import { AbsenceHost } from './components/AbsenceHost'
@@ -49,7 +50,7 @@ export default function App() {
       screen = <HabitDetailScreen key={route.id} id={route.id} />
       break
     case 'new':
-      screen = <HabitFormScreen key="new" />
+      screen = <HabitFormScreen key={`new-${route.template ?? ''}`} template={route.template} />
       break
     case 'edit':
       screen = <HabitFormScreen key={route.id} id={route.id} />
@@ -70,6 +71,7 @@ export default function App() {
       <AbsenceHost />
       <ReminderHost />
       <AchievementWatcher />
+      <ShareHost />
       <ConfirmHost />
     </div>
   )

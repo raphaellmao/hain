@@ -51,6 +51,13 @@ export const IconGrip = (p: P) => (
   </svg>
 )
 
+export const IconShare = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M12 14.5V3.5M8 7.2 12 3.2l4 4" />
+    <path d="M8.5 10.5H7a2 2 0 0 0-2 2V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5.5a2 2 0 0 0-2-2h-1.5" />
+  </svg>
+)
+
 export const IconPlus = (p: P) => (
   <svg {...base} {...p}>
     <path d="M12 5v14M5 12h14" />

@@ -73,6 +73,7 @@ git push -u origin main
 src/
   domain/      reine Fachlogik ohne React/Datenbank – hier wird gerechnet
     mood.ts      Stimmung: Schnitt, Verteilung, Zusammenhang mit Gewohnheiten
+    templates.ts Vorlagen für neue Gewohnheiten
     dates.ts     Datumsrechnung auf 'JJJJ-MM-TT'-Texten (keine Zeitzonenfehler)
     schedule.ts  fällig an welchem Tag? (Häufigkeit mit Versionsliste)
     streaks.ts   aktuelle und längste Serie
@@ -297,6 +298,28 @@ Auswertung in `domain/mood.ts`:
   Erst ab je 4 bewerteten Tagen auf beiden Seiten und einem Unterschied ab 0,3; die
   drei größten werden gezeigt. Ausdrücklich als Zusammenhang, nicht als Ursache.
 - **Wochenrückblick:** Stimmungs-Schnitt der Woche unter der Quote.
+
+## Vorlagen
+
+16 fertige Gewohnheiten in `domain/templates.ts` (Wasser trinken 8 Gläser, Lesen 20 min,
+Laufen Mo/Mi/Fr, Liegestütze 50 Wdh., Kein Social Media als Schatten-Ich …). Auf dem
+leeren „Heute“ stehen die ersten sechs, im Formular „Neue Gewohnheit“ alle als
+wischbare Leiste. Ein Tipp füllt Name, Symbol, Farbe, Tage, Ziel und Bild aus;
+Pflanzenart und Startdatum bleiben frei. Direkt aufrufbar als `#/neu/<id>`, z. B.
+`#/neu/wasser`. Gespeichert wird keine Verbindung zur Vorlage – es ist danach eine
+ganz normale Gewohnheit.
+
+## Teilen
+
+- **Hain weitergeben** (Einstellungen → Teilen): QR-Code und Link zur App. Der Code
+  wird mit [uqr](https://github.com/unjs/uqr) erzeugt, erst beim Öffnen geladen und ist
+  immer dunkel auf weiß, damit ihn jede Kamera liest. Daten werden dabei nicht geteilt.
+- **Garten als Bild** (Garten → Teilen-Knopf oben rechts, oder Einstellungen):
+  `lib/gardenImage.tsx` malt ein PNG in 1080 px Breite – 4:5 bis sechs Pflanzen, darüber
+  hochkant 9:16. Himmel und Wiese der aktuellen Jahreszeit bei Tageslicht, die echten
+  Pflanzen in Reihen mit Tiefe (Anordnung in `garden/shareLayout.ts`), Namen wahlweise
+  aus. Geteilt über das Teilen-Menü des Handys (`navigator.share` mit Datei), sonst
+  „Bild sichern“ als Download.
 
 ## Erweiterungen (vorbereitet)
 

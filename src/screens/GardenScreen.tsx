@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 import { motion } from 'motion/react'
-import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, useToday } from '../db/hooks'
 import { colorHex } from '../domain/colors'
-import { stageLabel, summarize } from '../domain/summary'
+import { stageLabel } from '../domain/summary'
 import { navigate, paths } from '../app/router'
 import { HabitVisual } from '../components/HabitVisual'
 import { TERRITORY_STATUS } from '../domain/shadow'
@@ -12,6 +11,9 @@ import { scenePalette, rnd } from '../garden/palette'
 import { PlantGround, PlantLife } from '../garden/PlantSpot'
 import { useSky } from '../lib/sky'
 import { useDarkMode } from '../lib/useDarkMode'
+import { useGardenItems } from '../garden/useGardenItems'
+import { openShareSheet } from '../lib/shareSheet'
+import { IconShare } from '../components/icons'
 
 /**
  * Alle Bäume auf einen Blick, mitten in der Landschaft. Bewusst ohne Animationen
@@ -20,23 +22,13 @@ import { useDarkMode } from '../lib/useDarkMode'
  * Spalte ist versetzt, und jede bekommt aus ihrem Seed eine kleine eigene Abweichung.
  */
 export function GardenScreen() {
-  const habits = useHabits()
-  const doneMap = useDoneMap()
-  const excuseMap = useExcuseMap()
-  const today = useToday()
+  const loaded = useGardenItems()
   const sky = useSky()
   const dark = useDarkMode()
   const p = useMemo(() => scenePalette(sky.phase, sky.season, sky.weather, dark), [sky.phase, sky.season, sky.weather, dark])
 
-  const items = useMemo(() => {
-    if (!habits || !doneMap) return []
-    return habits.map((habit) => ({
-      habit,
-      summary: summarize(habit, doneFor(doneMap, habit.id), today, excusedSet(excusesFor(excuseMap, habit.id))),
-    }))
-  }, [habits, doneMap, excuseMap, today])
-
-  if (!habits || !doneMap) return null
+  if (!loaded) return null
+  const items = loaded
 
   const isBare = (s: (typeof items)[number]['summary']) => s.health.dormant && s.stage === 0
   const bare = items.filter((i) => isBare(i.summary)).length
@@ -55,9 +47,22 @@ export function GardenScreen() {
       {/* pb: Gras und Tiere im Vordergrund sollen die letzte Reihe nicht verdecken */}
       <div className="pb-nav">
         <header className="px-safe pt-safe">
-          <div className="pt-2 pb-4 [text-shadow:0_1px_10px_rgba(0,0,0,0.22)]">
-            <p className="text-[13px] font-semibold tracking-wide uppercase opacity-90">{items.length === 0 ? 'Noch leer' : summaryLine}</p>
-            <h1 className="text-[32px] font-bold leading-tight">Garten</h1>
+          <div className="flex items-end justify-between gap-3 pt-2 pb-4">
+            <div className="min-w-0 [text-shadow:0_1px_10px_rgba(0,0,0,0.22)]">
+              <p className="text-[13px] font-semibold tracking-wide uppercase opacity-90">{items.length === 0 ? 'Noch leer' : summaryLine}</p>
+              <h1 className="text-[32px] font-bold leading-tight">Garten</h1>
+            </div>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => openShareSheet('garten')}
+                aria-label="Garten als Bild teilen"
+                className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full backdrop-blur-sm"
+                style={{ background: p.labelBg, color: p.labelInk }}
+              >
+                <IconShare width={21} height={21} />
+              </button>
+            )}
           </div>
         </header>
 

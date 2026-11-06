@@ -8,6 +8,7 @@ import { type DateStr, WEEKDAYS_MON0 } from '../domain/dates'
 import { ALL_DAYS, daysAt } from '../domain/schedule'
 import type { GoalKind, Habit, HabitGoal, Metaphor } from '../domain/types'
 import { formatNumber, MINUTE_PRESETS, parseAmount, UNIT_SUGGESTIONS } from '../domain/goal'
+import { HABIT_TEMPLATES, templateById, templateHint, type HabitTemplate } from '../domain/templates'
 import { ShadowDuel } from '../shadow/ShadowDuel'
 import { SPECIES_INFO, SPECIES_KEYS, speciesOf, type SpeciesKey } from '../domain/species'
 import { goBack, navigate, paths } from '../app/router'
@@ -21,8 +22,8 @@ const QUICK_EMOJIS = [
   '💊', '🗣️', '🚴', '🙏', '🎨', '💰', '🧊', '🍎',
 ]
 
-/** Neues Habit anlegen (id fehlt) oder bestehendes bearbeiten. */
-export function HabitFormScreen({ id }: { id?: string }) {
+/** Neues Habit anlegen (id fehlt, optional aus einer Vorlage) oder bestehendes bearbeiten. */
+export function HabitFormScreen({ id, template }: { id?: string; template?: string }) {
   const habit = useHabit(id ?? '')
   const today = useToday()
   if (id && habit === undefined) return null // lädt noch
@@ -36,25 +37,44 @@ export function HabitFormScreen({ id }: { id?: string }) {
       </div>
     )
   }
-  return <Form habit={habit ?? undefined} today={today} />
+  return <Form habit={habit ?? undefined} template={id ? undefined : templateById(template)} today={today} />
 }
 
-function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
-  const [name, setName] = useState(habit?.name ?? '')
-  const [emoji, setEmoji] = useState(habit?.emoji ?? '🌱')
-  const [color, setColor] = useState<ColorKey>(habit?.color ?? randomColor())
-  const [days, setDays] = useState<number[]>(habit ? daysAt(habit.schedule, today) : ALL_DAYS)
+function Form({ habit, template, today }: { habit?: Habit; template?: HabitTemplate; today: DateStr }) {
+  const goal0 = habit ? habit.goal : template?.goal
+  const [name, setName] = useState(habit?.name ?? template?.name ?? '')
+  const [emoji, setEmoji] = useState(habit?.emoji ?? template?.emoji ?? '🌱')
+  const [color, setColor] = useState<ColorKey>(habit?.color ?? template?.color ?? randomColor())
+  const [days, setDays] = useState<number[]>(habit ? daysAt(habit.schedule, today) : (template?.days ?? ALL_DAYS))
   const [startDate, setStartDate] = useState<DateStr>(habit?.startDate ?? today)
   const [seed, setSeed] = useState(habit?.seed ?? newSeed())
   const [species, setSpecies] = useState<SpeciesKey>(habit ? speciesOf(habit) : randomSpecies())
-  const [metaphor, setMetaphor] = useState<Metaphor>(habit?.metaphor ?? 'pflanze')
-  const [goalKind, setGoalKind] = useState<GoalKind | 'abhaken'>(habit?.goal?.kind ?? 'abhaken')
+  const [metaphor, setMetaphor] = useState<Metaphor>(habit?.metaphor ?? template?.metaphor ?? 'pflanze')
+  const [goalKind, setGoalKind] = useState<GoalKind | 'abhaken'>(goal0?.kind ?? 'abhaken')
   // Als Text, damit man beim Tippen „1,“ schreiben kann
-  const [target, setTarget] = useState(habit?.goal?.kind === 'menge' ? formatNumber(habit.goal.target) : '8')
-  const [unit, setUnit] = useState(habit?.goal?.kind === 'menge' ? habit.goal.unit : 'Gläser')
-  const [step, setStep] = useState(habit?.goal?.kind === 'menge' ? formatNumber(habit.goal.step) : '1')
-  const [minutes, setMinutes] = useState(habit?.goal?.kind === 'dauer' ? String(habit.goal.target) : '30')
+  const [target, setTarget] = useState(goal0?.kind === 'menge' ? formatNumber(goal0.target) : '8')
+  const [unit, setUnit] = useState(goal0?.kind === 'menge' ? goal0.unit : 'Gläser')
+  const [step, setStep] = useState(goal0?.kind === 'menge' ? formatNumber(goal0.step) : '1')
+  const [minutes, setMinutes] = useState(goal0?.kind === 'dauer' ? String(goal0.target) : '30')
+  const [templateId, setTemplateId] = useState(template?.id)
   const [saving, setSaving] = useState(false)
+
+  /** Vorlage übernehmen: alles, was sie festlegt; Pflanze und Startdatum bleiben */
+  function applyTemplate(t: HabitTemplate) {
+    setTemplateId(t.id)
+    setName(t.name)
+    setEmoji(t.emoji)
+    setColor(t.color)
+    setDays(t.days)
+    setMetaphor(t.metaphor ?? 'pflanze')
+    setGoalKind(t.goal?.kind ?? 'abhaken')
+    if (t.goal?.kind === 'menge') {
+      setTarget(formatNumber(t.goal.target))
+      setUnit(t.goal.unit)
+      setStep(formatNumber(t.goal.step))
+    }
+    if (t.goal?.kind === 'dauer') setMinutes(String(t.goal.target))
+  }
 
   const goal = buildGoal(goalKind, target, unit, step, minutes)
   const daily = days.length === 7
@@ -104,6 +124,35 @@ function Form({ habit, today }: { habit?: Habit; today: DateStr }) {
           <h1 className="text-[17px] font-semibold">{habit ? 'Bearbeiten' : 'Neue Gewohnheit'}</h1>
           <span className="w-20" />
         </div>
+
+        {!habit && (
+          <section className="mt-1 mb-3" aria-labelledby="vorlagen">
+            <h2 id="vorlagen" className="mb-1.5 px-1 text-[13px] font-semibold tracking-wide text-muted uppercase">
+              Vorlage <span className="normal-case">(optional)</span>
+            </h2>
+            <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+              {HABIT_TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => applyTemplate(t)}
+                  aria-pressed={templateId === t.id}
+                  className={`flex shrink-0 snap-start items-center gap-2 rounded-2xl bg-surface py-2 pr-3.5 pl-2.5 text-left transition-shadow ${
+                    templateId === t.id ? 'ring-2 ring-accent' : ''
+                  }`}
+                >
+                  <span className="text-[22px] leading-none" aria-hidden>
+                    {t.emoji}
+                  </span>
+                  <span>
+                    <span className="block text-[14px] leading-tight font-medium whitespace-nowrap">{t.name}</span>
+                    <span className="block text-[12px] leading-tight whitespace-nowrap text-muted">{templateHint(t)}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Bild für den Fortschritt: Pflanze oder Schatten-Ich */}
         <div className="mt-2 grid grid-cols-2 gap-1 rounded-2xl bg-surface p-1">

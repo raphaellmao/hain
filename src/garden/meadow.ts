@@ -91,6 +91,12 @@ function details(p: ScenePalette, size: number, salt: number): string {
   return out
 }
 
+/** Die beiden Kacheln als rohe SVG-Inhalte (für das Gartenbild zum Teilen) */
+export const meadowTiles = (p: ScenePalette) => [
+  { size: 470, body: patches(p, 470, 5) },
+  { size: 310, body: details(p, 310, 3) },
+]
+
 const cache = new Map<string, { image: string; size: string }>()
 
 /** Hintergrund der Wiese, passend zu Jahreszeit und Licht */

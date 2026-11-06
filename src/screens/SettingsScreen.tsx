@@ -5,6 +5,7 @@ import { navigate, paths } from '../app/router'
 import { formatRange, phaseOf, sortAbsences } from '../domain/absence'
 import { reasonInfo } from '../domain/excuse'
 import { openAbsenceSheet } from '../lib/absenceSheet'
+import { openShareSheet } from '../lib/shareSheet'
 import { BackupError, exportBackup, parseBackup, restoreBackup } from '../db/backup'
 import { confirmDialog } from '../lib/confirm'
 import { showToast } from '../lib/toast'
@@ -133,6 +134,13 @@ export function SettingsScreen() {
           <HabitsLink />
         </Section>
 
+        <Section title="Teilen">
+          <div className="flex flex-col gap-2">
+            <LinkRow emoji="📲" title="Hain weitergeben" detail="QR-Code und Link – deine Daten bleiben bei dir" onClick={() => openShareSheet('app')} />
+            <LinkRow emoji="🖼️" title="Garten als Bild" detail="Zum Teilen oder Aufheben" onClick={() => openShareSheet('garten')} />
+          </div>
+        </Section>
+
         <Section title="Abwesenheit" hint="Urlaub, Lehrgang, Übung: einmal von–bis eintragen, und die Gewohnheiten pausieren – nichts welkt.">
           <Absences />
         </Section>
@@ -164,6 +172,23 @@ export function SettingsScreen() {
         </section>
       </main>
     </div>
+  )
+}
+
+function LinkRow({ emoji, title, detail, onClick }: { emoji: string; title: string; detail: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface px-4 py-2 text-left">
+      <span className="text-[22px] leading-none" aria-hidden>
+        {emoji}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[16px] font-medium">{title}</span>
+        <span className="block text-[13px] text-muted">{detail}</span>
+      </span>
+      <span className="text-muted" aria-hidden>
+        ›
+      </span>
+    </button>
   )
 }
 
