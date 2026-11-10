@@ -19,6 +19,7 @@ export type Route =
   | { name: 'habit'; id: string }
   | { name: 'new'; template?: string }
   | { name: 'edit'; id: string }
+  | { name: 'routine'; id?: string }
 
 export const paths = {
   today: '/',
@@ -33,6 +34,8 @@ export const paths = {
   /** Neue Gewohnheit, vorausgefüllt aus einer Vorlage (domain/templates.ts) */
   newFrom: (template: string) => `/neu/${template}`,
   edit: (id: string) => `/habit/${id}/bearbeiten`,
+  /** Routine bearbeiten; ohne id eine neue */
+  routine: (id?: string) => `/routine/${id ?? 'neu'}`,
 }
 
 export function parseHash(hash: string): Route {
@@ -45,6 +48,7 @@ export function parseHash(hash: string): Route {
   if (parts[0] === 'rueckblick') return { name: 'review', week: parts[1] }
   if (parts[0] === 'gewohnheiten') return { name: 'habits' }
   if (parts[0] === 'neu') return { name: 'new', template: parts[1] }
+  if (parts[0] === 'routine') return { name: 'routine', id: parts[1] && parts[1] !== 'neu' ? parts[1] : undefined }
   if (parts[0] === 'habit' && parts[1]) {
     return parts[2] === 'bearbeiten' ? { name: 'edit', id: parts[1] } : { name: 'habit', id: parts[1] }
   }

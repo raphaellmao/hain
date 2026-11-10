@@ -74,6 +74,8 @@ src/
   domain/      reine Fachlogik ohne React/Datenbank – hier wird gerechnet
     mood.ts      Stimmung: Schnitt, Verteilung, Zusammenhang mit Gewohnheiten
     templates.ts Vorlagen für neue Gewohnheiten
+    routine.ts   Plan je Gewohnheit, Routinen (Gewohnheiten stapeln)
+    perfect.ts   perfekte Tage und ihre Serie
     dates.ts     Datumsrechnung auf 'JJJJ-MM-TT'-Texten (keine Zeitzonenfehler)
     schedule.ts  fällig an welchem Tag? (Häufigkeit mit Versionsliste)
     streaks.ts   aktuelle und längste Serie
@@ -298,6 +300,30 @@ Auswertung in `domain/mood.ts`:
   Erst ab je 4 bewerteten Tagen auf beiden Seiten und einem Unterschied ab 0,3; die
   drei größten werden gezeigt. Ausdrücklich als Zusammenhang, nicht als Ursache.
 - **Wochenrückblick:** Stimmungs-Schnitt der Woche unter der Quote.
+
+## Plan und Routinen (aus „Die 1%-Methode“)
+
+- **Plan je Gewohnheit** („Wann und wo?“ im Formular): z. B. „Nach dem Dienst“ oder
+  „Um 6:30 Uhr im Flur“. Steht klein unter dem Namen, solange sie offen ist. Feld
+  `Habit.plan` (max. 80 Zeichen).
+- **Routinen** = Gewohnheiten stapeln: Einstellungen → Reihenfolge, Routinen & Archiv →
+  Neue Routine. Name, Symbol, optionaler Anker („Nach dem Aufstehen“) und die Kette in
+  fester Reihenfolge. Auf „Heute“ stehen die fälligen Glieder als Karte an der Stelle
+  der ersten; die nächste offene ist hervorgehoben, abhaken geht trotzdem in jeder
+  Reihenfolge. Komplett → Karte leuchtet auf, Hinweis „… geschafft“. Eine Gewohnheit
+  steckt in höchstens einer Routine. Tabelle `routines` (`version(6)`), Logik in
+  `domain/routine.ts`, Backup-Format 10.
+
+## Belohnung für einen perfekten Tag
+
+Sobald das Letzte für heute abgehakt ist (egal wo), zeigt `components/Celebration.tsx`
+einen Effekt passend zu Tages- und Jahreszeit – Blütenregen, Laub, Schnee oder aufsteigende
+Glühwürmchen – und eine Karte, auf der der Baum des Tages wächst, mit der Serie perfekter
+Tage (`domain/perfect.ts`; Ausgesetztes zählt nicht, Tage ohne Fälliges unterbrechen nichts).
+Die große Feier einmal am Tag, danach nur der kurze Effekt. Beim Laden und nach Mitternacht
+wird nur gemerkt, nicht gefeiert. Bis zum Tageswechsel feiert der Garten mit: tagsüber
+Regenbogen und Funkeln, abends und nachts goldene Glühwürmchen. Bei „Bewegung reduzieren“
+bleibt nur die Karte.
 
 ## Vorlagen
 

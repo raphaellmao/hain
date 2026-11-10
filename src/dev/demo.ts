@@ -7,7 +7,7 @@
 import { db } from '../db/schema'
 import { addDays, logicalToday, startOfWeek, weekday, type DateStr } from '../domain/dates'
 import { ALL_DAYS } from '../domain/schedule'
-import type { Checkin, Habit, HabitGoal, Todo } from '../domain/types'
+import type { Checkin, Habit, HabitGoal, Todo, Routine } from '../domain/types'
 import type { ColorKey } from '../domain/colors'
 import type { SpeciesKey } from '../domain/species'
 
@@ -130,12 +130,28 @@ export async function hainDemo() {
     return { id: date, date, note: '', mood, updatedAt: now }
   })
 
+  // Pläne und eine Routine („Gewohnheiten stapeln“)
+  const plans: Record<string, string> = { 'demo-1': 'Vor dem Schlafengehen', 'demo-2': 'Nach dem Dienst', 'demo-6': 'In der Mittagspause' }
+  for (const h of habits) if (plans[h.id]) h.plan = plans[h.id]
+  const routine: Routine = {
+    id: 'demo-routine-morgen',
+    name: 'Morgenroutine',
+    emoji: '🌅',
+    cue: 'Nach dem Aufstehen',
+    habitIds: ['demo-12', 'demo-3', 'demo-10'],
+    order: 1,
+    deleted: false,
+    createdAt: now,
+    updatedAt: now,
+  }
+
   const absence = {
     id: 'demo-absence-1', from: addDays(today, -26), to: addDays(today, -22), reason: 'lehrgang' as const, note: 'Führungslehrgang',
     deleted: false, createdAt: now, updatedAt: now,
   }
 
-  await db.transaction('rw', [db.habits, db.checkins, db.todos, db.absences, db.dayEntries], async () => {
+  await db.transaction('rw', [db.habits, db.checkins, db.todos, db.absences, db.dayEntries, db.routines], async () => {
+    if (!(await db.routines.get(routine.id))) await db.routines.put(routine)
     for (const m of moods) if (!(await db.dayEntries.get(m.id))) await db.dayEntries.put(m)
     await db.habits.bulkAdd(habits)
     await db.checkins.bulkAdd(checkins)

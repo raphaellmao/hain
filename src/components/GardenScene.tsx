@@ -17,7 +17,7 @@ import { SkyScene } from '../garden/SkyScene'
 import { Wildlife } from '../garden/Wildlife'
 import type { Sky } from '../lib/sky'
 
-export function GardenScene({ sky, p, children }: { sky: Sky; p: ScenePalette; children: ReactNode }) {
+export function GardenScene({ sky, p, perfect = false, children }: { sky: Sky; p: ScenePalette; perfect?: boolean; children: ReactNode }) {
   const meadow = meadowBackground(p, `${sky.phase}|${sky.season}|${sky.weather}|${p.meadow[0]}`)
 
   return (
@@ -35,10 +35,10 @@ export function GardenScene({ sky, p, children }: { sky: Sky; p: ScenePalette; c
       data-season={sky.season}
       data-weather={sky.weather}
     >
-      <SkyScene sky={sky} p={p} />
+      <SkyScene sky={sky} p={p} perfect={perfect} />
       {sky.phase === 'nacht' && <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(ellipse_at_50%_40%,transparent_40%,rgba(3,6,20,0.5))]" />}
       <div className="relative z-[2]">{children}</div>
-      <Wildlife sky={sky} p={p} />
+      <Wildlife sky={sky} p={p} perfect={perfect} />
     </div>
   )
 }

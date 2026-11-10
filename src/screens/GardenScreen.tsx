@@ -12,6 +12,8 @@ import { PlantGround, PlantLife } from '../garden/PlantSpot'
 import { useSky } from '../lib/sky'
 import { useDarkMode } from '../lib/useDarkMode'
 import { useGardenItems } from '../garden/useGardenItems'
+import { useToday } from '../db/hooks'
+import { dayStatus } from '../domain/perfect'
 import { openShareSheet } from '../lib/shareSheet'
 import { IconShare } from '../components/icons'
 
@@ -23,12 +25,15 @@ import { IconShare } from '../components/icons'
  */
 export function GardenScreen() {
   const loaded = useGardenItems()
+  const today = useToday()
   const sky = useSky()
   const dark = useDarkMode()
   const p = useMemo(() => scenePalette(sky.phase, sky.season, sky.weather, dark), [sky.phase, sky.season, sky.weather, dark])
 
   if (!loaded) return null
   const items = loaded
+  // Heute alles erledigt: Der Garten feiert bis zum Tageswechsel mit
+  const perfect = dayStatus(items, today).complete
 
   const isBare = (s: (typeof items)[number]['summary']) => s.health.dormant && s.stage === 0
   const bare = items.filter((i) => isBare(i.summary)).length
@@ -40,10 +45,11 @@ export function GardenScreen() {
     bare && `${bare} kahl`,
   ]
     .filter(Boolean)
+    .concat(perfect ? ['✨ Perfekter Tag'] : [])
     .join(' · ')
 
   return (
-    <GardenScene sky={sky} p={p}>
+    <GardenScene sky={sky} p={p} perfect={perfect}>
       {/* pb: Gras und Tiere im Vordergrund sollen die letzte Reihe nicht verdecken */}
       <div className="pb-nav">
         <header className="px-safe pt-safe">

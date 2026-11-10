@@ -12,13 +12,14 @@ import { parseRepeat } from '../domain/repeat'
 import { parseGoal, roundAmount } from '../domain/goal'
 import { absenceProblem } from '../domain/absence'
 import { isMood } from '../domain/mood'
+import { cleanPlan, ROUTINE_NAME_MAX } from '../domain/routine'
 import { cleanReminders } from '../domain/todos'
-import { type Absence, type Checkin, type DayEntry, type Habit, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
+import { type Absence, type Checkin, type DayEntry, type Habit, type Routine, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
 import { NOTE_MAX_LENGTH, TODO_MAX_LENGTH } from './repo'
 import { startOfWeek, toDateStr } from '../domain/dates'
 
-/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos · 6 = Tagesziele mit Menge oder Dauer · 7 = Abwesenheiten · 8 = Archiv · 9 = Stimmung */
-export const BACKUP_VERSION = 9
+/** 1 = Habits + Abhakungen · 2 = zusätzlich Notizen pro Tag · 3 = zusätzlich To-dos · 4 = mehrere Erinnerungen je To-do · 5 = wiederkehrende To-dos · 6 = Tagesziele mit Menge oder Dauer · 7 = Abwesenheiten · 8 = Archiv · 9 = Stimmung · 10 = Plan je Gewohnheit und Routinen */
+export const BACKUP_VERSION = 10
 
 export interface BackupFile {
   app: 'hain'
@@ -30,6 +31,7 @@ export interface BackupFile {
   dayEntries: DayEntry[]
   todos: Todo[]
   absences: Absence[]
+  routines: Routine[]
 }
 
 export async function createBackup(): Promise<BackupFile> {
@@ -39,8 +41,9 @@ export async function createBackup(): Promise<BackupFile> {
   const dayEntries = (await db.dayEntries.toArray()).filter((e) => e.note !== '' || e.mood)
   const todos = (await db.todos.toArray()).filter((t) => !t.deleted)
   const absences = (await db.absences.toArray()).filter((a) => !a.deleted)
+  const routines = (await db.routines.toArray()).filter((r) => !r.deleted)
   const settings = { ...DEFAULT_SETTINGS, ...((await db.meta.get('settings'))?.value as Partial<Settings>) }
-  return { app: 'hain', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), settings, habits, checkins, dayEntries, todos, absences }
+  return { app: 'hain', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), settings, habits, checkins, dayEntries, todos, absences, routines }
 }
 
 /** Backup speichern: auf dem Handy über das Teilen-Menü („In Dateien sichern“), sonst als Download. */
@@ -109,6 +112,7 @@ export function parseBackup(text: string): BackupFile {
       ...(isSpecies(h.species) ? { species: h.species } : {}),
       ...(h.metaphor === 'schatten' || h.metaphor === 'pflanze' ? { metaphor: h.metaphor } : {}),
       ...(parseGoal(h.goal) ? { goal: parseGoal(h.goal) } : {}),
+      ...(typeof h.plan === 'string' && cleanPlan(h.plan) ? { plan: cleanPlan(h.plan) } : {}),
       ...(h.archived && isDate(h.archived.since) && isDays(h.archived.days) ? { archived: { since: h.archived.since, days: h.archived.days } } : {}),
       order: typeof h.order === 'number' ? h.order : i + 1,
       deleted: false,
@@ -208,15 +212,38 @@ export function parseBackup(text: string): BackupFile {
     })
   }
 
+  // Routinen gibt es erst ab Backup-Version 10; jede Gewohnheit höchstens in einer
+  const routines: Routine[] = []
+  const taken = new Set<string>()
+  for (const r of Array.isArray(b.routines) ? b.routines : []) {
+    if (!r || typeof r.id !== 'string' || typeof r.name !== 'string' || !r.name.trim() || !Array.isArray(r.habitIds)) continue
+    const habitIds = [...new Set(r.habitIds.filter((id) => typeof id === 'string' && ids.has(id) && !taken.has(id)))]
+    if (habitIds.length === 0) continue
+    habitIds.forEach((id) => taken.add(id))
+    routines.push({
+      id: r.id,
+      name: r.name.trim().slice(0, ROUTINE_NAME_MAX),
+      emoji: typeof r.emoji === 'string' && r.emoji ? r.emoji.slice(0, 8) : '🌅',
+      ...(typeof r.cue === 'string' && cleanPlan(r.cue) ? { cue: cleanPlan(r.cue) } : {}),
+      habitIds,
+      order: typeof r.order === 'number' ? r.order : routines.length + 1,
+      deleted: false,
+      createdAt: typeof r.createdAt === 'number' ? r.createdAt : now,
+      updatedAt: typeof r.updatedAt === 'number' ? r.updatedAt : now,
+    })
+  }
+
   const hour = b.settings?.dayStartHour
   const settings: Settings = { dayStartHour: Number.isInteger(hour) && hour! >= 0 && hour! <= 4 ? hour! : 0 }
 
-  return { app: 'hain', version: b.version, exportedAt: String(b.exportedAt ?? ''), settings, habits, checkins, dayEntries, todos, absences }
+  return { app: 'hain', version: b.version, exportedAt: String(b.exportedAt ?? ''), settings, habits, checkins, dayEntries, todos, absences, routines }
 }
 
 /** Ersetzt ALLE vorhandenen Daten durch das Backup (in einer Transaktion: ganz oder gar nicht). */
 export async function restoreBackup(backup: BackupFile): Promise<void> {
-  await db.transaction('rw', [db.habits, db.checkins, db.dayEntries, db.todos, db.absences, db.meta], async () => {
+  await db.transaction('rw', [db.habits, db.checkins, db.dayEntries, db.todos, db.absences, db.routines, db.meta], async () => {
+    await db.routines.clear()
+    await db.routines.bulkPut(backup.routines)
     await db.habits.clear()
     await db.checkins.clear()
     await db.dayEntries.clear()

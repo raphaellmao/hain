@@ -201,9 +201,9 @@ function HabitsLink() {
       className="flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2 text-left"
     >
       <span>
-        <span className="block text-[16px] font-medium">Reihenfolge & Archiv</span>
+        <span className="block text-[16px] font-medium">Reihenfolge, Routinen & Archiv</span>
         <span className="block text-[13px] text-muted">
-          {archived?.length ? `${archived.length} im Archiv` : 'Sortieren per Ziehen, Pausiertes zurückholen'}
+          {archived?.length ? `${archived.length} im Archiv` : 'Sortieren, Gewohnheiten aneinanderketten, Pausiertes zurückholen'}
         </span>
       </span>
       <span className="text-muted" aria-hidden>

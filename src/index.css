@@ -620,3 +620,89 @@
 @media (prefers-reduced-motion: reduce) {
   .bell-ring { animation: none; }
 }
+
+/* ── Belohnung: alles abgehakt (Celebration.tsx) ─────────────────────────── */
+.cel {
+  position: absolute;
+  top: -6%;
+  will-change: transform, opacity;
+  animation-name: cel-fall;
+  animation-timing-function: cubic-bezier(0.3, 0.1, 0.5, 1);
+  animation-fill-mode: both;
+}
+.cel-bluete { border-radius: 80% 0 55% 50% / 55% 0 80% 50%; }
+.cel-laub { border-radius: 0 80% 0 80%; }
+.cel-schnee { border-radius: 50%; box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.8); }
+.cel-gluehwuermchen {
+  top: auto;
+  bottom: -4%;
+  border-radius: 50%;
+  box-shadow: 0 0 12px 5px rgba(214, 255, 110, 0.75);
+  animation-name: cel-rise;
+}
+@keyframes cel-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  8% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate3d(var(--dx), 112vh, 0) rotate(var(--rot)); opacity: 0; }
+}
+@keyframes cel-rise {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  15% { opacity: 1; }
+  45% { opacity: 0.45; }
+  60% { opacity: 1; }
+  100% { transform: translate3d(var(--dx), -82vh, 0); opacity: 0; }
+}
+.celebrate-glow {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 140vmax;
+  height: 140vmax;
+  margin: -70vmax 0 0 -70vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 236, 170, 0.38), transparent 55%);
+  animation: cel-glow 1.8s ease-out both;
+}
+.celebrate-glow-gluehwuermchen { background: radial-gradient(circle, rgba(214, 255, 110, 0.22), transparent 55%); }
+.celebrate-glow-schnee { background: radial-gradient(circle, rgba(220, 238, 255, 0.4), transparent 55%); }
+@keyframes cel-glow {
+  from { transform: scale(0.2); opacity: 0; }
+  30% { opacity: 1; }
+  to { transform: scale(1); opacity: 0; }
+}
+/* Routine komplett: die Karte leuchtet einmal auf */
+.routine-burst { animation: routine-burst 1.3s ease-out; }
+@keyframes routine-burst {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  100% { box-shadow: 0 0 0 18px transparent; }
+}
+
+/* ── Perfekter Tag im Garten (Wildlife.tsx, SkyScene.tsx) ─────────────────── */
+.firefly-gold {
+  width: 7px;
+  height: 7px;
+  background: #ffe9a3;
+  box-shadow: 0 0 12px 5px rgba(255, 205, 90, 0.75);
+}
+.sparkle {
+  position: absolute;
+  color: #fff8d6;
+  font-size: 13px;
+  line-height: 1;
+  text-shadow: 0 0 6px rgba(255, 225, 130, 0.95);
+  animation: sparkle-float ease-in-out infinite;
+}
+@keyframes sparkle-float {
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  30% { opacity: 1; }
+  60% { transform: translateY(-28px) scale(1); opacity: 0.85; }
+  100% { transform: translateY(-56px) scale(0.5); opacity: 0; }
+}
+.rainbow-in { animation: rainbow-in 2.4s ease-out both; }
+@keyframes rainbow-in { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cel, .celebrate-glow, .sparkle { display: none; }
+  .routine-burst, .rainbow-in { animation: none; }
+}

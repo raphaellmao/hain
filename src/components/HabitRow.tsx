@@ -30,6 +30,7 @@ export function HabitRow({
   onMore,
   amount = 0,
   timerStart,
+  next = false,
 }: {
   habit: Habit
   summary: HabitSummary
@@ -46,6 +47,8 @@ export function HabitRow({
   amount?: number
   /** Start des laufenden Timers (nur mit Ziel „Dauer“, nur heute) */
   timerStart?: number
+  /** in einer Routine als Nächstes dran */
+  next?: boolean
 }) {
   const color = colorHex(habit.color)
   const { current } = summary.streaks
@@ -89,7 +92,7 @@ export function HabitRow({
   return (
     <motion.li
       layout="position"
-      className={`flex items-stretch overflow-hidden rounded-3xl bg-surface shadow-[0_1px_0_var(--line)] ${dimmed ? 'opacity-70' : ''}`}
+      className={`flex items-stretch overflow-hidden rounded-3xl bg-surface shadow-[0_1px_0_var(--line)] ${dimmed ? 'opacity-70' : ''} ${next ? 'ring-2 ring-accent/60' : ''}`}
     >
       <motion.button
         type="button"
@@ -118,6 +121,12 @@ export function HabitRow({
             {running && <TimerBadge since={timerStart} />}
             {sub}
           </span>
+          {habit.plan && !done && (
+            <span className="mt-0.5 block truncate text-[12px] text-muted">
+              <span aria-hidden>↪ </span>
+              {habit.plan}
+            </span>
+          )}
         </span>
         {excused ? (
           <span

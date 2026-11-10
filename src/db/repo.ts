@@ -10,10 +10,11 @@ import type { SpeciesKey } from '../domain/species'
 import type { ExcuseReason } from '../domain/excuse'
 import { nextDateOf, nextInstance, nextOccurrence, remindersOn } from '../domain/repeat'
 import { endedEarly } from '../domain/absence'
-import { type Absence, type Checkin, type DayEntry, type Habit, type HabitGoal, type Metaphor, type Mood, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
+import { type Absence, type Checkin, type DayEntry, type Habit, type HabitGoal, type Metaphor, type Mood, type Routine, type Settings, type Todo, type TodoRepeat, type TodoScope, DEFAULT_SETTINGS } from '../domain/types'
 import { reached, roundAmount } from '../domain/goal'
 import { archivedSchedule, daysAt, restoredSchedule, withNewDays } from '../domain/schedule'
 import { cleanReminders, withoutDue } from '../domain/todos'
+import { cleanPlan, ROUTINE_NAME_MAX } from '../domain/routine'
 
 export interface HabitInput {
   name: string
@@ -25,6 +26,7 @@ export interface HabitInput {
   species: SpeciesKey
   metaphor: Metaphor
   goal?: HabitGoal
+  plan?: string
 }
 
 export const newSeed = () => Math.floor(Math.random() * 2 ** 31)
@@ -43,6 +45,7 @@ export async function createHabit(input: HabitInput): Promise<string> {
     species: input.species,
     metaphor: input.metaphor,
     ...(input.goal ? { goal: input.goal } : {}),
+    ...(cleanPlan(input.plan) ? { plan: cleanPlan(input.plan) } : {}),
     order: (last?.order ?? 0) + 1,
     deleted: false,
     createdAt: now,
@@ -76,10 +79,57 @@ export async function updateHabit(id: string, input: HabitInput, today: DateStr)
     species: input.species,
     metaphor: input.metaphor,
     goal: input.goal,
+    plan: cleanPlan(input.plan),
     startDate: input.startDate,
     schedule,
     updatedAt: Date.now(),
   })
+}
+
+// ── Routinen ────────────────────────────────────────────────────────────────
+
+export interface RoutineInput {
+  name: string
+  emoji: string
+  cue?: string
+  habitIds: string[]
+}
+
+/**
+ * Routine anlegen oder ändern. Eine Gewohnheit steckt in höchstens einer Routine –
+ * wer sie hier aufnimmt, nimmt sie aus der anderen heraus.
+ */
+export async function saveRoutine(input: RoutineInput, id?: string): Promise<string> {
+  const now = Date.now()
+  const habitIds = [...new Set(input.habitIds)]
+  const routineId = id ?? crypto.randomUUID()
+  await db.transaction('rw', db.routines, async () => {
+    const others = (await db.routines.toArray()).filter((r) => !r.deleted && r.id !== routineId)
+    for (const r of others) {
+      const kept = r.habitIds.filter((h) => !habitIds.includes(h))
+      if (kept.length !== r.habitIds.length) await db.routines.update(r.id, { habitIds: kept, updatedAt: now })
+    }
+    const current = id ? await db.routines.get(id) : undefined
+    const last = await db.routines.orderBy('order').last()
+    const routine: Routine = {
+      id: routineId,
+      name: input.name.trim().slice(0, ROUTINE_NAME_MAX),
+      emoji: input.emoji,
+      ...(cleanPlan(input.cue) ? { cue: cleanPlan(input.cue) } : {}),
+      habitIds,
+      order: current?.order ?? (last?.order ?? 0) + 1,
+      deleted: false,
+      createdAt: current?.createdAt ?? now,
+      updatedAt: now,
+    }
+    await db.routines.put(routine)
+  })
+  return routineId
+}
+
+/** Routine auflösen – die Gewohnheiten bleiben, wie sie sind */
+export async function deleteRoutine(id: string): Promise<void> {
+  await db.routines.update(id, { deleted: true, updatedAt: Date.now() })
 }
 
 /** Weiches Löschen: Das Habit verschwindet aus der App, bleibt aber als Grabstein. */

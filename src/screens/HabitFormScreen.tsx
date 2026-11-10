@@ -9,6 +9,7 @@ import { ALL_DAYS, daysAt } from '../domain/schedule'
 import type { GoalKind, Habit, HabitGoal, Metaphor } from '../domain/types'
 import { formatNumber, MINUTE_PRESETS, parseAmount, UNIT_SUGGESTIONS } from '../domain/goal'
 import { HABIT_TEMPLATES, templateById, templateHint, type HabitTemplate } from '../domain/templates'
+import { PLAN_MAX, PLAN_SUGGESTIONS } from '../domain/routine'
 import { ShadowDuel } from '../shadow/ShadowDuel'
 import { SPECIES_INFO, SPECIES_KEYS, speciesOf, type SpeciesKey } from '../domain/species'
 import { goBack, navigate, paths } from '../app/router'
@@ -56,6 +57,7 @@ function Form({ habit, template, today }: { habit?: Habit; template?: HabitTempl
   const [unit, setUnit] = useState(goal0?.kind === 'menge' ? goal0.unit : 'Gläser')
   const [step, setStep] = useState(goal0?.kind === 'menge' ? formatNumber(goal0.step) : '1')
   const [minutes, setMinutes] = useState(goal0?.kind === 'dauer' ? String(goal0.target) : '30')
+  const [plan, setPlan] = useState(habit?.plan ?? '')
   const [templateId, setTemplateId] = useState(template?.id)
   const [saving, setSaving] = useState(false)
 
@@ -83,7 +85,7 @@ function Form({ habit, template, today }: { habit?: Habit; template?: HabitTempl
   async function save() {
     if (!valid || saving) return
     setSaving(true)
-    const input: HabitInput = { name, emoji, color, days, startDate, seed, species, metaphor, goal: goal ?? undefined }
+    const input: HabitInput = { name, emoji, color, days, startDate, seed, species, metaphor, goal: goal ?? undefined, plan }
     if (habit) {
       await updateHabit(habit.id, input, today)
       goBack(paths.habit(habit.id))
@@ -436,6 +438,33 @@ function Form({ habit, template, today }: { habit?: Habit; template?: HabitTempl
               Erreicht zählt als erledigt.{habit ? ' Ein geändertes Ziel gilt ab jetzt, erledigte Tage bleiben erledigt.' : ''}
             </p>
           )}
+        </Field>
+
+        <Field label="Wann und wo? (optional)">
+          <input
+            value={plan}
+            onChange={(e) => setPlan(e.target.value)}
+            maxLength={PLAN_MAX}
+            placeholder="z. B. Nach dem Dienst · Um 6:30 Uhr im Flur"
+            enterKeyHint="done"
+            className="h-13 w-full rounded-2xl bg-surface px-4 text-[17px] outline-none placeholder:text-muted focus:ring-2 focus:ring-accent"
+          />
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {PLAN_SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setPlan(s)}
+                aria-pressed={plan === s}
+                className={`h-9 rounded-full px-3 text-[14px] ${plan === s ? 'bg-ink text-bg' : 'bg-surface text-muted'}`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[13px] text-muted">
+            Je genauer, desto eher klappt es: wann und wo – oder nach welcher Gewohnheit. Steht klein unter dem Namen.
+          </p>
         </Field>
 
         <Field label="Startdatum">

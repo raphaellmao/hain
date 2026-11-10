@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabits, useMeta, useSettings, useTimers, useToday } from '../db/hooks'
+import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabits, useMeta, useRoutines, useSettings, useTimers, useToday } from '../db/hooks'
+import { groupByRoutine } from '../domain/routine'
+import { perfectStats } from '../domain/perfect'
+import { RoutineCard } from '../components/RoutineCard'
 import { effectiveAmount } from '../domain/goal'
 import { excusesInWindow, ownExcuses } from '../domain/excuse'
 import { AbsenceBanner } from '../components/AbsenceBanner'
@@ -33,6 +36,7 @@ export function TodayScreen() {
   const [selected, setSelected] = useState<DateStr>(today)
   const [showRest, setShowRest] = useState(false)
   const lastBackupAt = useMeta<number>('lastBackupAt')
+  const routines = useRoutines()
 
   // Neuer Tag (z. B. App über Nacht offen) → zurück auf „Heute“
   useEffect(() => setSelected(today), [today])
@@ -48,8 +52,9 @@ export function TodayScreen() {
       return { habit, done, excuses, excused, summary: summarize(habit, done, today, excused) }
     })
   }, [habits, doneMap, excuseMap, today])
+  const perfect = useMemo(() => perfectStats(items, today), [items, today])
 
-  if (!habits || !doneMap) return null
+  if (!habits || !doneMap || !routines) return null
 
   if (habits.length === 0) return <EmptyState today={today} />
 
@@ -69,7 +74,7 @@ export function TodayScreen() {
     return d.length === 0 ? null : d.filter((i) => i.done.has(date)).length / d.length
   }
 
-  const row = (i: (typeof items)[number], dimmed = false) => {
+  const row = (i: (typeof items)[number], dimmed = false, next = false) => {
     const goal = i.habit.goal
     const amount = goal ? effectiveAmount(amountsFor(amountMap, i.habit.id).get(selected), i.done.has(selected), goal) : 0
     const running = goal?.kind === 'dauer' && isToday ? timers?.get(i.habit.id) : undefined
@@ -102,6 +107,7 @@ export function TodayScreen() {
         dimmed={dimmed}
         amount={amount}
         timerStart={running}
+        next={next}
         onToggle={onToggle}
         onMore={openSheet}
       />
@@ -142,13 +148,34 @@ export function TodayScreen() {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden text-center text-[15px] text-muted"
             >
-              <span className="block pb-3">{isToday ? 'Alles erledigt für heute 🌿' : 'An diesem Tag war alles erledigt 🌿'}</span>
+              <span className="block pb-3">
+                {isToday ? 'Alles erledigt für heute 🌿' : 'An diesem Tag war alles erledigt 🌿'}
+                {isToday && perfect.streak >= 2 && (
+                  <span className="mt-0.5 block text-[13px] font-semibold text-accent">🔥 {perfect.streak} perfekte Tage in Folge</span>
+                )}
+              </span>
             </motion.p>
           )}
         </AnimatePresence>
 
         {due.length > 0 ? (
-          <ul className="flex flex-col gap-2.5">{due.map((i) => row(i))}</ul>
+          <ul className="flex flex-col gap-2.5">
+            {groupByRoutine(due, routines).map((e) =>
+              e.kind === 'habit' ? (
+                row(e.item)
+              ) : (
+                <RoutineCard
+                  key={`r-${e.routine.id}`}
+                  routine={e.routine}
+                  items={e.items}
+                  date={selected}
+                  isToday={isToday}
+                  dayComplete={allDone}
+                  renderRow={(i, next) => row(i as (typeof items)[number], false, next)}
+                />
+              ),
+            )}
+          </ul>
         ) : (
           <p className="py-8 text-center text-[15px] text-muted">
             {isToday ? 'Heute ist nichts fällig.' : 'An diesem Tag war nichts fällig.'}

@@ -388,7 +388,22 @@ function Flock({ delay, top, duration, color, scale }: { delay: number; top: num
   )
 }
 
-export function SkyScene({ sky, p }: { sky: Sky; p: ScenePalette }) {
+/** Perfekter Tag: ein Regenbogen hinter den Hügeln */
+function Rainbow() {
+  const colors = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#748ffc', '#b197fc']
+  return (
+    <svg className={`${LAYER} rainbow-in`} {...VIEW} aria-hidden data-rainbow>
+      <g fill="none" strokeWidth="4.2" opacity="0.34">
+        {colors.map((c, i) => {
+          const r = 172 - i * 4
+          return <path key={c} d={`M${200 - r} 262A${r} ${r} 0 0 1 ${200 + r} 262`} stroke={c} />
+        })}
+      </g>
+    </svg>
+  )
+}
+
+export function SkyScene({ sky, p, perfect = false }: { sky: Sky; p: ScenePalette; perfect?: boolean }) {
   return (
     <>
       <SkyBack sky={sky} p={p} />
@@ -396,6 +411,7 @@ export function SkyScene({ sky, p }: { sky: Sky; p: ScenePalette }) {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[258px] overflow-hidden" aria-hidden>
         <Stars sky={sky} />
         <Rays sky={sky} p={p} />
+        {perfect && sky.phase !== 'nacht' && <Rainbow />}
         <Clouds sky={sky} p={p} />
       </div>
       <Landscape p={p} />

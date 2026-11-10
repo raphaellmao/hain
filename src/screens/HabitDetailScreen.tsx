@@ -1,4 +1,4 @@
-import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabit, useToday, type ExcuseDays } from '../db/hooks'
+import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabit, useRoutines, useToday, type ExcuseDays } from '../db/hooks'
 import { amountStats, formatAmount, goalLabel } from '../domain/goal'
 import { GoalEditor } from '../components/GoalEditor'
 import { unarchiveHabit } from '../db/repo'
@@ -17,7 +17,7 @@ import { shadowTaunt } from '../domain/taunts'
 import { ShadowTaunt } from '../components/ShadowTaunt'
 import { MonthBars } from '../components/MonthBars'
 import { stageLabel, summarize } from '../domain/summary'
-import type { DoneSet, Habit } from '../domain/types'
+import type { DoneSet, Habit, Routine } from '../domain/types'
 import { toggleDay } from '../app/actions'
 import { goBack, navigate, paths } from '../app/router'
 import { HabitVisual } from '../components/HabitVisual'
@@ -29,6 +29,7 @@ import { MonthCalendar } from '../components/MonthCalendar'
 
 export function HabitDetailScreen({ id }: { id: string }) {
   const habit = useHabit(id)
+  const routine = useRoutines()?.find((r) => r.habitIds.includes(id))
   const doneMap = useDoneMap()
   const excuseMap = useExcuseMap()
   const amountMap = useAmountMap()
@@ -43,7 +44,7 @@ export function HabitDetailScreen({ id }: { id: string }) {
       </div>
     )
   }
-  return <Detail habit={habit} done={doneFor(doneMap, id)} excuses={excusesFor(excuseMap, id)} amounts={amountsFor(amountMap, id)} today={today} />
+  return <Detail habit={habit} routine={routine} done={doneFor(doneMap, id)} excuses={excusesFor(excuseMap, id)} amounts={amountsFor(amountMap, id)} today={today} />
 }
 
 function TopBar({ onEdit }: { onEdit?: () => void }) {
@@ -69,7 +70,21 @@ function TopBar({ onEdit }: { onEdit?: () => void }) {
 const fmt1 = (v: number) => v.toLocaleString('de-DE', { maximumFractionDigits: 1 })
 const days = (n: number) => `${n} ${n === 1 ? 'Tag' : 'Tage'}`
 
-function Detail({ habit, done, excuses, amounts, today }: { habit: Habit; done: DoneSet; excuses: ExcuseDays; amounts: ReadonlyMap<DateStr, number>; today: DateStr }) {
+function Detail({
+  habit,
+  routine,
+  done,
+  excuses,
+  amounts,
+  today,
+}: {
+  habit: Habit
+  routine?: Routine
+  done: DoneSet
+  excuses: ExcuseDays
+  amounts: ReadonlyMap<DateStr, number>
+  today: DateStr
+}) {
   const excused = excusedSet(excuses)
   const s = summarize(habit, done, today, excused)
   const color = colorHex(habit.color)
@@ -115,6 +130,21 @@ function Detail({ habit, done, excuses, amounts, today }: { habit: Habit; done: 
           {describeDays(daysAt(habit.schedule, today))}
           {habit.goal && ` · ${goalLabel(habit.goal)}`}
         </p>
+        {(habit.plan || routine) && (
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[14px] text-muted">
+            {habit.plan && (
+              <span>
+                <span aria-hidden>↪ </span>
+                {habit.plan}
+              </span>
+            )}
+            {routine && (
+              <button type="button" onClick={() => navigate(paths.routine(routine.id))} className="min-h-8 font-medium text-accent">
+                {routine.emoji} Teil von „{routine.name}“
+              </button>
+            )}
+          </p>
+        )}
 
         {/* Pflanze bzw. Schatten-Ich */}
         <div className="relative mx-auto mt-2 aspect-square w-full max-w-[340px]">

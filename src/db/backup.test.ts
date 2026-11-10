@@ -124,6 +124,35 @@ describe('Backup mit To-dos', () => {
   })
 })
 
+describe('Backup mit Plan und Routinen', () => {
+  it('übernimmt Plan und Routinen, verwirft Unbekanntes und Doppeltes', () => {
+    const habits = [
+      { ...valid.habits[0], id: 'a', plan: '  Nach dem Dienst ' },
+      { ...valid.habits[0], id: 'b' },
+    ]
+    const b = parseBackup(
+      JSON.stringify({
+        ...valid,
+        version: 10,
+        habits,
+        checkins: [],
+        routines: [
+          { id: 'r1', name: 'Morgen', emoji: '🌅', cue: 'Nach dem Aufstehen', habitIds: ['b', 'a', 'gibtsnicht'], order: 1 },
+          { id: 'r2', name: 'Doppelt', emoji: '🌙', habitIds: ['a'], order: 2 },
+          { id: 'r3', name: '', emoji: '🌙', habitIds: ['b'] },
+        ],
+      }),
+    )
+    expect(b.habits.find((h) => h.id === 'a')?.plan).toBe('Nach dem Dienst')
+    expect(b.habits.find((h) => h.id === 'b')?.plan).toBeUndefined()
+    expect(b.routines.map((r) => [r.id, r.habitIds, r.cue ?? null])).toEqual([['r1', ['b', 'a'], 'Nach dem Aufstehen']])
+  })
+
+  it('ältere Backups ohne Routinen gehen weiter', () => {
+    expect(parseBackup(JSON.stringify(valid)).routines).toEqual([])
+  })
+})
+
 describe('Backup mit Stimmung', () => {
   it('übernimmt Stimmungen, auch ohne Notiz, und verwirft Unsinn', () => {
     const b = parseBackup(

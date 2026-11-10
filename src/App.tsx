@@ -2,6 +2,8 @@ import { useRoute } from './app/router'
 import { BottomNav } from './components/BottomNav'
 import { ConfirmHost } from './components/ConfirmHost'
 import { ShareHost } from './components/ShareHost'
+import { RoutineFormScreen } from './screens/RoutineFormScreen'
+import { CelebrationWatcher } from './components/Celebration'
 import { ExcuseHost } from './components/ExcuseHost'
 import { ReminderHost } from './components/ReminderHost'
 import { AbsenceHost } from './components/AbsenceHost'
@@ -55,10 +57,13 @@ export default function App() {
     case 'edit':
       screen = <HabitFormScreen key={route.id} id={route.id} />
       break
+    case 'routine':
+      screen = <RoutineFormScreen key={route.id ?? 'neu'} id={route.id} />
+      break
   }
 
   // Im Formular gibt es unten den Speichern-Knopf statt der Navigation
-  const showNav = route.name !== 'new' && route.name !== 'edit'
+  const showNav = route.name !== 'new' && route.name !== 'edit' && route.name !== 'routine'
 
   return (
     <div className="mx-auto min-h-dvh max-w-md">
@@ -72,6 +77,7 @@ export default function App() {
       <ReminderHost />
       <AchievementWatcher />
       <ShareHost />
+      <CelebrationWatcher />
       <ConfirmHost />
     </div>
   )

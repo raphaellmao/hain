@@ -32,6 +32,8 @@ export interface Habit {
   metaphor?: Metaphor
   /** Tagesziel (Menge oder Dauer) statt einfachem Abhaken; fehlt = abhaken */
   goal?: HabitGoal
+  /** Plan: wann und wo bzw. wonach („Nach dem Dienst“, „Um 6:30 Uhr im Flur“) – routine.ts */
+  plan?: string
   /**
    * Im Archiv: verschwindet aus „Heute“ und dem Garten. Ab `since` ist sie an keinem
    * Tag fällig (eigene Version in `schedule`), `days` sind die Tage für das Zurückholen.
@@ -75,6 +77,24 @@ export interface Checkin {
   reasonNote?: string
   /** Menge bzw. Minuten an diesem Tag (nur bei Gewohnheiten mit Ziel) */
   amount?: number
+  updatedAt: number
+}
+
+/**
+ * Routine: mehrere Gewohnheiten in fester Reihenfolge („Gewohnheiten stapeln“),
+ * optional mit Anker („Nach dem Aufstehen“). Eine Gewohnheit steckt in höchstens einer.
+ */
+export interface Routine {
+  id: string
+  name: string
+  emoji: string
+  /** Anker: wonach die Routine beginnt */
+  cue?: string
+  /** in dieser Reihenfolge */
+  habitIds: string[]
+  order: number
+  deleted: boolean
+  createdAt: number
   updatedAt: number
 }
 

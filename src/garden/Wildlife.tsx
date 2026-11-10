@@ -293,7 +293,48 @@ function Foreground({ p }: { p: ScenePalette }) {
   )
 }
 
-export function Wildlife({ sky, p }: { sky: Sky; p: ScenePalette }) {
+/** Perfekter Tag: nachts und abends goldene Glühwürmchen, tagsüber Funkeln über der Wiese */
+function PerfectLife({ phase }: { phase: Sky['phase'] }) {
+  if (phase === 'nacht' || phase === 'abend') {
+    return (
+      <>
+        {Array.from({ length: 26 }, (_, i) => (
+          <span
+            key={`g${i}`}
+            className="firefly firefly-gold"
+            data-perfect
+            style={
+              {
+                left: `${rnd(i, 61) * 96}%`,
+                top: `${30 + rnd(i, 62) * 60}%`,
+                '--fx': `${(rnd(i, 63) - 0.5) * 70}px`,
+                '--fy': `${(rnd(i, 64) - 0.5) * 60}px`,
+                animationDuration: `${5 + rnd(i, 65) * 5}s, ${1.4 + rnd(i, 66) * 2}s`,
+                animationDelay: `${-rnd(i, 67) * 8}s, ${-rnd(i, 68) * 3}s`,
+              } as Vars
+            }
+          />
+        ))}
+      </>
+    )
+  }
+  return (
+    <>
+      {Array.from({ length: 16 }, (_, i) => (
+        <span
+          key={`s${i}`}
+          className="sparkle"
+          data-perfect
+          style={{ left: `${rnd(i, 71) * 96}%`, top: `${34 + rnd(i, 72) * 54}%`, animationDuration: `${3 + rnd(i, 73) * 3}s`, animationDelay: `${-rnd(i, 74) * 6}s` }}
+        >
+          ✦
+        </span>
+      ))}
+    </>
+  )
+}
+
+export function Wildlife({ sky, p, perfect = false }: { sky: Sky; p: ScenePalette; perfect?: boolean }) {
   const { season, phase, weather } = sky
   const warm = season === 'fruehling' || season === 'sommer'
   const dry = weather !== 'regen'
@@ -308,6 +349,7 @@ export function Wildlife({ sky, p }: { sky: Sky; p: ScenePalette }) {
       {phase === 'nacht' && season !== 'winter' && <Hedgehog p={p} />}
       <Foreground p={p} />
       {phase === 'nacht' && <Owl p={p} />}
+      {perfect && <PerfectLife phase={phase} />}
     </div>,
     document.body,
   )

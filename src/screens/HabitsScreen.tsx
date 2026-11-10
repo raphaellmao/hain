@@ -1,7 +1,7 @@
 import { useEffect, useState, type KeyboardEvent } from 'react'
 import { Reorder, useDragControls } from 'motion/react'
 import { goBack, navigate, paths } from '../app/router'
-import { useArchivedHabits, useHabits, useToday } from '../db/hooks'
+import { useArchivedHabits, useHabits, useRoutines, useToday } from '../db/hooks'
 import { saveHabitOrder, unarchiveHabit } from '../db/repo'
 import { formatDayMonth } from '../domain/dates'
 import { describeDays, daysAt } from '../domain/schedule'
@@ -14,6 +14,7 @@ import { showToast } from '../lib/toast'
 export function HabitsScreen() {
   const habits = useHabits()
   const archived = useArchivedHabits()
+  const routines = useRoutines()
   const today = useToday()
   const [list, setList] = useState<Habit[]>([])
 
@@ -60,6 +61,49 @@ export function HabitsScreen() {
               ))}
             </Reorder.Group>
           )}
+        </section>
+
+        <section>
+          <h2 className="mb-1 px-1 text-[13px] font-semibold tracking-wide text-muted uppercase">Routinen</h2>
+          <p className="mb-2 px-1 text-[13px] text-muted">Gewohnheiten aneinanderketten – eine erledigte ist der Auslöser für die nächste.</p>
+          <ul className="flex flex-col gap-2">
+            {routines?.map((r) => {
+              const names = r.habitIds.map((id) => habits?.find((h) => h.id === id)).filter((h): h is Habit => !!h)
+              return (
+                <li key={r.id}>
+                  <button
+                    type="button"
+                    onClick={() => navigate(paths.routine(r.id))}
+                    className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface px-4 py-2 text-left"
+                  >
+                    <span className="text-[22px] leading-none" aria-hidden>
+                      {r.emoji}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[16px] font-medium">{r.name}</span>
+                      <span className="block truncate text-[13px] text-muted">
+                        {names.length ? names.map((h) => `${h.emoji} ${h.name}`).join(' → ') : 'keine aktiven Gewohnheiten'}
+                      </span>
+                    </span>
+                    <span className="text-muted" aria-hidden>
+                      ›
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+            <li>
+              <button
+                type="button"
+                onClick={() => navigate(paths.routine())}
+                disabled={(habits?.length ?? 0) < 2}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line text-[16px] font-medium text-accent disabled:text-muted"
+              >
+                + Neue Routine
+              </button>
+              {(habits?.length ?? 0) < 2 && <p className="mt-1 px-1 text-[13px] text-muted">Dafür braucht es mindestens zwei Gewohnheiten.</p>}
+            </li>
+          </ul>
         </section>
 
         <section>

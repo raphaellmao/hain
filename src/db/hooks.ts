@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './schema'
 import { type DateStr, eachDay, logicalToday } from '../domain/dates'
-import { type Absence, type Habit, type Mood, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
+import { type Absence, type Habit, type Mood, type Routine, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
 import type { ExcuseReason } from '../domain/excuse'
 import type { TickStats } from '../domain/achievements'
 
@@ -97,6 +97,11 @@ export function useExcuseMap(): Map<string, Map<DateStr, ExcuseInfo>> | undefine
 }
 
 /** Alle Abwesenheiten (ohne gelöschte), undefined = lädt noch */
+/** Routinen in ihrer Reihenfolge */
+export function useRoutines(): Routine[] | undefined {
+  return useLiveQuery(async () => (await db.routines.orderBy('order').toArray()).filter((r) => !r.deleted))
+}
+
 export function useAbsences(): Absence[] | undefined {
   return useLiveQuery(async () => (await db.absences.toArray()).filter((a) => !a.deleted))
 }
