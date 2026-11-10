@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { amountsFor, doneFor, excusedSet, excusesFor, useAmountMap, useDoneMap, useExcuseMap, useHabits, useMeta, useRoutines, useSettings, useTimers, useToday } from '../db/hooks'
 import { groupByRoutine } from '../domain/routine'
 import { perfectStats } from '../domain/perfect'
+import { missedBefore, missedText } from '../domain/missed'
 import { RoutineCard } from '../components/RoutineCard'
 import { effectiveAmount } from '../domain/goal'
 import { excusesInWindow, ownExcuses } from '../domain/excuse'
@@ -78,6 +79,11 @@ export function TodayScreen() {
     const goal = i.habit.goal
     const amount = goal ? effectiveAmount(amountsFor(amountMap, i.habit.id).get(selected), i.done.has(selected), goal) : 0
     const running = goal?.kind === 'dauer' && isToday ? timers?.get(i.habit.id) : undefined
+    // Nie zweimal aussetzen: nur heute, nur solange noch offen
+    const missed =
+      isToday && isDue(i.habit, selected) && !i.done.has(selected) && !i.excused.has(selected)
+        ? missedBefore(i.habit, i.done, i.excused, selected)
+        : null
     const openSheet = () =>
       openExcuseSheet({
         habit: i.habit,
@@ -108,6 +114,7 @@ export function TodayScreen() {
         amount={amount}
         timerStart={running}
         next={next}
+        missed={missed ? missedText(missed, today) : undefined}
         onToggle={onToggle}
         onMore={openSheet}
       />

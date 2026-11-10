@@ -76,6 +76,7 @@ src/
     templates.ts Vorlagen für neue Gewohnheiten
     routine.ts   Plan je Gewohnheit, Routinen (Gewohnheiten stapeln)
     perfect.ts   perfekte Tage und ihre Serie
+    missed.ts    „Nie zweimal aussetzen“: verpasste Tage vor heute
     dates.ts     Datumsrechnung auf 'JJJJ-MM-TT'-Texten (keine Zeitzonenfehler)
     schedule.ts  fällig an welchem Tag? (Häufigkeit mit Versionsliste)
     streaks.ts   aktuelle und längste Serie
@@ -313,6 +314,15 @@ Auswertung in `domain/mood.ts`:
   Reihenfolge. Komplett → Karte leuchtet auf, Hinweis „… geschafft“. Eine Gewohnheit
   steckt in höchstens einer Routine. Tabelle `routines` (`version(6)`), Logik in
   `domain/routine.ts`, Backup-Format 10.
+
+## Nie zweimal aussetzen
+
+Wurde eine Gewohnheit am letzten fälligen Tag verpasst, steht heute in ihrer Zeile
+„⚠️ Gestern hast du’s schon verpasst“ (bei anderen Wochentagen „Am Montag …“, ab zwei
+Fehltagen „Schon 3× in Folge verpasst“) – passend zur Regel, dass ab dem zweiten Fehltag
+in Folge der Baum halbiert wird. Ausgesetzte und nicht fällige Tage zählen nicht als
+verpasst. Nur für heute und nur, solange die Gewohnheit offen ist. Logik in
+`domain/missed.ts`.
 
 ## Belohnung für einen perfekten Tag
 

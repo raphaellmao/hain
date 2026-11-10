@@ -31,6 +31,7 @@ export function HabitRow({
   amount = 0,
   timerStart,
   next = false,
+  missed,
 }: {
   habit: Habit
   summary: HabitSummary
@@ -49,6 +50,8 @@ export function HabitRow({
   timerStart?: number
   /** in einer Routine als Nächstes dran */
   next?: boolean
+  /** „Nie zweimal aussetzen“: Hinweis, dass der letzte fällige Tag verpasst wurde */
+  missed?: string
 }) {
   const color = colorHex(habit.color)
   const { current } = summary.streaks
@@ -103,9 +106,9 @@ export function HabitRow({
         whileTap={{ scale: 0.97 }}
         aria-pressed={done}
         aria-label={
-          goal
+          (goal
             ? `${habit.name}: ${progressText(live, goal)}. ${goal.kind === 'menge' ? `Tippen: ${stepLabel(goal)}` : running ? 'Timer stoppen' : 'Timer starten'}`
-            : `${habit.name} ${done ? 'erledigt' : excused ? 'ausgesetzt – trotzdem abhaken' : 'abhaken'}`
+            : `${habit.name} ${done ? 'erledigt' : excused ? 'ausgesetzt – trotzdem abhaken' : 'abhaken'}`) + (missed ? `. ${missed}` : '')
         }
         className="flex min-h-[76px] min-w-0 flex-1 touch-manipulation items-center gap-3 py-2 pl-2 pr-1 text-left select-none"
       >
@@ -121,6 +124,12 @@ export function HabitRow({
             {running && <TimerBadge since={timerStart} />}
             {sub}
           </span>
+          {missed && (
+            <span className="mt-0.5 block text-[12px] leading-tight font-semibold text-warn" data-missed>
+              <span aria-hidden>⚠️ </span>
+              {missed}
+            </span>
+          )}
           {habit.plan && !done && (
             <span className="mt-0.5 block truncate text-[12px] text-muted">
               <span aria-hidden>↪ </span>
