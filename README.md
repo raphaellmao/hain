@@ -143,6 +143,14 @@ herum ein Hain: bei H = 100, 150, 200, 270 und 340 kommt je eine Begleitpflanze
 dazu, die als Keimling beginnt und mitwächst. Verpasste Tage lassen zuerst die
 jüngsten wieder verschwinden.
 
+## Farben
+
+23 Farben (`domain/colors.ts`): Koralle, Apricot, Gold, Rosa, Weinrot, Flieder, Blau, Türkis,
+Rot, Orange, Pfirsich, Zitrone, Limette, Smaragd, Mint, Himmelblau, Indigo, Violett, Magenta,
+Silber – und drei mehrfarbige: **Regenbogen, Feuer, Polarlicht**. Bei diesen zieht jede Blüte,
+Frucht und jeder Leuchtpunkt ihren Farbton aus ihrer Schattierung (`hues` in der Farbdefinition,
+`hueOf` in `tree/palette.ts`); Haken, Ringe und Schilder nehmen die stellvertretende Farbe.
+
 ## Schatten-Ich (statt Pflanze)
 
 Pro Gewohnheit wählbar: eine dunkle Version von dir, die an jedem Tag stärker wird,

@@ -4,6 +4,16 @@
  * Die Töne sind mittelhell gewählt und funktionieren auf hellem wie dunklem
  * Hintergrund. Im Baum färben sie die Blüten und tönen die Blätter leicht.
  */
+export interface ColorDef {
+  label: string
+  /** stellvertretende Farbe (Haken, Ringe, Namensschild) */
+  hex: string
+  /** Mehrfarbig: Jede Blüte bekommt einen dieser Farbtöne (HSL-Grad) */
+  hues?: readonly number[]
+  /** Hintergrund für das Farbfeld im Formular */
+  swatch?: string
+}
+
 export const COLORS = {
   koralle: { label: 'Koralle', hex: '#ef6f53' },
   apricot: { label: 'Apricot', hex: '#f0a540' },
@@ -13,11 +23,34 @@ export const COLORS = {
   flieder: { label: 'Flieder', hex: '#a387e6' },
   blau: { label: 'Blau', hex: '#5a9aef' },
   tuerkis: { label: 'Türkis', hex: '#36b8a8' },
-} as const
+  // seit 11/2026
+  rot: { label: 'Rot', hex: '#e0413c' },
+  orange: { label: 'Orange', hex: '#f27a36' },
+  pfirsich: { label: 'Pfirsich', hex: '#f5a58c' },
+  zitrone: { label: 'Zitrone', hex: '#e3d84a' },
+  limette: { label: 'Limette', hex: '#9bcf4a' },
+  smaragd: { label: 'Smaragd', hex: '#2fa86a' },
+  mint: { label: 'Mint', hex: '#6fd4b5' },
+  himmel: { label: 'Himmelblau', hex: '#4cc3ef' },
+  indigo: { label: 'Indigo', hex: '#5b61d6' },
+  violett: { label: 'Violett', hex: '#8a4fd8' },
+  magenta: { label: 'Magenta', hex: '#d64bc0' },
+  silber: { label: 'Silber', hex: '#c3ccd8' },
+  // mehrfarbig
+  regenbogen: {
+    label: 'Regenbogen', hex: '#a387e6', hues: [0, 32, 52, 120, 190, 230, 280, 320],
+    swatch: 'conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444)',
+  },
+  feuer: { label: 'Feuer', hex: '#f27a36', hues: [0, 14, 26, 38, 48], swatch: 'linear-gradient(135deg, #e0413c, #f27a36, #f5c542)' },
+  polarlicht: { label: 'Polarlicht', hex: '#36b8a8', hues: [150, 170, 190, 265, 290, 315], swatch: 'linear-gradient(135deg, #2fd48a, #36b8c8, #8a4fd8, #d64bc0)' },
+} as const satisfies Record<string, ColorDef>
 
 export type ColorKey = keyof typeof COLORS
 
 export const COLOR_KEYS = Object.keys(COLORS) as ColorKey[]
+
+/** Definition einer Farbe (mit optionalen Farbtönen für mehrfarbige Pflanzen) */
+export const colorDef = (key: ColorKey): ColorDef => (COLORS as Record<string, ColorDef>)[key] ?? COLORS.koralle
 
 export function colorHex(key: ColorKey): string {
   return COLORS[key]?.hex ?? COLORS.koralle.hex

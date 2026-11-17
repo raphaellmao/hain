@@ -31,8 +31,10 @@ export function glowOrb(
   const s = size * f.fit
   const X = r1(f.fx(x))
   const Y = r1(f.fy(y))
-  out.push({ id: out.length, x: X, y: Y, d: circle(s * (opts.halo ?? 2.2)), size: r1(s), rot: 0, shade: 0, appear, tone: 'halo' })
-  const core: Blossom = { id: out.length, x: X, y: Y, d: circle(s), size: r1(s), rot: 0, shade: 0, appear: appear + 0.01, tone: opts.core ?? 'glow' }
+  // Schattierung aus der Lage: Bei mehrfarbigen Farben (Regenbogen …) leuchtet jeder Punkt anders
+  const shade = Math.round((((Math.abs(X * 7.3 + Y * 13.1) % 200) / 100) - 1) * 100) / 100
+  out.push({ id: out.length, x: X, y: Y, d: circle(s * (opts.halo ?? 2.2)), size: r1(s), rot: 0, shade, appear, tone: 'halo' })
+  const core: Blossom = { id: out.length, x: X, y: Y, d: circle(s), size: r1(s), rot: 0, shade, appear: appear + 0.01, tone: opts.core ?? 'glow' }
   if (opts.center) core.center = { r: r1(s * 0.45), tone: opts.center }
   out.push(core)
 }

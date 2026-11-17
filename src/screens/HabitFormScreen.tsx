@@ -3,7 +3,7 @@ import { motion } from 'motion/react'
 import { useHabit, useToday } from '../db/hooks'
 import { archiveHabit, createHabit, deleteHabit, newSeed, updateHabit, type HabitInput } from '../db/repo'
 import { showToast } from '../lib/toast'
-import { COLOR_KEYS, COLORS, colorHex, type ColorKey } from '../domain/colors'
+import { COLOR_KEYS, COLORS, colorDef, colorHex, type ColorKey } from '../domain/colors'
 import { type DateStr, WEEKDAYS_MON0 } from '../domain/dates'
 import { ALL_DAYS, daysAt } from '../domain/schedule'
 import type { GoalKind, Habit, HabitGoal, Metaphor } from '../domain/types'
@@ -277,7 +277,7 @@ function Form({ habit, template, today }: { habit?: Habit; template?: HabitTempl
         </Field>
 
         <Field label={metaphor === 'schatten' ? 'Farbe deines Lichts' : 'Farbe der Blüten und Früchte'}>
-          <div className="grid grid-cols-4 justify-items-center gap-1 rounded-2xl bg-surface p-2">
+          <div className="grid grid-cols-6 justify-items-center gap-y-1 rounded-2xl bg-surface p-2">
             {COLOR_KEYS.map((k) => (
               <button
                 key={k}
@@ -289,7 +289,7 @@ function Form({ habit, template, today }: { habit?: Habit; template?: HabitTempl
               >
                 <span
                   className={`size-8 rounded-full transition-transform ${color === k ? 'scale-110 ring-2 ring-ink ring-offset-2 ring-offset-surface' : ''}`}
-                  style={{ background: colorHex(k) }}
+                  style={{ background: colorDef(k).swatch ?? colorHex(k) }}
                 />
               </button>
             ))}

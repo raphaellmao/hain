@@ -3,7 +3,7 @@
  * leichten Stich der Habit-Farbe – so bleibt im Garten lesbar:
  * grün = gesund, gelbbraun = welk. Blüten und Früchte tragen die Habit-Farbe.
  */
-import { type ColorKey, colorHex, hexToHsl, hsl, mixHue } from '../domain/colors'
+import { type ColorKey, colorDef, colorHex, hexToHsl, hsl, mixHue } from '../domain/colors'
 import type { BlossomTone, BranchTone, CenterTone, LeafTone } from './model'
 
 export interface TreePalette {
@@ -31,6 +31,11 @@ const LEAF_HUE = 104
  */
 export function treePalette(color: ColorKey, wilt: number, dark: boolean): TreePalette {
   const accent = hexToHsl(colorHex(color))
+  // Mehrfarbig (Regenbogen, Feuer, Polarlicht): Jede Blüte zieht ihren Ton aus ihrer Schattierung
+  const hues = colorDef(color).hues
+  const hueOf = (shade: number) => (hues ? hues[Math.min(hues.length - 1, Math.floor(((shade + 1) / 2) * hues.length))] : accent.h)
+  const satOf = hues ? 82 : accent.s
+  const litOf = hues ? 60 : accent.l
   const leafHue = mixHue(LEAF_HUE, accent.h, 0.14)
   const baseL = dark ? 47 : 39
   const baseS = dark ? 40 : 44
@@ -63,7 +68,7 @@ export function treePalette(color: ColorKey, wilt: number, dark: boolean): TreeP
     leaf: (shade, tone) => {
       if (tone === 'spine') return dark ? 'hsl(45 30% 80%)' : 'hsl(45 35% 88%)'
       if (tone === 'needle') return wiltGreen(152 + shade * 6, 34 + shade * 4, (dark ? 38 : 27) + shade * 5)
-      if (tone === 'ember') return energy(accent.h + shade * 8, 90, (dark ? 62 : 54) + shade * 5)
+      if (tone === 'ember') return energy(hueOf(shade) + (hues ? 0 : shade * 8), 90, (dark ? 62 : 54) + shade * 5)
       if (tone === 'panel') return energy(mixHue(222, accent.h, 0.25) + shade * 6, 55, (dark ? 40 : 30) + shade * 7)
       if (tone === 'silver') return wiltGreen(88 + shade * 6, 16 + shade * 3, (dark ? 56 : 48) + shade * 5)
       if (tone === 'glow') return energy(mixHue(165, accent.h, 0.4) + shade * 8, 78, (dark ? 60 : 48) + shade * 6)
@@ -75,12 +80,12 @@ export function treePalette(color: ColorKey, wilt: number, dark: boolean): TreeP
     blossom: (shade, tone) => {
       if (tone === 'green') return wiltGreen(98, 40, dark ? 44 : 36)
       if (tone === 'brown') return hsl({ h: 26, s: 42 - 10 * wilt, l: (dark ? 26 : 22) + shade * 3 })
-      if (tone === 'glow') return energy(accent.h + shade * 6, 92, (dark ? 64 : 56) + shade * 4)
-      if (tone === 'core') return energy(accent.h, 70, dark ? 93 : 90)
-      if (tone === 'halo') return energy(accent.h, 95, dark ? 66 : 60, 0.3 * (1 - 0.7 * wilt))
-      const s = accent.s * (1 - 0.6 * wilt)
-      const l = accent.l + shade * 5 + (dark ? 4 : 0) - 10 * wilt
-      return hsl({ h: mixHue(accent.h, 30, 0.4 * wilt), s, l })
+      if (tone === 'glow') return energy(hueOf(shade) + (hues ? 0 : shade * 6), 92, (dark ? 64 : 56) + shade * 4)
+      if (tone === 'core') return energy(hueOf(shade), 70, dark ? 93 : 90)
+      if (tone === 'halo') return energy(hueOf(shade), 95, dark ? 66 : 60, 0.3 * (1 - 0.7 * wilt))
+      const s = satOf * (1 - 0.6 * wilt)
+      const l = litOf + (hues ? 0 : shade * 5) + (dark ? 4 : 0) - 10 * wilt
+      return hsl({ h: mixHue(hueOf(shade), 30, 0.4 * wilt), s, l })
     },
     center: (tone) =>
       tone === 'brown' ? 'hsl(26 45% 24%)' : tone === 'pale' ? 'hsl(45 70% 88%)' : wilt > 0.5 ? 'hsl(35 30% 45%)' : 'hsl(46 90% 70%)',
