@@ -39,6 +39,10 @@ export function treePalette(color: ColorKey, wilt: number, dark: boolean): TreeP
   const wiltGreen = (h: number, s: number, l: number) =>
     hsl({ h: mixHue(h, 40, 0.78 * wilt), s: s * (1 - 0.42 * wilt), l: l + 5 * wilt })
 
+  /** Leuchtfarbe: welk verliert sie Sättigung und Helligkeit wie ein schwacher Akku */
+  const energy = (h: number, s: number, l: number, a = 1) =>
+    `hsl(${h.toFixed(1)} ${(s * (1 - 0.65 * wilt)).toFixed(1)}% ${(l - 14 * wilt).toFixed(1)}% / ${a})`
+
   const bark = dark ? 'hsl(25 22% 46%)' : 'hsl(24 26% 34%)'
   const branchColors: Record<BranchTone, string> = {
     bark,
@@ -48,18 +52,30 @@ export function treePalette(color: ColorKey, wilt: number, dark: boolean): TreeP
     stem: wiltGreen(96, 42, dark ? 44 : 36),
     cactus: wiltGreen(138, 30, dark ? 42 : 36),
     rib: wiltGreen(130, 30, dark ? 54 : 48),
+    // Futuristisch: leuchtet in einem Ton nahe der Habit-Farbe, welk verliert es Energie
+    neon: energy(mixHue(170, accent.h, 0.45), 72, dark ? 60 : 46),
+    crystal: energy(mixHue(195, accent.h, 0.3), 45, dark ? 80 : 70, 0.92),
+    metal: dark ? 'hsl(220 14% 58%)' : 'hsl(222 14% 38%)',
+    ring: energy(accent.h, 88, dark ? 70 : 56),
   }
 
   return {
     leaf: (shade, tone) => {
       if (tone === 'spine') return dark ? 'hsl(45 30% 80%)' : 'hsl(45 35% 88%)'
       if (tone === 'needle') return wiltGreen(152 + shade * 6, 34 + shade * 4, (dark ? 38 : 27) + shade * 5)
+      if (tone === 'silver') return wiltGreen(88 + shade * 6, 16 + shade * 3, (dark ? 56 : 48) + shade * 5)
+      if (tone === 'glow') return energy(mixHue(165, accent.h, 0.4) + shade * 8, 78, (dark ? 60 : 48) + shade * 6)
+      if (tone === 'frond') return energy(mixHue(140, accent.h, 0.3) + shade * 8, 70, (dark ? 52 : 40) + shade * 6)
+      if (tone === 'crystal') return energy(mixHue(192, accent.h, 0.35) + shade * 10, 60, (dark ? 76 : 66) + shade * 6, 0.8)
       return wiltGreen(leafHue + shade * 7, baseS + shade * 5, baseL + shade * 6)
     },
     branch: (tone) => branchColors[tone ?? 'bark'],
     blossom: (shade, tone) => {
       if (tone === 'green') return wiltGreen(98, 40, dark ? 44 : 36)
       if (tone === 'brown') return hsl({ h: 26, s: 42 - 10 * wilt, l: (dark ? 26 : 22) + shade * 3 })
+      if (tone === 'glow') return energy(accent.h + shade * 6, 92, (dark ? 64 : 56) + shade * 4)
+      if (tone === 'core') return energy(accent.h, 70, dark ? 93 : 90)
+      if (tone === 'halo') return energy(accent.h, 95, dark ? 66 : 60, 0.3 * (1 - 0.7 * wilt))
       const s = accent.s * (1 - 0.6 * wilt)
       const l = accent.l + shade * 5 + (dark ? 4 : 0) - 10 * wilt
       return hsl({ h: mixHue(accent.h, 30, 0.4 * wilt), s, l })

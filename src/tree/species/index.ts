@@ -1,6 +1,8 @@
 import type { SpeciesKey } from '../../domain/species'
 import type { PlantModel } from '../model'
-import { apfel, birke, kirsche, laubbaum } from './trees'
+import { ahorn, apfel, birke, kirsche, laubbaum, olive } from './trees'
+import { palme } from './palme'
+import { kristall, lumenpilz, neonfarn, orbital } from './futur'
 import { weide } from './weide'
 import { tanne } from './tanne'
 import { kaktus } from './kaktus'
@@ -16,4 +18,11 @@ export const GENERATORS: Record<SpeciesKey, (seed: number) => PlantModel> = {
   tanne,
   kaktus,
   sonnenblume,
+  olive,
+  ahorn,
+  palme,
+  kristall,
+  lumenpilz,
+  orbital,
+  neonfarn,
 }

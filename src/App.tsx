@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { useRoute } from './app/router'
+import { useSettings } from './db/hooks'
 import { BottomNav } from './components/BottomNav'
 import { ConfirmHost } from './components/ConfirmHost'
 import { ShareHost } from './components/ShareHost'
@@ -23,6 +25,10 @@ import { AchievementsScreen } from './screens/AchievementsScreen'
 import { AchievementWatcher } from './app/achievements'
 
 export default function App() {
+  const { density } = useSettings()
+  useEffect(() => {
+    document.documentElement.dataset.density = density
+  }, [density])
   const route = useRoute()
 
   let screen

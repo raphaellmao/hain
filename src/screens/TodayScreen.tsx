@@ -166,7 +166,7 @@ export function TodayScreen() {
         </AnimatePresence>
 
         {due.length > 0 ? (
-          <ul className="flex flex-col gap-2.5">
+          <ul className="hlist flex flex-col gap-2.5">
             {groupByRoutine(due, routines).map((e) =>
               e.kind === 'habit' ? (
                 row(e.item)
@@ -202,7 +202,7 @@ export function TodayScreen() {
                 ›
               </span>
             </button>
-            {showRest && <ul className="mt-1 flex flex-col gap-2.5">{rest.map((i) => row(i, true))}</ul>}
+            {showRest && <ul className="hlist mt-1 flex flex-col gap-2.5">{rest.map((i) => row(i, true))}</ul>}
           </section>
         )}
 

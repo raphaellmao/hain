@@ -11,7 +11,7 @@ import { formatNumber, MINUTE_PRESETS, parseAmount, UNIT_SUGGESTIONS } from '../
 import { HABIT_TEMPLATES, templateById, templateHint, type HabitTemplate } from '../domain/templates'
 import { PLAN_MAX, PLAN_SUGGESTIONS } from '../domain/routine'
 import { ShadowDuel } from '../shadow/ShadowDuel'
-import { SPECIES_INFO, SPECIES_KEYS, speciesOf, type SpeciesKey } from '../domain/species'
+import { SPECIES_INFO, SPECIES_KEYS, isFutureSpecies, speciesOf, type SpeciesKey } from '../domain/species'
 import { goBack, navigate, paths } from '../app/router'
 import { confirmDialog } from '../lib/confirm'
 import { Tree } from '../tree/Tree'
@@ -208,9 +208,12 @@ function Form({ habit, template, today }: { habit?: Habit; template?: HabitTempl
 
         {metaphor === 'pflanze' && (
         <Field label="Pflanze">
-          {/* Waagerecht wischbar; jede Karte zeigt die Art in voller Blüte */}
+          {/* Waagerecht wischbar; jede Karte zeigt die Art in voller Blüte. Erst die natürlichen, dann die erfundenen */}
+          {([false, true] as const).map((future) => (
+          <div key={String(future)}>
+          {future && <p className="mt-2 mb-1 px-1 text-[12px] font-semibold tracking-wide text-muted uppercase">Futuristisch · erfunden</p>}
           <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-            {SPECIES_KEYS.map((k) => (
+            {SPECIES_KEYS.filter((k) => isFutureSpecies(k) === future).map((k) => (
               <button
                 key={k}
                 type="button"
@@ -227,6 +230,8 @@ function Form({ habit, template, today }: { habit?: Habit; template?: HabitTempl
               </button>
             ))}
           </div>
+          </div>
+          ))}
         </Field>
         )}
 

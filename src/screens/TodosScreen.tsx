@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { useToday, useTodos } from '../db/hooks'
+import { DensitySwitch } from '../components/DensitySwitch'
 import { moveTodosToNow } from '../db/repo'
 import { startOfWeek, type DateStr } from '../domain/dates'
 import { calendarItems } from '../domain/ics'
@@ -27,12 +28,15 @@ export function TodosScreen() {
   return (
     <div className="pb-nav">
       <header className="px-safe pt-safe">
-        <div className="pt-2 pb-3">
-          <p className="text-[13px] font-semibold tracking-wide text-muted uppercase">
-            {open === 0 ? 'Nichts offen' : `${open} offen`}
-            {groups.overdue.length > 0 && ` · ${groups.overdue.length} überfällig`}
-          </p>
-          <h1 className="text-[32px] font-bold leading-tight">To-dos</h1>
+        <div className="flex items-end justify-between gap-3 pt-2 pb-3">
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold tracking-wide text-muted uppercase">
+              {open === 0 ? 'Nichts offen' : `${open} offen`}
+              {groups.overdue.length > 0 && ` · ${groups.overdue.length} überfällig`}
+            </p>
+            <h1 className="text-[32px] font-bold leading-tight">To-dos</h1>
+          </div>
+          <DensitySwitch />
         </div>
       </header>
 
@@ -139,7 +143,7 @@ function Section({ title, note, warn, action, onAdd, addLabel, children }: {
 
 function Rows({ todos, today, showWhen = false }: { todos: Todo[]; today: DateStr; showWhen?: boolean | ((t: Todo) => boolean) }) {
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="tlist flex flex-col gap-2">
       <AnimatePresence mode="popLayout" initial={false}>
         {todos.map((t) => (
           <TodoRow key={t.id} todo={t} today={today} showWhen={typeof showWhen === 'function' ? showWhen(t) : showWhen} />

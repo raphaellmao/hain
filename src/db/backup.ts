@@ -14,7 +14,7 @@ import { absenceProblem } from '../domain/absence'
 import { isMood } from '../domain/mood'
 import { cleanPlan, ROUTINE_NAME_MAX } from '../domain/routine'
 import { cleanReminders } from '../domain/todos'
-import { type Absence, type Checkin, type DayEntry, type Habit, type Routine, type Settings, type Todo, DEFAULT_SETTINGS } from '../domain/types'
+import { type Absence, type Checkin, type DayEntry, type Habit, type Routine, type Settings, type Todo, DEFAULT_SETTINGS, isDensity } from '../domain/types'
 import { NOTE_MAX_LENGTH, TODO_MAX_LENGTH } from './repo'
 import { startOfWeek, toDateStr } from '../domain/dates'
 
@@ -234,7 +234,10 @@ export function parseBackup(text: string): BackupFile {
   }
 
   const hour = b.settings?.dayStartHour
-  const settings: Settings = { dayStartHour: Number.isInteger(hour) && hour! >= 0 && hour! <= 4 ? hour! : 0 }
+  const settings: Settings = {
+    dayStartHour: Number.isInteger(hour) && hour! >= 0 && hour! <= 4 ? hour! : 0,
+    density: isDensity(b.settings?.density) ? b.settings.density : 'normal',
+  }
 
   return { app: 'hain', version: b.version, exportedAt: String(b.exportedAt ?? ''), settings, habits, checkins, dayEntries, todos, absences, routines }
 }

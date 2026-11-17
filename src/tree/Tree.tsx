@@ -326,7 +326,12 @@ function FullTree({
         b.appear > g ? null : (
           <g key={b.id} style={{ transform: `translate(${b.x}px, ${b.y}px)` }}>
             <g className={!lite && pop(`b${b.id}`, b.appear) ? 'leaf-pop' : undefined}>
-              <path className={lite ? undefined : 'leaf'} d={b.d} fill={pal.blossom(b.shade, b.tone)} />
+              <path
+                className={lite ? undefined : b.tone === 'halo' ? 'leaf halo-pulse' : 'leaf'}
+                style={b.tone === 'halo' && !lite ? { animationDelay: `${-(b.id % 7) * 0.45}s` } : undefined}
+                d={b.d}
+                fill={pal.blossom(b.shade, b.tone)}
+              />
               {b.shine && <path d={b.shine} fill={pal.shine} />}
               {b.lines && <path d={b.lines} fill="none" stroke={pal.lines} strokeWidth={Math.max(0.6, b.size * 0.12)} strokeLinecap="round" />}
               {b.dots && <path d={b.dots} fill={pal.lines} />}

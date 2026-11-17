@@ -110,11 +110,26 @@ src/
 
 ## Pflanzen und Hain
 
-Acht Arten: Laubbaum, Kirschbaum, Apfelbaum, Birke, Trauerweide, Tanne, Kaktus,
-Sonnenblume – jede mit eigenem Wuchs, eigenen Blättern und eigenen Blüten bzw.
-Früchten, Zapfen oder Kätzchen in der Habit-Farbe. Gewählt wird die Art im
-Formular; Habits von vor der Einführung bleiben Laubbäume und sehen unverändert aus
-(ein Test sichert das ab).
+Fünfzehn Arten. Natürlich: Laubbaum, Kirschbaum, Apfelbaum, Birke, Trauerweide, Tanne,
+Kaktus, Sonnenblume, Olivenbaum, Ahorn, Palme – jede mit eigenem Wuchs, eigenen Blättern
+und eigenen Blüten bzw. Früchten, Zapfen, Kätzchen oder Flügelsamen in der Habit-Farbe.
+
+Futuristisch, erfunden (`tree/species/futur.ts`) – sie leuchten in einem Ton nahe der
+Habit-Farbe, welk verlieren sie „Energie“, im Garten bleiben sie nachts hell und haben
+einen Schein; ihre Leuchtpunkte pulsieren sanft:
+
+- **Kristallbaum:** kantige Glieder in festen Winkeln mit Leuchtader, Prismen-Splitter,
+  zur Blüte leuchtende Kristallbüschel
+- **Lumenpilz:** ein Turm aus Schirmen, einer nach dem anderen; Leuchtfäden, glühende
+  Punkte, schwebende Sporen
+- **Orbitalblume:** Energiekern, um den sich Ringe selbst zeichnen; Monde darauf, zuletzt
+  öffnen sich Klingen
+- **Neonfarn:** eingerollte Triebe am Boden, die sich Wedel für Wedel entrollen; leuchtende
+  Sporen und Wedelspitzen
+
+Gewählt wird die Art im Formular (zwei Reihen: natürlich und futuristisch); Habits von vor
+der Einführung bleiben Laubbäume und sehen unverändert aus (ein Test sichert das ab).
+Alle Stufen aller Arten zeigt `baumlabor.html` (nur Entwicklung).
 
 Bis H = 100 wächst die Pflanze selbst bis zur vollen Blüte. Danach entsteht um sie
 herum ein Hain: bei H = 100, 150, 200, 270 und 340 kommt je eine Begleitpflanze
@@ -314,6 +329,14 @@ Auswertung in `domain/mood.ts`:
   Reihenfolge. Komplett → Karte leuchtet auf, Hinweis „… geschafft“. Eine Gewohnheit
   steckt in höchstens einer Routine. Tabelle `routines` (`version(6)`), Logik in
   `domain/routine.ts`, Backup-Format 10.
+
+## Darstellung: Kompakt, Normal, Groß
+
+Einstellungen → Darstellung oder direkt auf der To-do-Seite (A− / A+). Ändert die Zeilen
+auf „Heute“ und „To-dos“: Bildgröße, Abstände, Schrift. Kompakt zeigt deutlich mehr auf
+einmal (im Test 10 statt 6 Gewohnheiten auf einem iPhone-Bildschirm). Gespeichert in den
+Einstellungen (`Settings.density`), auch im Backup. Umgesetzt mit `data-density` am
+Wurzelelement und CSS in `index.css`.
 
 ## Nie zweimal aussetzen
 

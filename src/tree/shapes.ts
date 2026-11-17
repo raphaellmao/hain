@@ -82,7 +82,109 @@ export function firTier(w: number, h: number, teeth = 6): string {
   return d
 }
 
+/** Ahornblatt: fünf spitze Lappen */
+export function mapleLeaf(s: number): string {
+  // Spitzen und Buchten im Uhrzeigersinn, Stiel unten bei (0, 0)
+  const pts: [number, number][] = [
+    [0.12, -0.12], [0.5, -0.2], [0.34, -0.36], [0.56, -0.62], [0.24, -0.58], [0.2, -0.82], [0, -1],
+    [-0.2, -0.82], [-0.24, -0.58], [-0.56, -0.62], [-0.34, -0.36], [-0.5, -0.2], [-0.12, -0.12],
+  ]
+  return `M0 0${pts.map(([x, y]) => `L${p(x * s, y * s)}`).join('')}Z`
+}
+
+/** Kristallsplitter: sechseckiges Prisma, Ansatz unten */
+export const shard = (s: number) =>
+  `M0 0L${p(0.2 * s, -0.16 * s)}L${p(0.17 * s, -0.8 * s)}L0 ${r1(-s)}L${p(-0.17 * s, -0.8 * s)}L${p(-0.2 * s, -0.16 * s)}Z`
+
+/** Farnfieder: schmal, leicht gebogen */
+export const pinna = (s: number) =>
+  `M0 0C${p(0.2 * s, -0.25 * s)} ${p(0.18 * s, -0.75 * s)} ${p(0.04 * s, -s)}C${p(-0.1 * s, -0.7 * s)} ${p(-0.14 * s, -0.25 * s)} 0 0Z`
+
+/** Eingerollte Farnspitze (Fiddlehead): Spirale mit abnehmender Dicke, Ansatz unten */
+export function fiddlehead(s: number): string {
+  const outer: string[] = []
+  const inner: string[] = []
+  const turns = 2.2 * Math.PI
+  const R0 = 0.42 * s
+  for (let i = 0; i <= 22; i++) {
+    const t = (i / 22) * turns
+    const R = R0 * (1 - (0.78 * t) / turns)
+    const w = 0.16 * s * (1 - (0.7 * t) / turns)
+    // Mittelpunkt der Spirale liegt über dem Ansatz, die Spirale dreht sich nach innen
+    const a = Math.PI + t
+    const cx = R0
+    const cy = -R0
+    const dx = Math.cos(a)
+    const dy = Math.sin(a)
+    outer.push(p(cx + dx * (R + w / 2), cy + dy * (R + w / 2)))
+    inner.push(p(cx + dx * (R - w / 2), cy + dy * (R - w / 2)))
+  }
+  return `M${outer[0]}L${outer.slice(1).join('L')}L${inner.reverse().join('L')}Z`
+}
+
+/** Energieklinge (Orbitalblume): schmales, spitzes Blatt */
+export const blade = (s: number) => `M0 0C${p(0.16 * s, -0.3 * s)} ${p(0.1 * s, -0.7 * s)} 0 ${r1(-s)}C${p(-0.04 * s, -0.6 * s)} ${p(-0.1 * s, -0.25 * s)} 0 0Z`
+
 // ── Blüten & Früchte (Mitte bei 0, 0) ────────────────────────────────────────
+
+/** Olive: kleines Oval, hängt */
+export const olive = (s: number) => {
+  const rx = 0.62 * s
+  const ry = s
+  return `M0 0C${p(rx, 0)} ${p(rx, 2 * ry)} 0 ${r1(2 * ry)}C${p(-rx, 2 * ry)} ${p(-rx, 0)} 0 0Z`
+}
+export const oliveShine = (s: number) => `M${p(-0.28 * s, 0.5 * s)}a${r1(0.14 * s)} ${r1(0.3 * s)} 0 1 0 ${r1(0.01 * s)} 0Z`
+
+/** Ahorn-Flügelsamen: zwei Flügel, hängt */
+export function samara(s: number, rot: number): string {
+  let d = ''
+  for (const side of [-1, 1]) {
+    const pts: [number, number][] = [
+      [side * 0.12 * s, 0.1 * s], [side * 0.7 * s, 0.25 * s], [side * 0.85 * s, 0.75 * s],
+      [side * 0.55 * s, 0.85 * s], [side * 0.25 * s, 0.55 * s], [0, 0.18 * s],
+    ].map(([x, y]) => rotate(x, y, rot))
+    d += `M0 0C${p(...pts[0])} ${p(...pts[1])} ${p(...pts[2])}C${p(...pts[3])} ${p(...pts[4])} ${p(...pts[5])}Z`
+  }
+  return d
+}
+
+/** Kristallbüschel: fünf Splitter strahlenförmig */
+export function crystalCluster(s: number, rot: number): string {
+  let d = ''
+  for (const [a, len] of [[-50, 0.75], [-22, 0.95], [0, 1.15], [24, 0.9], [52, 0.7]] as const) {
+    const pts = [[0.16, -0.1], [0.14, -0.8], [0, -1], [-0.14, -0.8], [-0.16, -0.1]].map(([x, y]) => rotate(x * s, y * s * len, rot + a))
+    d += `M0 0L${pts.map((q) => p(...q)).join('L')}Z`
+  }
+  return d
+}
+/** Facettenlinien auf den Splittern */
+export const crystalFacets = (s: number, rot: number) =>
+  [-22, 0, 24].map((a) => { const [x, y] = rotate(0, -0.9 * s, rot + a); return `M0 0L${p(x, y)}` }).join('')
+
+/** Pilzhut: Kuppel mit gewölbter Unterkante, Mitte der Unterkante bei (0, 0) */
+export const mushroomCap = (w: number, h: number) =>
+  `M${r1(-w)} 0C${p(-w, -h * 1.25)} ${p(w, -h * 1.25)} ${p(w, 0)}Q${p(w * 0.5, h * 0.22)} 0 ${r1(h * 0.18)}Q${p(-w * 0.5, h * 0.22)} ${r1(-w)} 0Z`
+/** Lamellen unter dem Hut */
+export const gills = (w: number, h: number) =>
+  [-0.7, -0.35, 0, 0.35, 0.7].map((f) => `M${p(f * w * 0.9, h * 0.1)}L${p(f * w * 0.6, h * 0.28)}`).join('')
+/** Leuchtpunkte auf dem Hut */
+export function capSpots(w: number, h: number, seed: number): string {
+  let d = ''
+  for (let i = 0; i < 6; i++) {
+    const fx = Math.sin(seed + i * 2.1) * 0.62
+    const fy = 0.25 + ((i * 0.37 + seed * 0.13) % 0.55)
+    const r = w * (0.07 + ((i * 0.53) % 0.05))
+    const x = fx * w
+    const y = -fy * h
+    d += `M${r1(x - r)} ${r1(y)}a${r1(r)} ${r1(r)} 0 1 0 ${r1(2 * r)} 0a${r1(r)} ${r1(r)} 0 1 0 ${r1(-2 * r)} 0Z`
+  }
+  return d
+}
+
+/** Kokosnuss/Dattel: rund, leicht oval */
+export const nut = (s: number) => circle(s)
+
+
 
 /** Fünf tropfenförmige Blütenblätter (Laubbaum) – exakt die ursprüngliche Form */
 export function flowerPath(s: number, rot: number): string {

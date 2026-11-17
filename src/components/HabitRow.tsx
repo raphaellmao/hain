@@ -95,7 +95,7 @@ export function HabitRow({
   return (
     <motion.li
       layout="position"
-      className={`flex items-stretch overflow-hidden rounded-3xl bg-surface shadow-[0_1px_0_var(--line)] ${dimmed ? 'opacity-70' : ''} ${next ? 'ring-2 ring-accent/60' : ''}`}
+      className={`hrow flex items-stretch overflow-hidden rounded-3xl bg-surface shadow-[0_1px_0_var(--line)] ${dimmed ? 'opacity-70' : ''} ${next ? 'ring-2 ring-accent/60' : ''}`}
     >
       <motion.button
         type="button"
@@ -110,17 +110,17 @@ export function HabitRow({
             ? `${habit.name}: ${progressText(live, goal)}. ${goal.kind === 'menge' ? `Tippen: ${stepLabel(goal)}` : running ? 'Timer stoppen' : 'Timer starten'}`
             : `${habit.name} ${done ? 'erledigt' : excused ? 'ausgesetzt – trotzdem abhaken' : 'abhaken'}`) + (missed ? `. ${missed}` : '')
         }
-        className="flex min-h-[76px] min-w-0 flex-1 touch-manipulation items-center gap-3 py-2 pl-2 pr-1 text-left select-none"
+        className="hrow-btn flex min-h-[76px] min-w-0 flex-1 touch-manipulation items-center gap-3 py-2 pl-2 pr-1 text-left select-none"
       >
-        <span className="size-16 shrink-0">
+        <span className="hrow-vis size-16 shrink-0">
           <HabitVisual habit={habit} summary={summary} animated density="small" className="size-full" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5 text-[17px] font-semibold leading-tight">
+          <span className="hrow-name flex items-center gap-1.5 text-[17px] font-semibold leading-tight">
             <span aria-hidden>{habit.emoji}</span>
             <span className="truncate">{habit.name}</span>
           </span>
-          <span className={`mt-0.5 block truncate text-[13px] ${subClass}`}>
+          <span className={`hrow-sub mt-0.5 block truncate text-[13px] ${subClass}`}>
             {running && <TimerBadge since={timerStart} />}
             {sub}
           </span>

@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
+import { isFutureSpecies, speciesOf } from '../domain/species'
 import { motion } from 'motion/react'
 import { colorHex } from '../domain/colors'
 import { stageLabel } from '../domain/summary'
@@ -101,7 +102,17 @@ export function GardenScreen() {
                       <span className="relative block aspect-square w-full" style={{ scale: String(0.95 + rnd(seed, 3) * 0.1) }}>
                         {!shadow && <PlantGround seed={habit.seed} spread={summary.g >= 7 ? 1.3 : summary.g >= 3 ? 1 : 0.7} p={p} />}
                         {/* jede Pflanze wiegt sich in ihrem eigenen Takt */}
-                        <span className="sway plant-lit absolute inset-0 block" style={{ animationDuration: `${8 + (idx % 5) * 1.3}s`, animationDelay: `${-idx * 1.7}s` }}>
+                        {/* Futuristische Pflanzen leuchten selbst: kein Tageslicht-Filter, nachts ein Schein */}
+                        <span
+                          className={`sway absolute inset-0 block ${!shadow && isFutureSpecies(speciesOf(habit)) ? 'plant-glow' : 'plant-lit'}`}
+                          style={
+                            {
+                              animationDuration: `${8 + (idx % 5) * 1.3}s`,
+                              animationDelay: `${-idx * 1.7}s`,
+                              '--glow': colorHex(habit.color),
+                            } as CSSProperties
+                          }
+                        >
                           <HabitVisual habit={habit} summary={summary} ground={false} className="size-full" />
                         </span>
                         {!shadow && idx < 12 && <PlantLife index={idx} g={summary.g} wilted={wilted} color={colorHex(habit.color)} phase={p.phase} />}

@@ -2,7 +2,7 @@
  * Arten, die auf dem rekursiven Baum aufbauen – nur die Parameter unterscheiden sich.
  */
 import { recursiveTree, segmentOn } from './recursive'
-import { appleFruit, appleShine, appleStem, birchLeaf, catkin, cherryFlower, flowerPath, leafPath, roundLeaf } from '../shapes'
+import { appleFruit, appleShine, appleStem, birchLeaf, catkin, cherryFlower, flowerPath, lanceLeaf, leafPath, mapleLeaf, olive as oliveFruit, oliveShine, roundLeaf, samara } from '../shapes'
 import type { PlantModel, RawBranch } from '../model'
 
 /** Laubbaum: der ursprüngliche Baum (bestehende Habits sehen unverändert aus) */
@@ -107,4 +107,35 @@ export const birke = (seed: number): PlantModel =>
       }
       branches.push(...marks)
     },
+  })
+
+/** Olivenbaum: kurzer, knorriger Stamm, weit ausladend, silbrige schmale Blätter, Oliven in der Habit-Farbe */
+export const olive = (seed: number): PlantModel =>
+  recursiveTree(seed, {
+    spread: [0.62, 0.82],
+    ratio: [0.68, 0.75],
+    upright: [0, 0.08],
+    lean: [-0.26, 0.26],
+    trunkLen: [26, 34],
+    trunkWidth: [11, 14],
+    leafSize: [9, 11],
+    leafShape: lanceLeaf,
+    leafTone: 'silver',
+    thirdChild: [0.65, 0.35],
+    maxAngle: 1.85,
+    blossom: { count: 40, early: 4, earlyFrom: 4.6, size: [2.4, 3], hanging: true, shape: (s) => oliveFruit(s), shine: oliveShine },
+  })
+
+/** Ahorn: hoher, ebenmäßiger Baum mit großen gelappten Blättern; Flügelsamen in der Habit-Farbe */
+export const ahorn = (seed: number): PlantModel =>
+  recursiveTree(seed, {
+    spread: [0.48, 0.64],
+    ratio: [0.72, 0.79],
+    upright: [0.08, 0.18],
+    lean: [-0.06, 0.06],
+    trunkLen: [42, 50],
+    trunkWidth: [9, 11.5],
+    leafSize: [13, 16],
+    leafShape: mapleLeaf,
+    blossom: { count: 34, early: 5, size: [6.5, 8.5], hanging: true, shape: samara },
   })

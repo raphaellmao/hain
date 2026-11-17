@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { saveSettings } from '../db/repo'
+import { DENSITIES } from '../domain/types'
 import { useAbsences, useArchivedHabits, useMeta, useSettings, useToday } from '../db/hooks'
 import { navigate, paths } from '../app/router'
 import { formatRange, phaseOf, sortAbsences } from '../domain/absence'
@@ -143,6 +144,23 @@ export function SettingsScreen() {
 
         <Section title="Abwesenheit" hint="Urlaub, Lehrgang, Übung: einmal von–bis eintragen, und die Gewohnheiten pausieren – nichts welkt.">
           <Absences />
+        </Section>
+
+        <Section title="Darstellung" hint="Kompakt zeigt mehr Gewohnheiten und To-dos auf einmal, Groß ist leichter zu lesen. Auch direkt auf der To-do-Seite umschaltbar.">
+          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1" role="radiogroup" aria-label="Anzeigegröße">
+            {DENSITIES.map((d) => (
+              <button
+                key={d.value}
+                type="button"
+                role="radio"
+                aria-checked={settings.density === d.value}
+                onClick={() => saveSettings({ density: d.value })}
+                className={`h-11 rounded-xl text-[15px] font-medium transition-colors ${settings.density === d.value ? 'bg-ink text-bg' : 'text-muted'}`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
         </Section>
 
         <Section

@@ -170,12 +170,22 @@ export interface Todo {
   updatedAt: number
 }
 
+/** Anzeigegröße der Listen auf „Heute“ und „To-dos“ */
+export type Density = 'kompakt' | 'normal' | 'gross'
+export const DENSITIES: { value: Density; label: string }[] = [
+  { value: 'kompakt', label: 'Kompakt' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'gross', label: 'Groß' },
+]
+export const isDensity = (v: unknown): v is Density => v === 'kompakt' || v === 'normal' || v === 'gross'
+
 export interface Settings {
   /** Tageswechsel in Stunden nach Mitternacht (0–4) */
   dayStartHour: number
+  density: Density
 }
 
-export const DEFAULT_SETTINGS: Settings = { dayStartHour: 0 }
+export const DEFAULT_SETTINGS: Settings = { dayStartHour: 0, density: 'normal' }
 
 /** Für die Berechnungen: an welchen Tagen wurde ein Habit erledigt (bzw. ausgesetzt)? */
 export type DoneSet = ReadonlySet<DateStr>

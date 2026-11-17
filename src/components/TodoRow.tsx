@@ -59,7 +59,7 @@ export function TodoRow({ todo, today, showWhen = false, compact = false, ref }:
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.18 }}
-      className={`flex items-center ${compact ? '' : 'rounded-2xl bg-surface'}`}
+      className={`todo-row flex items-center ${compact ? '' : 'rounded-2xl bg-surface'}`}
     >
       <button
         type="button"
@@ -67,18 +67,18 @@ export function TodoRow({ todo, today, showWhen = false, compact = false, ref }:
         role="checkbox"
         aria-checked={done}
         aria-label={`${todo.title} erledigt`}
-        className={`flex shrink-0 items-center justify-center ${compact ? 'size-11' : 'size-14'}`}
+        className={`todo-check flex shrink-0 items-center justify-center ${compact ? 'size-11' : 'size-14'}`}
       >
         <CheckCircle done={done} color="var(--accent)" size={compact ? 24 : 28} />
       </button>
       <button
         type="button"
         onClick={() => openTodoSheet({ todo })}
-        className={`min-w-0 flex-1 pr-3 text-left ${compact ? 'py-1.5' : 'min-h-14 py-2.5'}`}
+        className={`todo-main min-w-0 flex-1 pr-3 text-left ${compact ? 'py-1.5' : 'min-h-14 py-2.5'}`}
       >
-        <span className={`block text-[16px] leading-snug break-words ${done ? 'text-muted line-through' : ''}`}>{todo.title}</span>
+        <span className={`todo-title block text-[16px] leading-snug break-words ${done ? 'text-muted line-through' : ''}`}>{todo.title}</span>
         {meta.length > 0 && (
-          <span className={`mt-0.5 block text-[13px] ${overdue ? 'text-warn' : 'text-muted'}`}>{meta.join(' · ')}</span>
+          <span className={`todo-meta mt-0.5 block text-[13px] ${overdue ? 'text-warn' : 'text-muted'}`}>{meta.join(' · ')}</span>
         )}
       </button>
     </motion.li>

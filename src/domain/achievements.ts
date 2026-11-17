@@ -11,7 +11,7 @@ import { isDue } from './schedule'
 import { STAGE_THRESHOLDS } from './health'
 import { shadowJourney } from './shadow'
 import { combineMonthly, monthlyRates, successRate, totalDone } from './stats'
-import { SPECIES_KEYS, speciesOf } from './species'
+import { SPECIES_KEYS, isFutureSpecies, speciesOf } from './species'
 import type { HabitSummary } from './summary'
 import type { DoneSet, Habit } from './types'
 
@@ -131,6 +131,7 @@ export function computeAchievements(ctx: Context): Achievement[] {
   const journeys = shadows.map((i) => shadowJourney(i.habit, i.done, today, i.excused))
   const bestShadow = maxOf(journeys.map((j) => j.best))
   const species = new Set(plants.map((i) => speciesOf(i.habit))).size
+  const futureCount = plants.filter((i) => isFutureSpecies(speciesOf(i.habit))).length
   const weeks = perfectWeeks(ctx)
 
   const days = dailyTotals(ctx)
@@ -241,7 +242,10 @@ export function computeAchievements(ctx: Context): Achievement[] {
   a('gaertner', '🧑‍🌾', 'Gärtner', 'Fünf Gewohnheiten gleichzeitig.', 'garten', 'bronze', items.length, 5)
   a('grossgrund', '🏡', 'Großer Garten', 'Zehn Gewohnheiten gleichzeitig.', 'garten', 'gold', items.length, 10)
   a('artenvielfalt', '🌈', 'Artenvielfalt', 'Vier verschiedene Pflanzenarten im Garten.', 'garten', 'silber', species, 4)
-  a('botaniker', '🌺', 'Botaniker', `Alle ${SPECIES_KEYS.length} Pflanzenarten im Garten.`, 'garten', 'gold', species, SPECIES_KEYS.length)
+  // Bleibt bei acht, damit niemand den Erfolg verliert, nur weil neue Arten dazukommen
+  a('botaniker', '🌺', 'Botaniker', 'Acht verschiedene Pflanzenarten im Garten.', 'garten', 'gold', species, 8)
+  a('zukunft', '🛸', 'Zukunftsgärtner', 'Eine erfundene, futuristische Pflanze gepflanzt.', 'garten', 'bronze', futureCount, 1)
+  a('alle-arten', '🌐', 'Alle Arten', `Alle ${SPECIES_KEYS.length} Pflanzenarten im Garten.`, 'garten', 'legendaer', species, SPECIES_KEYS.length)
   a('bluetenmeer', '💐', 'Blütenmeer', 'Drei Pflanzen blühen gleichzeitig.', 'garten', 'silber', blooming, 3)
   a('wald', '🌲', 'Wald', 'Drei Haine gleichzeitig.', 'garten', 'gold', groves, 3)
   a('halbjahr', '🎂', 'Halbes Jahr', 'Eine Gewohnheit seit einem halben Jahr.', 'garten', 'silber', oldest, 182)
