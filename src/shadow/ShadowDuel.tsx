@@ -132,6 +132,38 @@ const CRACKS = [
   'M135 186L142 188L150 186L156 189',
 ]
 
+/** Drehpunkte: Hand am Schwertgriff, Hand am Sensenstiel */
+const SWORD_PIVOT = '11 -31'
+const SCYTHE_PIVOT = '27 -59'
+/** Siegerpose: Schwert nach oben */
+const VICTORY_ANGLE = -80
+/** Schwert in Pose v (0 = nach vorn, VICTORY_ANGLE = hoch erhoben): drehen und dabei anheben */
+const swordPose = (v: number) => `translate(${((v / VICTORY_ANGLE) * -6).toFixed(2)} ${((v / VICTORY_ANGLE) * -18).toFixed(2)}) rotate(${v.toFixed(2)} ${SWORD_PIVOT})`
+
+/**
+ * Kleine Bewegung über das transform-Attribut (statt CSS-Transform: der Drehpunkt
+ * liegt so sicher in den Koordinaten der Figur). Keyframes werden weich verbunden.
+ */
+function play(el: SVGGElement | null, frames: number[], ms: number, make: (v: number) => string) {
+  if (!el || typeof window === 'undefined') return
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    el.setAttribute('transform', make(frames[frames.length - 1]))
+    return
+  }
+  const start = performance.now()
+  const step = (now: number) => {
+    // Der erste Frame kann einen Zeitstempel knapp vor `start` haben
+    const u = Math.max(0, Math.min(1, (now - start) / ms))
+    const pos = u * (frames.length - 1)
+    const i = Math.min(frames.length - 2, Math.floor(pos))
+    const f = pos - i
+    const e = f < 0.5 ? 2 * f * f : 1 - (-2 * f + 2) ** 2 / 2
+    el.setAttribute('transform', make(frames[i] + (frames[i + 1] - frames[i]) * e))
+    if (u < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}
+
 const seq = (i: number, a: number, b: number, salt = 0) => a + (((i * 37 + salt * 17) % 23) / 22) * (b - a)
 
 export const ShadowDuel = memo(function ShadowDuel({
@@ -188,16 +220,29 @@ export const ShadowDuel = memo(function ShadowDuel({
   // ── Reaktion: Licht pulsiert, Schatten weicht zurück / stößt vor ──────────
   const [lightPulse, animateLight] = useAnimate<SVGGElement>()
   const [shadowPulse, animateShadow] = useAnimate<SVGGElement>()
-  const prev = useRef(territory)
+  const swordRef = useRef<SVGGElement>(null)
+  const shieldRef = useRef<SVGGElement>(null)
+  const scytheRef = useRef<SVGGElement>(null)
+  const victory = statusOf(territory) === 4
+  // Ab dem zuletzt gesehenen Stand: Wer die App öffnet, sieht die Reaktion auf das, was seitdem passiert ist
+  const prev = useRef(fromTerritory ?? territory)
   useEffect(() => {
     const before = prev.current
     prev.current = territory
     if (!animated || Math.abs(territory - before) < 1e-6) return
+    const wasVictory = statusOf(before) === 4
     if (territory > before) {
+      // Du drängst ihn zurück: Licht pulsiert, Schwertstoß, er weicht
       if (lightPulse.current) animateLight(lightPulse.current, { scale: [1, 1.45, 1], opacity: [1, 1, 1] }, { duration: 0.8 })
       if (shadowPulse.current) animateShadow(shadowPulse.current, { x: [0, 7, 0], opacity: [1, 0.55, 1] }, { duration: 0.7 })
-    } else if (shadowPulse.current) {
-      animateShadow(shadowPulse.current, { scale: [1, 1.08, 1] }, { duration: 0.7 })
+      if (victory && !wasVictory) play(swordRef.current, [0, 12, VICTORY_ANGLE], 1100, swordPose)
+      else if (!victory) play(swordRef.current, [0, 12, 0], 650, (v) => `translate(${v} 0)`)
+    } else {
+      // Er rückt vor: holt mit der Sense aus, du hebst den Schild
+      if (shadowPulse.current) animateShadow(shadowPulse.current, { scale: [1, 1.08, 1] }, { duration: 0.7 })
+      play(scytheRef.current, [0, -42, 22, 0], 950, (v) => `rotate(${v} ${SCYTHE_PIVOT})`)
+      play(shieldRef.current, [0, -10, -10, 0], 1100, (v) => `translate(${-v * 0.25} ${v})`)
+      if (wasVictory && !victory) play(swordRef.current, [VICTORY_ANGLE, 0], 700, swordPose)
     }
   }, [territory, animated, animateLight, animateShadow, lightPulse, shadowPulse])
 
@@ -421,14 +466,7 @@ export const ShadowDuel = memo(function ShadowDuel({
             <circle cx={8} cy={-101} r={2.6} fill={url('leye')} />
             <circle cx={1} cy={-101} r={0.9} fill="#fffef5" />
             <circle cx={8} cy={-101} r={0.9} fill="#fffef5" />
-            {/* Xiphos, nach vorn auf ihn gerichtet */}
-            <path d={SWORD_BLADE} fill="none" stroke={lightTop} strokeOpacity={0.3 + 0.3 * (light / 100)} strokeWidth={3.2} strokeLinejoin="round" />
-            <path d={SWORD_BLADE} fill={url('blade')} stroke="#6b7480" strokeWidth={0.5} />
-            <path d={SWORD_FULLER} stroke="#5d6672" strokeOpacity={0.45} strokeWidth={0.8} />
-            <path d={SWORD_EDGE} stroke="#fff" strokeOpacity={0.6} strokeWidth={0.5} />
-            <path d="M10 -30L17 -30" stroke="#3a2414" strokeWidth={3} strokeLinecap="round" />
-            <path d="M17.5 -36L17.5 -24" stroke="#b8862b" strokeWidth={2.6} strokeLinecap="round" />
-            <circle cx={9} cy={-30} r={1.9} fill="#d9a441" />
+            <g ref={shieldRef}>
             {/* Hoplon mit Lambda */}
             <circle {...SHIELD} fill={url('bronze')} />
             <circle {...SHIELD} fill="none" stroke="#7a5312" strokeWidth={2.4} />
@@ -439,6 +477,20 @@ export const ShadowDuel = memo(function ShadowDuel({
             })}
             <path d={LAMBDA} stroke="#a4161a" strokeWidth={3.8} fill="none" strokeLinecap="round" strokeLinejoin="round" />
             <path d={SHIELD_SHINE} stroke="#fff" strokeOpacity={0.5} strokeWidth={1.4} fill="none" strokeLinecap="round" />
+            </g>
+            <g ref={swordRef} transform={victory ? swordPose(VICTORY_ANGLE) : undefined}>
+            {/* Xiphos, nach vorn auf ihn gerichtet – in der Siegerpose nach oben */}
+            <path d={SWORD_BLADE} fill="none" stroke={lightTop} strokeOpacity={0.3 + 0.3 * (light / 100)} strokeWidth={3.2} strokeLinejoin="round" />
+            <path d={SWORD_BLADE} fill={url('blade')} stroke="#6b7480" strokeWidth={0.5} />
+            <path d={SWORD_FULLER} stroke="#5d6672" strokeOpacity={0.45} strokeWidth={0.8} />
+            <path d={SWORD_EDGE} stroke="#fff" strokeOpacity={0.6} strokeWidth={0.5} />
+            <path d="M10 -30L17 -30" stroke="#3a2414" strokeWidth={3} strokeLinecap="round" />
+            <path d="M17.5 -36L17.5 -24" stroke="#b8862b" strokeWidth={2.6} strokeLinecap="round" />
+            <circle cx={9} cy={-30} r={1.9} fill="#d9a441" />
+            {victory && (
+              <path d="M69 -36L70.6 -31.6L75 -30L70.6 -28.4L69 -24L67.4 -28.4L63 -30L67.4 -31.6Z" fill="#fffbe6" className="rune-glow" />
+            )}
+            </g>
           </g>
         </g>
         {MOTES.slice(0, nMotes).map(([x, y], i) => (
@@ -511,6 +563,7 @@ export const ShadowDuel = memo(function ShadowDuel({
                 <path d={EYE} transform="translate(1 -101)" fill="#ffe2d6" />
                 <path d={EYE} transform="translate(8 -101)" fill="#ffe2d6" />
               </g>
+              <g ref={scytheRef}>
               {/* Sense: Blut wird mit seiner Stärke mehr */}
               <path d={SCYTHE_STAFF} stroke="#1b120c" strokeWidth={3.4} fill="none" strokeLinecap="round" />
               <path d={SCYTHE_STAFF_HI} stroke="#6b4a32" strokeOpacity={0.55} strokeWidth={0.9} fill="none" strokeLinecap="round" />
@@ -537,6 +590,7 @@ export const ShadowDuel = memo(function ShadowDuel({
                   />
                 </g>
               ))}
+              </g>
               {claws > 0 && (
                 <g opacity={claws}>
                   <path d={CLAWS} stroke="#07030b" strokeWidth={3} fill="none" strokeLinecap="round" />

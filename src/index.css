@@ -747,3 +747,22 @@
 /* Futuristische Pflanzen im Garten: abends und nachts leuchten sie (GardenScreen.tsx) */
 .garden-scene[data-phase='abend'] .plant-glow > svg { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--glow) 55%, transparent)); }
 .garden-scene[data-phase='nacht'] .plant-glow > svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--glow) 75%, transparent)) brightness(1.08); }
+
+/* Gartendeko (garden/Decor.tsx) */
+.lantern-glow { animation: lantern-glow 4s ease-in-out infinite; }
+@keyframes lantern-glow { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } 47% { opacity: 0.7; } }
+.rune-glow { animation: rune-glow 3s ease-in-out infinite; }
+@keyframes rune-glow { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+.fountain-drop { animation: fountain-drop 1.4s ease-in infinite; }
+@keyframes fountain-drop { 0% { transform: translateY(-26px); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(54px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .lantern-glow, .rune-glow, .fountain-drop { animation: none; }
+}
+
+/* Erfolge in der Anzeigegröße (Einstellungen → Darstellung) */
+:root[data-density='kompakt'] .ach-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+:root[data-density='kompakt'] .ach-grid .badge { padding: 8px; }
+:root[data-density='kompakt'] .ach-grid .badge p:first-of-type { font-size: 13px; }
+:root[data-density='kompakt'] .ach-grid .badge p:nth-of-type(2) { display: none; }
+:root[data-density='gross'] .ach-grid .badge p:first-of-type { font-size: 17px; }
+:root[data-density='gross'] .ach-grid .badge p:nth-of-type(2) { font-size: 14px; }

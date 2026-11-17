@@ -13,7 +13,10 @@ import { PlantGround, PlantLife } from '../garden/PlantSpot'
 import { useSky } from '../lib/sky'
 import { useDarkMode } from '../lib/useDarkMode'
 import { useGardenItems } from '../garden/useGardenItems'
-import { useToday } from '../db/hooks'
+import { useSettings, useToday } from '../db/hooks'
+import { useAchievements } from '../app/achievements'
+import { DECOR, DecorArt } from '../garden/Decor'
+import { showToast } from '../lib/toast'
 import { dayStatus } from '../domain/perfect'
 import { openShareSheet } from '../lib/shareSheet'
 import { IconShare } from '../components/icons'
@@ -27,12 +30,21 @@ import { IconShare } from '../components/icons'
 export function GardenScreen() {
   const loaded = useGardenItems()
   const today = useToday()
+  const { density } = useSettings()
+  const achievements = useAchievements()
   const sky = useSky()
   const dark = useDarkMode()
   const p = useMemo(() => scenePalette(sky.phase, sky.season, sky.weather, dark), [sky.phase, sky.season, sky.weather, dark])
 
   if (!loaded) return null
   const items = loaded
+  // Spalten je Anzeigegröße; die versetzten Höhen ergeben eine natürliche Reihe
+  const cols = density === 'kompakt' ? 4 : density === 'gross' ? 2 : 3
+  const lift = [0, 22, 6, 14]
+  const small = density === 'kompakt'
+  const earned = new Set(achievements?.filter((a) => a.achieved).map((a) => a.id) ?? [])
+  const decor = DECOR.filter((d) => earned.has(d.achievement))
+  const achievementTitle = (id: string) => achievements?.find((a) => a.id === id)?.title ?? id
   // Heute alles erledigt: Der Garten feiert bis zum Tageswechsel mit
   const perfect = dayStatus(items, today).complete
 
@@ -79,7 +91,7 @@ export function GardenScreen() {
               Hier wachsen deine Bäume, sobald du eine Gewohnheit anlegst.
             </p>
           ) : (
-            <ul className="grid grid-cols-3 gap-x-1 gap-y-5">
+            <ul className="grid gap-x-1 gap-y-5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} data-cols={cols}>
               {items.map(({ habit, summary }, idx) => {
                 const wilted = summary.health.wilted && !isBare(summary)
                 const shadow = habit.metaphor === 'schatten'
@@ -92,7 +104,7 @@ export function GardenScreen() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(idx, 12) * 0.03 }}
-                    style={{ marginTop: idx % 3 === 1 ? 22 : idx % 3 === 2 ? 6 : 0 }}
+                    style={{ marginTop: lift[idx % cols] }}
                   >
                     <button
                       type="button"
@@ -118,20 +130,41 @@ export function GardenScreen() {
                         {!shadow && idx < 12 && <PlantLife index={idx} g={summary.g} wilted={wilted} color={colorHex(habit.color)} phase={p.phase} />}
                       </span>
                       <span
-                        className="relative mt-1 flex max-w-full items-center justify-center gap-1 rounded-full px-2 py-0.5 text-[13px] leading-tight font-semibold"
+                        className={`relative mt-1 flex max-w-full items-center justify-center gap-1 rounded-full px-2 py-0.5 leading-tight font-semibold ${small ? 'text-[11px]' : density === 'gross' ? 'text-[16px]' : 'text-[13px]'}`}
                         style={{ background: p.labelBg, color: p.labelInk }}
                       >
                         <span aria-hidden>{habit.emoji}</span>
                         <span className="truncate">{habit.name}</span>
                       </span>
                       <span
-                        className={`relative mt-0.5 max-w-full text-center text-[11px] leading-tight ${warn ? 'rounded-full bg-warn px-1.5 font-semibold text-white' : ''}`}
+                        className={`relative mt-0.5 max-w-full text-center leading-tight ${small ? 'text-[10px]' : density === 'gross' ? 'text-[13px]' : 'text-[11px]'} ${warn ? 'rounded-full bg-warn px-1.5 font-semibold text-white' : ''}`}
                         style={warn ? undefined : { color: p.subInk, textShadow: p.phase === 'tag' ? undefined : '0 1px 3px rgba(0,0,0,0.55)' }}
                       >
                         {status}
                       </span>
                     </button>
                   </motion.li>
+                )
+              })}
+              {/* Gartendeko: erscheint von selbst, sobald der passende Erfolg erreicht ist */}
+              {decor.map((d, k) => {
+                const idx = items.length + k
+                return (
+                  <li key={`decor-${d.id}`} style={{ marginTop: lift[idx % cols] }} data-decor={d.id}>
+                    <button
+                      type="button"
+                      onClick={() => showToast(`${d.name} – freigeschaltet durch „${achievementTitle(d.achievement)}“`, '🏅', 3600)}
+                      className="flex w-full flex-col items-center pb-1 active:opacity-75"
+                      aria-label={`${d.name}, Belohnung für „${achievementTitle(d.achievement)}“`}
+                    >
+                      <span className="plant-lit relative block aspect-square w-full">
+                        <DecorArt id={d.id} p={p} className="size-full" />
+                      </span>
+                      <span className={`relative mt-1 max-w-full text-center leading-tight ${small ? 'text-[10px]' : 'text-[11px]'}`} style={{ color: p.subInk }}>
+                        {d.name}
+                      </span>
+                    </button>
+                  </li>
                 )
               })}
             </ul>

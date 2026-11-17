@@ -105,7 +105,7 @@ export function AchievementsScreen() {
                 {g.done}/{g.items.length}
               </span>
             </h2>
-            <ul className="grid grid-cols-2 gap-2">
+            <ul className="ach-grid grid grid-cols-2 gap-2">
               {g.items.map((a, i) => (
                 <Badge key={a.id} a={a} index={i} />
               ))}

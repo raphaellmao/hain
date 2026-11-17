@@ -57,8 +57,15 @@ export async function renderGardenImage(all: GardenImageItem[], o: GardenImageOp
   ctx.save()
   ctx.clip(new Path2D(meadowPath))
   for (const tile of meadowTiles(p)) {
-    const img = await svgImage(`<svg xmlns="http://www.w3.org/2000/svg" width="${tile.size * 2.2}" height="${tile.size * 2.2}" viewBox="0 0 ${tile.size} ${tile.size}">${tile.body}</svg>`, tile.size * 2.2, tile.size * 2.2)
-    const pattern = ctx.createPattern(img, 'repeat')
+    const px = Math.round(tile.size * 2.2)
+    const img = await svgImage(`<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${tile.size} ${tile.size}">${tile.body}</svg>`, px, px)
+    // Safari (WebKit) „vergiftet“ die Leinwand, wenn ein Muster direkt aus einem SVG-Bild
+    // entsteht – dann ließe sich das Bild nicht speichern. Erst auf eine Hilfsleinwand zeichnen.
+    const tileCanvas = document.createElement('canvas')
+    tileCanvas.width = px
+    tileCanvas.height = px
+    tileCanvas.getContext('2d')?.drawImage(img, 0, 0, px, px)
+    const pattern = ctx.createPattern(tileCanvas, 'repeat')
     if (!pattern) continue
     ctx.fillStyle = pattern
     ctx.fillRect(0, HORIZON - 60, W, H)

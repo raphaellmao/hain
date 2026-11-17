@@ -172,6 +172,11 @@ Umhang, spitzer Kapuze, violettem Kantenlicht, Knochenhand an der Sense, geschli
 und – ab „Dunkler Zwilling“ – einer Dornenkrone. Boden mit Verläufen, Gras auf deinem Land,
 Dornen auf seinem und einer Lichtsäule an der Frontlinie.
 
+Das Schatten-Ich reagiert (über das transform-Attribut, damit die Drehpunkte stimmen): rückt er
+vor, holt er mit der Sense aus und du hebst den Schild; drängst du ihn zurück, stößt dein
+Schwert vor; bei „Dein Land“ hältst du es in Siegerpose hoch. Beim Öffnen spielt die Reaktion auf
+alles, was seit dem letzten Ansehen passiert ist.
+
 ## Ausnahmetage („heute nicht möglich“)
 
 Über „⋯“ in einer Zeile (oder lange drücken) bzw. „Heute nicht möglich …“ in der
@@ -352,10 +357,19 @@ Auswertung in `domain/mood.ts`:
   steckt in höchstens einer Routine. Tabelle `routines` (`version(6)`), Logik in
   `domain/routine.ts`, Backup-Format 10.
 
+## Gartendeko
+
+Erfolge schalten Deko frei, die von selbst im Garten erscheint (`garden/Decor.tsx`), nach den
+Pflanzen: Gartenbank (Perfekte Woche), Vogelhaus (100 Haken), Rosenbogen (Sieben auf einen
+Streich), Laterne – leuchtet abends und nachts – (Ein Monat dran), Seerosenteich (Erster Hain),
+Steinkreis mit glühenden Runen (Schatten besiegt), Brunnen (Perfekter Monat), Kristall-Obelisk
+(Futurist). Antippen zeigt, wofür es sie gab.
+
 ## Darstellung: Kompakt, Normal, Groß
 
 Einstellungen → Darstellung oder direkt auf der To-do-Seite (A− / A+). Ändert die Zeilen
-auf „Heute“ und „To-dos“: Bildgröße, Abstände, Schrift. Kompakt zeigt deutlich mehr auf
+auf „Heute“ und „To-dos“ (Bildgröße, Abstände, Schrift), den Garten (4 / 3 / 2 Spalten) und
+die Erfolge (Kompakt: 3 Spalten). Kompakt zeigt deutlich mehr auf
 einmal (im Test 10 statt 6 Gewohnheiten auf einem iPhone-Bildschirm). Gespeichert in den
 Einstellungen (`Settings.density`), auch im Backup. Umgesetzt mit `data-density` am
 Wurzelelement und CSS in `index.css`.
