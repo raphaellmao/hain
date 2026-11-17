@@ -13,7 +13,8 @@ import { shadowJourney } from './shadow'
 import { combineMonthly, monthlyRates, successRate, totalDone } from './stats'
 import { SPECIES_KEYS, isFutureSpecies, speciesOf } from './species'
 import type { HabitSummary } from './summary'
-import type { DoneSet, Habit } from './types'
+import type { DoneSet, Habit, Routine } from './types'
+import { bouncedBack, longestRun } from './perfect'
 
 export type Tier = 'bronze' | 'silber' | 'gold' | 'legendaer'
 export type Category = 'wachstum' | 'serien' | 'fleiss' | 'quote' | 'schatten' | 'garten' | 'geheim'
@@ -72,6 +73,10 @@ interface Context {
   notes: number
   backedUp: boolean
   ticks: TickStats
+  /** Routinen (fehlt in älteren Aufrufen) */
+  routines?: Routine[]
+  /** Tage mit eingetragener Stimmung */
+  moods?: number
 }
 
 const maxOf = (xs: number[]) => (xs.length ? Math.max(...xs) : 0)
@@ -167,6 +172,17 @@ export function computeAchievements(ctx: Context): Achievement[] {
   const christmas = doneDates.some((d) => d.endsWith('-12-24') || d.endsWith('-12-25'))
   const newYear = doneDates.some((d) => d.endsWith('-01-01'))
 
+  // Neu: perfekte Tage am Stück, Routinen, „nie zweimal“, Pläne, futuristische Arten
+  const perfectRun = longestRun(items, today)
+  const routines = ctx.routines ?? []
+  const routineRun = maxOf(
+    routines.map((r) => longestRun(items.filter((i) => r.habitIds.includes(i.habit.id)), today)),
+  )
+  const bounces = items.reduce((n, i) => n + bouncedBack(i, today), 0)
+  const plans = items.filter((i) => i.habit.plan).length
+  const futureKinds = new Set(plants.map((i) => speciesOf(i.habit)).filter(isFutureSpecies)).size
+  const futureTotal = SPECIES_KEYS.filter(isFutureSpecies).length
+
   // Keine Ausreden: 30 Tage ohne Ausnahme bei mind. 90 % Quote
   const last30 = addDays(today, -29)
   const noExcuses =
@@ -210,6 +226,11 @@ export function computeAchievements(ctx: Context): Achievement[] {
   a('serie-365', '👑', 'Ein ganzes Jahr', '365 Tage in Folge.', 'serien', 'legendaer', longest, 365)
   a('unaufhaltsam', '🦾', 'Unaufhaltsam', 'Drei Gewohnheiten gleichzeitig 30 Tage in Folge.', 'serien', 'gold', streak30, 3)
   a('woche', '📅', 'Perfekte Woche', 'Eine Woche lang alles Fällige erledigt.', 'serien', 'bronze', weeks, 1)
+  a('perfekt-7', '🎯', 'Sieben auf einen Streich', 'Sieben perfekte Tage am Stück.', 'serien', 'silber', perfectRun, 7)
+  a('perfekt-30', '🌞', 'Dreißig ohne Lücke', '30 perfekte Tage am Stück.', 'serien', 'legendaer', perfectRun, 30)
+  a('kette', '🔗', 'Kettenreaktion', 'Eine Routine angelegt.', 'serien', 'bronze', routines.length, 1)
+  a('eiserne-kette', '⛓️', 'Eiserne Kette', 'Eine Routine sieben Tage am Stück komplett.', 'serien', 'gold', routineRun, 7)
+  a('nie-zweimal', '🔁', 'Nie zweimal', 'Zehnmal nach einem verpassten Tag gleich wieder drangeblieben.', 'serien', 'silber', bounces, 10)
   a('wochen-10', '🗓️', 'Zehn perfekte Wochen', 'Zehn Wochen ohne einen verpassten Tag.', 'serien', 'gold', weeks, 10)
 
   // Fleiß
@@ -254,6 +275,10 @@ export function computeAchievements(ctx: Context): Achievement[] {
   a('chronist', '✍️', 'Chronist', '30 Tagesnotizen geschrieben.', 'garten', 'silber', ctx.notes, 30)
   a('memoiren', '📜', 'Memoiren', '100 Tagesnotizen geschrieben.', 'garten', 'gold', ctx.notes, 100)
   a('backup', '💾', 'Auf Nummer sicher', 'Ein Backup exportiert.', 'garten', 'bronze', ctx.backedUp ? 1 : 0, 1)
+  a('stimmung-7', '🙂', 'Stimmungsbarometer', 'An sieben Tagen die Stimmung eingetragen.', 'garten', 'bronze', ctx.moods ?? 0, 7)
+  a('stimmung-60', '🧭', 'Kenne dich selbst', 'An 60 Tagen die Stimmung eingetragen.', 'garten', 'gold', ctx.moods ?? 0, 60)
+  a('mit-plan', '📍', 'Mit Plan', 'Drei Gewohnheiten mit „Wann und wo?“.', 'garten', 'bronze', plans, 3)
+  a('futurist', '🌌', 'Futurist', `Alle ${futureTotal} erfundenen Arten gleichzeitig im Garten.`, 'garten', 'legendaer', futureKinds, futureTotal)
 
   // Geheim
   a('geisterstunde', '🕛', 'Geisterstunde', 'Zwischen Mitternacht und 1 Uhr abgehakt.', 'geheim', 'gold', ctx.ticks.ghost ? 1 : 0, 1, true)

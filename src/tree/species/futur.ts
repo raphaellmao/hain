@@ -21,10 +21,10 @@ import {
   blade, capSpots, circle, crystalCluster, crystalFacets, fiddlehead, gills, mushroomCap, pinna, r1, shard, sunPetal,
 } from '../shapes'
 
-const rad = (deg: number) => (deg * Math.PI) / 180
+export const rad = (deg: number) => (deg * Math.PI) / 180
 
 /** Leuchtpunkt: durchscheinender, pulsierender Schein und heller Kern darüber */
-function glowOrb(
+export function glowOrb(
   out: Blossom[], f: Fit, x: number, y: number, size: number, appear: number,
   opts: { core?: BlossomTone; halo?: number; center?: CenterTone } = {},
 ) {
@@ -37,7 +37,7 @@ function glowOrb(
   out.push(core)
 }
 
-const sortByAppear = (b: Blossom[]) => b.sort((x, y) => x.appear - y.appear).map((x, id) => ({ ...x, id }))
+export const sortByAppear = (b: Blossom[]) => b.sort((x, y) => x.appear - y.appear).map((x, id) => ({ ...x, id }))
 
 // ── Kristallbaum ─────────────────────────────────────────────────────────────
 

@@ -17,7 +17,7 @@ export const GROUND = 178
 
 /** Farbrolle eines Strichs – die Farbe selbst kommt aus palette.ts */
 export type BranchTone = 'bark' | 'birch' | 'mark' | 'twig' | 'stem' | 'cactus' | 'rib' | 'neon' | 'crystal' | 'metal' | 'ring'
-export type LeafTone = 'leaf' | 'needle' | 'spine' | 'glow' | 'crystal' | 'silver' | 'frond'
+export type LeafTone = 'leaf' | 'needle' | 'spine' | 'glow' | 'crystal' | 'silver' | 'frond' | 'panel' | 'ember'
 /** glow/halo/core: leuchtende Teile der futuristischen Arten (halo = durchscheinender Schein, pulsiert) */
 export type BlossomTone = 'accent' | 'green' | 'brown' | 'glow' | 'halo' | 'core'
 export type CenterTone = 'yellow' | 'brown' | 'pale'

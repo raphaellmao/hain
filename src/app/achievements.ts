@@ -2,7 +2,7 @@
  * Erfolge aus den aktuellen Daten berechnen und neu freigeschaltete melden.
  */
 import { useEffect, useMemo } from 'react'
-import { doneFor, excusedSet, excusesFor, useAllHabits, useDoneMap, useExcuseMap, useMeta, useNoteCount, useSettings, useTickStats, useToday } from '../db/hooks'
+import { doneFor, excusedSet, excusesFor, useAllHabits, useDoneMap, useExcuseMap, useMeta, useMoodMap, useNoteCount, useRoutines, useSettings, useTickStats, useToday } from '../db/hooks'
 import { TIERS, computeAchievements, type Achievement } from '../domain/achievements'
 import { summarize } from '../domain/summary'
 import { showToast } from '../lib/toast'
@@ -17,16 +17,18 @@ export function useAchievements(): Achievement[] | undefined {
   const today = useToday()
   const { dayStartHour } = useSettings()
   const ticks = useTickStats(dayStartHour)
+  const routines = useRoutines()
+  const moods = useMoodMap()
 
   return useMemo(() => {
-    if (!habits || !doneMap || !excuseMap || notes === undefined || lastBackupAt === undefined || !ticks) return undefined
+    if (!habits || !doneMap || !excuseMap || notes === undefined || lastBackupAt === undefined || !ticks || !routines || !moods) return undefined
     const items = habits.map((habit) => {
       const done = doneFor(doneMap, habit.id)
       const excused = excusedSet(excusesFor(excuseMap, habit.id))
       return { habit, done, excused, summary: summarize(habit, done, today, excused) }
     })
-    return computeAchievements({ items, today, notes, backedUp: !!lastBackupAt, ticks })
-  }, [habits, doneMap, excuseMap, notes, lastBackupAt, ticks, today])
+    return computeAchievements({ items, today, notes, backedUp: !!lastBackupAt, ticks, routines, moods: moods.size })
+  }, [habits, doneMap, excuseMap, notes, lastBackupAt, ticks, today, routines, moods])
 }
 
 // v2: mit dem großen Abzeichen-Update neu – sonst kämen alle neuen auf einmal

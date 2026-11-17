@@ -3,6 +3,7 @@ import type { PlantModel } from '../model'
 import { ahorn, apfel, birke, kirsche, laubbaum, olive } from './trees'
 import { palme } from './palme'
 import { kristall, lumenpilz, neonfarn, orbital } from './futur'
+import { helix, koralle, mondlilie, qualle, solar } from './futur2'
 import { weide } from './weide'
 import { tanne } from './tanne'
 import { kaktus } from './kaktus'
@@ -25,4 +26,9 @@ export const GENERATORS: Record<SpeciesKey, (seed: number) => PlantModel> = {
   lumenpilz,
   orbital,
   neonfarn,
+  qualle,
+  helix,
+  solar,
+  koralle,
+  mondlilie,
 }

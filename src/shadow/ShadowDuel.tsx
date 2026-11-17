@@ -53,6 +53,43 @@ const FACE = { cx: 3.5, cy: -101, rx: 8, ry: 10.5 }
 const CLAWS = 'M24 -52C34 -52 43 -49 51 -44M24 -48C35 -46 43 -41 49 -35M24 -44C33 -40 39 -34 43 -27'
 const EYE = 'M-2.2 0Q0 -1.7 2.2 0Q0 1.2 -2.2 0Z'
 
+// ── Details für mehr Tiefe (keine SVG-Filter: nur Flächen, Verläufe, Linien) ──
+/** Umhang hinter der Gestalt, weht nach hinten */
+const LIGHT_CAPE = 'M-12 -86C-24 -80 -32 -62 -36 -40C-40 -22 -46 -8 -52 3C-38 7 -22 5 -6 3C-10 -20 -12 -50 -12 -86Z'
+/** Schattenseite des Gewands (Volumen) */
+const ROBE_SHADE = 'M11 -84C20 -82 27 -78 29 -70C31 -60 31 -46 32 -34C33 -22 36 -10 38 0Q22 4 9 3C14 -24 16 -54 11 -84Z'
+/** Lichtkante entlang der Rückseite */
+const RIM_BACK = 'M-11 -84C-20 -82 -27 -78 -29 -70C-31 -60 -31 -46 -32 -34C-33 -22 -36 -10 -38 0'
+/** Kante zur Vorderseite (beim Schatten: zu dir hin) */
+const RIM_FRONT = 'M11 -84C20 -82 27 -78 29 -70C31 -60 31 -46 32 -34C33 -22 36 -10 38 0'
+const BELT = 'M-30 -47Q0 -41 31 -47'
+/** Rosshaar-Kamm des spartanischen Helms, über der Kapuze */
+const CREST = 'M-17 -104C-19 -127 -3 -142 15 -135C22 -132 25 -125 23 -116C19 -122 12 -127 4 -127C-6 -127 -12 -118 -13 -104Z'
+const CREST_HAIR = 'M-14 -108C-15 -124 -3 -136 12 -132M-10 -110C-10 -122 0 -131 12 -128M-6 -113C-5 -121 2 -126 10 -124M16 -133C20 -129 22 -124 22 -118'
+const CREST_BAND = 'M-15 -105C-11 -110 -5 -113 3 -113'
+/** Schwertarm vom Schulteransatz zur Hand am Griff */
+const SWORD_ARM = 'M6 -80C0 -64 2 -46 11 -31'
+/** Kehlung (Mittelrinne) der Klinge */
+const SWORD_FULLER = 'M23 -30L57 -30'
+
+/** Zerfetzter Umhang hinter dem Schatten, löst sich unten in Rauch auf */
+const SHADOW_CAPE = 'M-12 -88C-30 -80 -40 -58 -44 -34C-48 -16 -56 -2 -64 11L-53 4L-51 17L-43 6L-38 19L-31 6L-24 15L-16 4L-8 3C-10 -24 -12 -56 -12 -88Z'
+/** spitz nach hinten gezogene Kapuze */
+const SHADOW_PEAK = 'M-16 -100C-19 -117 -9 -130 6 -144C4 -131 10 -121 16 -105C11 -113 -6 -115 -16 -100Z'
+/** Knochenhand um den Sensenstiel */
+const BONE_HAND = 'M21 -63C24 -65.5 28.5 -65.5 31 -62.5M21 -59.5C24 -62 29.5 -62 32 -59M21.5 -56C24.5 -58.5 29.5 -58.5 31.5 -55.5'
+const STAFF_WRAPS = 'M27.6 -38L30.4 -40M28.8 -82L31.6 -84M30.8 -112L33.8 -114M32.6 -132L35.6 -134'
+/** heller Schliff an der Schneide */
+const BLADE_BEVEL = 'M36 -147C56 -156 80 -151 94 -135C82 -146 60 -149 37 -143Z'
+const BLADE_SPIKE = 'M35.5 -149L30 -159L39 -151.5Z'
+/** Dornenkrone, sobald er stark ist (Spitze, Basis links, Basis rechts) */
+const THORNS: [number, number, number, number, number, number][] = [
+  [-13, -122, -15, -110, -9, -112], [-6, -131, -9, -116, -3, -118], [3, -136, -1, -120, 5, -121], [11, -132, 6, -119, 12, -118], [17, -124, 12, -113, 17, -110],
+]
+// Boden: Grasbüschel auf deinem Land, Dornen auf seinem (Weltkoordinaten)
+const TUFTS: [number, number][] = [[18, 186], [30, 179], [44, 188], [58, 180], [70, 187], [84, 178], [96, 186], [108, 180], [122, 187], [136, 179]]
+const SPIKES: [number, number, number][] = [[118, 183, 6], [132, 178, 8], [146, 186, 7], [158, 179, 9], [170, 185, 7], [182, 180, 6], [126, 188, 5], [164, 189, 6]]
+
 // Sense des Schattens (vor dem Spiegeln zeigt die Klinge nach vorn = zu dir)
 const SCYTHE_STAFF = 'M24 8C27 -40 31 -100 35 -150'
 const SCYTHE_STAFF_HI = 'M25.4 5C28.4 -40 32.4 -100 36.2 -147'
@@ -255,6 +292,40 @@ export const ShadowDuel = memo(function ShadowDuel({
           <stop offset="0.5" stopColor="#dff6ff" stopOpacity="0.7" />
           <stop offset="1" stopColor="#dff6ff" stopOpacity="0" />
         </radialGradient>
+        <linearGradient id={id('cape')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={lightDeep} />
+          <stop offset="1" stopColor={lightBottom} stopOpacity="0.85" />
+        </linearGradient>
+        <linearGradient id={id('scape')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#0a0410" stopOpacity="0.95" />
+          <stop offset="0.6" stopColor="#1d0a2a" stopOpacity="0.75" />
+          <stop offset="1" stopColor="#3a1659" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id={id('crest')} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#e5383b" />
+          <stop offset="1" stopColor="#6a040f" />
+        </linearGradient>
+        <radialGradient id={id('core')}>
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.45" stopColor={lightTop} stopOpacity="0.9" />
+          <stop offset="1" stopColor={lightTop} stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={id('ray')} x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor={lightTop} stopOpacity="0.55" />
+          <stop offset="1" stopColor={lightTop} stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id={id('beam')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={lightTop} stopOpacity="0" />
+          <stop offset="1" stopColor={lightTop} stopOpacity="0.55" />
+        </linearGradient>
+        <radialGradient id={id('dland')} cx="0.7" cy="0.4">
+          <stop offset="0" stopColor={dark ? '#2a1238' : '#3d2a48'} />
+          <stop offset="1" stopColor={darkLand} />
+        </radialGradient>
+        <radialGradient id={id('lland')} cx="0.3" cy="0.35">
+          <stop offset="0" stopColor={lightLandEdge} />
+          <stop offset="1" stopColor={lightLand} />
+        </radialGradient>
         <linearGradient id={id('steel')} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#c9ced8" />
           <stop offset="0.5" stopColor="#6c727e" />
@@ -275,9 +346,28 @@ export const ShadowDuel = memo(function ShadowDuel({
       </defs>
 
       {/* ── Boden: sein Land (dunkel) und deins (Licht) ── */}
-      <ellipse cx={100} cy={BASE_Y + 3} rx={98} ry={14} fill={darkLand} />
-      <ellipse cx={100} cy={BASE_Y + 3} rx={98} ry={14} fill={lightLand} clipPath={url('cl')} />
-      <ellipse cx={100} cy={BASE_Y + 1} rx={92} ry={10} fill={lightLandEdge} opacity={0.5} clipPath={url('cl')} />
+      <ellipse cx={100} cy={BASE_Y + 5} rx={99} ry={15} fill="#000" opacity={0.25} />
+      <ellipse cx={100} cy={BASE_Y + 3} rx={98} ry={14} fill={url('dland')} />
+      {/* Dornen auf seinem Land – dein Land deckt sie zu, wo es hinreicht */}
+      <g opacity={0.35 + 0.65 * menace}>
+        {SPIKES.map(([x, y, h], i) => (
+          <path key={i} d={`M${x - 2.2} ${y}L${x + 0.6} ${y - h * (0.7 + 0.5 * menace)}L${x + 2.4} ${y}Z`} fill={dark ? '#1a0a26' : '#140a1c'} />
+        ))}
+      </g>
+      <ellipse cx={100} cy={BASE_Y + 3} rx={98} ry={14} fill={url('lland')} clipPath={url('cl')} />
+      <ellipse cx={100} cy={BASE_Y + 1} rx={92} ry={10} fill={lightLandEdge} opacity={0.35} clipPath={url('cl')} />
+      <g clipPath={url('cl')} opacity={0.5 + 0.5 * (light / 100)}>
+        {TUFTS.map(([x, y], i) => (
+          <path
+            key={i}
+            d={`M${x - 3} ${y}Q${x - 3.5} ${y - 4} ${x - 5} ${y - 6}M${x} ${y}Q${x} ${y - 5} ${x + 0.5} ${y - 8}M${x + 3} ${y}Q${x + 3.5} ${y - 4} ${x + 5} ${y - 5.5}`}
+            stroke={hsl({ h: accent.h, s: dark ? 40 : 45, l: dark ? 52 : 46 })}
+            strokeWidth={1}
+            fill="none"
+            strokeLinecap="round"
+          />
+        ))}
+      </g>
       <g opacity={0.25 + 0.75 * menace}>
         {CRACKS.map((d, i) => (
           <g key={i}>
@@ -288,6 +378,7 @@ export const ShadowDuel = memo(function ShadowDuel({
       </g>
       {/* Grenze */}
       <G {...(animated ? { initial: from ? { x: from.bx } : false, animate: { x: L.bx }, transition: { type: 'spring', stiffness: 60, damping: 16 } } : { transform: `translate(${L.bx} 0)` })}>
+        <rect x={-2} y={BASE_Y - 70} width={4} height={74} fill={url('beam')} opacity={0.35 + 0.4 * (light / 100)} />
         <ellipse cx={0} cy={BASE_Y + 3} rx={2.6} ry={13} fill="#7b2cbf" opacity={0.35} />
         <ellipse cx={-1} cy={BASE_Y + 3} rx={1} ry={12} fill={lightTop} opacity={0.8} className={animated ? 'seam' : undefined} />
       </G>
@@ -296,21 +387,44 @@ export const ShadowDuel = memo(function ShadowDuel({
       <G {...figureMotion(L.youX, L.youS, from?.youX, from?.youS)}>
         <g ref={lightPulse} style={{ transformBox: 'fill-box', transformOrigin: '50% 60%' }}>
           <ellipse cx={0} cy={-60} rx={46} ry={66} fill={url('laura')} opacity={0.35 + 0.5 * (light / 100)} />
+          {/* Strahlen hinter dem Kopf, mit deinem Licht stärker */}
+          <g opacity={0.15 + 0.45 * (light / 100)}>
+            {[-38, -16, 6, 28, 50].map((a) => (
+              <path key={a} d="M-3 -100L-1 -100L4 -152L-8 -152Z" fill={url('ray')} transform={`rotate(${a} 0 -100)`} />
+            ))}
+          </g>
         </g>
+        <ellipse cx={0} cy={1} rx={30} ry={4} fill="#000" opacity={0.22} />
         <g opacity={lightOpacity} transform="skewX(-3)">
           <g className={animated ? 'breathe' : undefined}>
+            <path d={LIGHT_CAPE} fill={url('cape')} />
             <path d={LIGHT_CLOAK} fill={url('lc')} />
-            <path d={LIGHT_CLOAK} fill="none" stroke="#fff" strokeOpacity={0.35} strokeWidth={1} />
+            <path d={ROBE_SHADE} fill={lightDeep} opacity={0.32} />
+            <path d={RIM_BACK} stroke="#fff" strokeOpacity={0.6} strokeWidth={1.6} fill="none" strokeLinecap="round" />
+            <path d={LIGHT_CLOAK} fill="none" stroke="#fff" strokeOpacity={0.25} strokeWidth={0.8} />
             <path d={FOLDS} stroke="#fff" strokeOpacity={0.28} strokeWidth={1.2} fill="none" strokeLinecap="round" />
+            <path d={BELT} stroke="#8a5a14" strokeWidth={3.6} fill="none" strokeLinecap="round" />
+            <path d={BELT} stroke="#ffd98a" strokeOpacity={0.6} strokeWidth={0.9} fill="none" strokeLinecap="round" />
+            {/* Leuchtkern auf der Brust */}
+            <circle cx={-9} cy={-68} r={7 + 3 * (light / 100)} fill={url('core')} />
             <ellipse {...FACE} fill={url('face')} />
             <path d={HOOD_RIM} stroke="#fff" strokeOpacity={0.6} strokeWidth={1.4} fill="none" strokeLinecap="round" />
+            {/* Helmkamm */}
+            <path d={CREST} fill={url('crest')} />
+            <path d={CREST_HAIR} stroke="#3d0208" strokeOpacity={0.55} strokeWidth={0.7} fill="none" strokeLinecap="round" />
+            <path d={CREST_BAND} stroke="#d9a441" strokeWidth={2.4} fill="none" strokeLinecap="round" />
+            {/* Schwertarm */}
+            <path d={SWORD_ARM} stroke={lightBottom} strokeWidth={7.5} fill="none" strokeLinecap="round" />
+            <path d={SWORD_ARM} stroke="#fff" strokeOpacity={0.3} strokeWidth={1.4} fill="none" strokeLinecap="round" transform="translate(-2 0)" />
             {/* ruhige, warme Augen – dasselbe Gesicht wie sein Schatten */}
             <circle cx={1} cy={-101} r={2.6} fill={url('leye')} />
             <circle cx={8} cy={-101} r={2.6} fill={url('leye')} />
             <circle cx={1} cy={-101} r={0.9} fill="#fffef5" />
             <circle cx={8} cy={-101} r={0.9} fill="#fffef5" />
             {/* Xiphos, nach vorn auf ihn gerichtet */}
+            <path d={SWORD_BLADE} fill="none" stroke={lightTop} strokeOpacity={0.3 + 0.3 * (light / 100)} strokeWidth={3.2} strokeLinejoin="round" />
             <path d={SWORD_BLADE} fill={url('blade')} stroke="#6b7480" strokeWidth={0.5} />
+            <path d={SWORD_FULLER} stroke="#5d6672" strokeOpacity={0.45} strokeWidth={0.8} />
             <path d={SWORD_EDGE} stroke="#fff" strokeOpacity={0.6} strokeWidth={0.5} />
             <path d="M10 -30L17 -30" stroke="#3a2414" strokeWidth={3} strokeLinecap="round" />
             <path d="M17.5 -36L17.5 -24" stroke="#b8862b" strokeWidth={2.6} strokeLinecap="round" />
@@ -319,6 +433,10 @@ export const ShadowDuel = memo(function ShadowDuel({
             <circle {...SHIELD} fill={url('bronze')} />
             <circle {...SHIELD} fill="none" stroke="#7a5312" strokeWidth={2.4} />
             <circle cx={SHIELD.cx} cy={SHIELD.cy} r={SHIELD.r - 3.6} fill="none" stroke="#fff1c4" strokeOpacity={0.5} strokeWidth={0.8} />
+            {Array.from({ length: 12 }, (_, k) => {
+              const a = (k / 12) * Math.PI * 2
+              return <circle key={k} cx={SHIELD.cx + Math.cos(a) * (SHIELD.r - 1.4)} cy={SHIELD.cy + Math.sin(a) * (SHIELD.r - 1.4)} r={0.85} fill="#ffe7a8" opacity={0.85} />
+            })}
             <path d={LAMBDA} stroke="#a4161a" strokeWidth={3.8} fill="none" strokeLinecap="round" strokeLinejoin="round" />
             <path d={SHIELD_SHINE} stroke="#fff" strokeOpacity={0.5} strokeWidth={1.4} fill="none" strokeLinecap="round" />
           </g>
@@ -364,11 +482,28 @@ export const ShadowDuel = memo(function ShadowDuel({
           {/* gespiegelt: blickt nach links, zu dir */}
           <g opacity={shadowOpacity} transform="scale(-1 1) skewX(-8)">
             <g className={animated ? 'breathe breathe-slow' : undefined}>
+              <path d={SHADOW_CAPE} fill={url('scape')} />
+              <path d={SHADOW_PEAK} fill={url('sc')} />
               <path d={SHADOW_CLOAK} fill={url('sc')} />
-              <path d={SHADOW_CLOAK} fill="none" stroke="#9b4dff" strokeOpacity={0.35 + 0.3 * menace} strokeWidth={1} />
+              <path d={ROBE_SHADE} fill="#000" opacity={0.35} />
+              <path d={SHADOW_CLOAK} fill="none" stroke="#9b4dff" strokeOpacity={0.25 + 0.25 * menace} strokeWidth={0.8} />
+              {/* violettes Kantenlicht auf der Seite zu dir */}
+              <path d={RIM_FRONT} stroke="#c77dff" strokeOpacity={0.35 + 0.4 * menace} strokeWidth={1.5} fill="none" strokeLinecap="round" />
               <path d={FOLDS} stroke="#8e3fd1" strokeOpacity={0.28} strokeWidth={1.2} fill="none" strokeLinecap="round" />
               <ellipse {...FACE} fill="#000" />
+              <ellipse cx={FACE.cx} cy={FACE.cy} rx={FACE.rx - 1} ry={FACE.ry - 1} fill="none" stroke="#5a1f8a" strokeOpacity={0.5} strokeWidth={0.8} />
               <path d={HOOD_RIM} stroke="#9b4dff" strokeOpacity={0.6} strokeWidth={1.3} fill="none" strokeLinecap="round" />
+              {/* Dornenkrone ab „Dunkler Zwilling“ */}
+              {menace > 0.6 && (
+                <g opacity={Math.min(1, (menace - 0.6) / 0.25)}>
+                  {THORNS.map(([tx, ty, ax, ay, bx2, by2], k) => (
+                    <g key={k}>
+                      <path d={`M${ax} ${ay}L${tx} ${ty}L${bx2} ${by2}Z`} fill="#07030b" />
+                      <path d={`M${ax + 1} ${ay - 1}L${tx} ${ty}`} stroke="#c77dff" strokeOpacity={0.5} strokeWidth={0.5} />
+                    </g>
+                  ))}
+                </g>
+              )}
               {/* Augen */}
               <g className={animated ? 'shadow-eyes' : undefined} opacity={0.6 + 0.4 * menace}>
                 <circle cx={1} cy={-101} r={4.5 + 3 * menace} fill={url('eye')} />
@@ -379,9 +514,14 @@ export const ShadowDuel = memo(function ShadowDuel({
               {/* Sense: Blut wird mit seiner Stärke mehr */}
               <path d={SCYTHE_STAFF} stroke="#1b120c" strokeWidth={3.4} fill="none" strokeLinecap="round" />
               <path d={SCYTHE_STAFF_HI} stroke="#6b4a32" strokeOpacity={0.55} strokeWidth={0.9} fill="none" strokeLinecap="round" />
+              <path d={STAFF_WRAPS} stroke="#4a2f1c" strokeWidth={1.6} strokeLinecap="round" />
               <path d={SCYTHE_GRIP} stroke="#1b120c" strokeWidth={2.6} strokeLinecap="round" />
-              <ellipse cx={27} cy={-59.5} rx={4.2} ry={3.2} fill="#07030b" />
+              {/* Knochenhand */}
+              <path d={BONE_HAND} stroke="#07030b" strokeWidth={2.8} fill="none" strokeLinecap="round" />
+              <path d={BONE_HAND} stroke="#d9cfe0" strokeWidth={1.3} fill="none" strokeLinecap="round" />
+              <path d={BLADE_SPIKE} fill={url('steel')} stroke="#1f2228" strokeWidth={0.5} />
               <path d={SCYTHE_BLADE} fill={url('steel')} stroke="#1f2228" strokeWidth={0.8} />
+              <path d={BLADE_BEVEL} fill="#eef2f7" opacity={0.4} />
               <path d={SCYTHE_EDGE} stroke="#eef2f7" strokeOpacity={0.75} strokeWidth={0.8} fill="none" strokeLinecap="round" className={animated ? 'blade-glint' : undefined} />
               <g opacity={0.45 + 0.55 * menace}>
                 <path d={BLOOD_SMEAR} fill="#8d0b13" />
@@ -399,8 +539,9 @@ export const ShadowDuel = memo(function ShadowDuel({
               ))}
               {claws > 0 && (
                 <g opacity={claws}>
-                  <path d={CLAWS} stroke="#07030b" strokeWidth={2.8} fill="none" strokeLinecap="round" />
-                  <path d={CLAWS} stroke="#b06bff" strokeOpacity={0.55} strokeWidth={0.8} fill="none" strokeLinecap="round" />
+                  <path d={CLAWS} stroke="#07030b" strokeWidth={3} fill="none" strokeLinecap="round" />
+                  <path d={CLAWS} stroke="#d9cfe0" strokeOpacity={0.85} strokeWidth={1.1} fill="none" strokeLinecap="round" />
+                  <path d={CLAWS} stroke="#b06bff" strokeOpacity={0.35} strokeWidth={2.4} fill="none" strokeLinecap="round" transform="translate(0.6 0.6)" />
                 </g>
               )}
             </g>

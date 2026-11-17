@@ -110,11 +110,11 @@ src/
 
 ## Pflanzen und Hain
 
-Fünfzehn Arten. Natürlich: Laubbaum, Kirschbaum, Apfelbaum, Birke, Trauerweide, Tanne,
+Zwanzig Arten. Natürlich: Laubbaum, Kirschbaum, Apfelbaum, Birke, Trauerweide, Tanne,
 Kaktus, Sonnenblume, Olivenbaum, Ahorn, Palme – jede mit eigenem Wuchs, eigenen Blättern
 und eigenen Blüten bzw. Früchten, Zapfen, Kätzchen oder Flügelsamen in der Habit-Farbe.
 
-Futuristisch, erfunden (`tree/species/futur.ts`) – sie leuchten in einem Ton nahe der
+Futuristisch, erfunden (`tree/species/futur.ts`, `futur2.ts`) – sie leuchten in einem Ton nahe der
 Habit-Farbe, welk verlieren sie „Energie“, im Garten bleiben sie nachts hell und haben
 einen Schein; ihre Leuchtpunkte pulsieren sanft:
 
@@ -126,6 +126,13 @@ einen Schein; ihre Leuchtpunkte pulsieren sanft:
   öffnen sich Klingen
 - **Neonfarn:** eingerollte Triebe am Boden, die sich Wedel für Wedel entrollen; leuchtende
   Sporen und Wedelspitzen
+- **Luftqualle:** schwebt an einem Leuchtfaden, der Schirm baut sich in durchscheinenden
+  Schichten auf, Tentakel wachsen, ihre Enden glühen
+- **Helixranke:** Doppelhelix um einen Stab, leuchtende Knoten an den Kreuzungen, Stern oben
+- **Solarbaum:** Arme im rechten Winkel wie eine Platine, sechseckige Solarzellen, Energiepunkte
+- **Glutkoralle:** dunkle Basaltkoralle mit glühenden Lavaadern und Polypen in der Habit-Farbe
+- **Mondlilie:** gebogener Stiel mit hängenden Monden – von der Sichel bis zum Vollmond –,
+  dazu Sterne
 
 Gewählt wird die Art im Formular (zwei Reihen: natürlich und futuristisch); Habits von vor
 der Einführung bleiben Laubbäume und sehen unverändert aus (ein Test sichert das ab).
@@ -149,6 +156,13 @@ zwischen deinem Land und seinem verschiebt sich mit dem Kräfteverhältnis.
 
 Logik in `domain/shadow.ts` (mit Tests), Darstellung in `shadow/ShadowDuel.tsx`.
 Im Baumlabor zeigt `baumlabor.html?schatten` alle Lagen.
+
+Seit 11/2026 detailreicher, weiterhin ohne SVG-Filter (bleibt auf dem Handy flüssig):
+Licht-Ich mit Umhang, Licht- und Schattenseite, Gürtel, Schwertarm, Leuchtkern, spartanischem
+Helmkamm, Schild mit Nieten und Lichtstrahlen; Schatten mit zerfetztem, in Rauch auslaufendem
+Umhang, spitzer Kapuze, violettem Kantenlicht, Knochenhand an der Sense, geschliffener Klinge
+und – ab „Dunkler Zwilling“ – einer Dornenkrone. Boden mit Verläufen, Gras auf deinem Land,
+Dornen auf seinem und einer Lichtsäule an der Frontlinie.
 
 ## Ausnahmetage („heute nicht möglich“)
 

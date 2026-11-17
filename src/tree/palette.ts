@@ -63,6 +63,8 @@ export function treePalette(color: ColorKey, wilt: number, dark: boolean): TreeP
     leaf: (shade, tone) => {
       if (tone === 'spine') return dark ? 'hsl(45 30% 80%)' : 'hsl(45 35% 88%)'
       if (tone === 'needle') return wiltGreen(152 + shade * 6, 34 + shade * 4, (dark ? 38 : 27) + shade * 5)
+      if (tone === 'ember') return energy(accent.h + shade * 8, 90, (dark ? 62 : 54) + shade * 5)
+      if (tone === 'panel') return energy(mixHue(222, accent.h, 0.25) + shade * 6, 55, (dark ? 40 : 30) + shade * 7)
       if (tone === 'silver') return wiltGreen(88 + shade * 6, 16 + shade * 3, (dark ? 56 : 48) + shade * 5)
       if (tone === 'glow') return energy(mixHue(165, accent.h, 0.4) + shade * 8, 78, (dark ? 60 : 48) + shade * 6)
       if (tone === 'frond') return energy(mixHue(140, accent.h, 0.3) + shade * 8, 70, (dark ? 52 : 40) + shade * 6)

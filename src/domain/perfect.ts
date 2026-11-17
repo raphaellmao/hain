@@ -31,6 +31,39 @@ export function dayStatus(items: DayItem[], date: DateStr): DayStatus {
   return { due, done, complete: due > 0 && done === due }
 }
 
+/**
+ * Längste Folge von Tagen, an denen `items` komplett erledigt waren (z. B. alle
+ * Gewohnheiten oder nur die einer Routine). Tage ohne Fälliges unterbrechen nichts;
+ * ein noch offener heutiger Tag auch nicht.
+ */
+export function longestRun(items: DayItem[], today: DateStr): number {
+  if (items.length === 0) return 0
+  const first = items.reduce((m, i) => (i.habit.startDate < m ? i.habit.startDate : m), today)
+  let best = 0
+  let run = 0
+  for (let d = first, n = 0; d <= today && n < MAX_DAYS; d = addDays(d, 1), n++) {
+    const s = dayStatus(items, d)
+    if (s.due === 0) continue
+    if (s.complete) best = Math.max(best, ++run)
+    else if (d !== today) run = 0
+  }
+  return best
+}
+
+/** Wie oft nach genau einem verpassten Tag gleich am nächsten fälligen Tag wieder erledigt („nie zweimal“) */
+export function bouncedBack(item: DayItem, today: DateStr): number {
+  let count = 0
+  let misses = 0
+  for (let d = item.habit.startDate, n = 0; d < today && n < MAX_DAYS; d = addDays(d, 1), n++) {
+    if (!isDue(item.habit, d) || (item.excused.has(d) && !item.done.has(d))) continue
+    if (item.done.has(d)) {
+      if (misses === 1) count++
+      misses = 0
+    } else misses++
+  }
+  return count
+}
+
 export interface PerfectStats {
   /** Heute schon alles erledigt? */
   today: boolean
@@ -40,7 +73,7 @@ export interface PerfectStats {
   total: number
 }
 
-const MAX_DAYS = 3 * 366
+const MAX_DAYS = 3 * 366 + 1
 
 export function perfectStats(items: DayItem[], today: DateStr): PerfectStats {
   if (items.length === 0) return { today: false, streak: 0, total: 0 }

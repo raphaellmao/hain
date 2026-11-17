@@ -127,6 +127,29 @@ export const blade = (s: number) => `M0 0C${p(0.16 * s, -0.3 * s)} ${p(0.1 * s, 
 
 // ── Blüten & Früchte (Mitte bei 0, 0) ────────────────────────────────────────
 
+/** Solarzelle: Sechseck, Ansatz unten */
+export function hexPanel(s: number): string {
+  const r = s / 2
+  const pts = [0, 60, 120, 180, 240, 300].map((a) => {
+    const t = (a * Math.PI) / 180
+    return `${r1(Math.sin(t) * r)} ${r1(-r - Math.cos(t) * r)}`
+  })
+  return `M${pts.join('L')}Z`
+}
+
+/** Knubbel (Korallenpolyp als Blatt), Ansatz unten */
+export const nub = (s: number) => `M0 0C${p(0.45 * s, 0)} ${p(0.45 * s, -s)} 0 ${r1(-s)}C${p(-0.45 * s, -s)} ${p(-0.45 * s, 0)} 0 0Z`
+
+/** Mond in einer Phase: 0 = schmale Sichel … 1 = Vollmond (Mitte bei 0, 0) */
+export function moonPhase(s: number, phase: number): string {
+  const rx = Math.abs(1 - 2 * phase) * s
+  return `M0 ${r1(-s)}A${r1(s)} ${r1(s)} 0 1 1 0 ${r1(s)}A${r1(Math.max(0.1, rx))} ${r1(s)} 0 1 ${phase < 0.5 ? 0 : 1} 0 ${r1(-s)}Z`
+}
+
+/** Vierzackiger Stern */
+export const star4 = (s: number) =>
+  `M0 ${r1(-s)}Q${p(0.15 * s, -0.15 * s)} ${p(s, 0)}Q${p(0.15 * s, 0.15 * s)} 0 ${r1(s)}Q${p(-0.15 * s, 0.15 * s)} ${p(-s, 0)}Q${p(-0.15 * s, -0.15 * s)} 0 ${r1(-s)}Z`
+
 /** Olive: kleines Oval, hängt */
 export const olive = (s: number) => {
   const rx = 0.62 * s

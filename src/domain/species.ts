@@ -6,7 +6,7 @@
 export const SPECIES_KEYS = [
   'laubbaum', 'kirsche', 'apfel', 'birke', 'weide', 'tanne', 'kaktus', 'sonnenblume', 'olive', 'ahorn', 'palme',
   // erfunden, futuristisch
-  'kristall', 'lumenpilz', 'orbital', 'neonfarn',
+  'kristall', 'lumenpilz', 'orbital', 'neonfarn', 'qualle', 'helix', 'solar', 'koralle', 'mondlilie',
 ] as const
 export type SpeciesKey = (typeof SPECIES_KEYS)[number]
 
@@ -32,6 +32,11 @@ export const SPECIES_INFO: Record<SpeciesKey, { label: string; stages: string[];
   lumenpilz: { label: 'Lumenpilz', future: true, stages: ['Pilzknospe', 'Junger Lumenpilz', 'Schirmturm', 'Leuchtender Schirmturm', 'Pilzkolonie', 'Lumenwald', 'Leuchtendes Myzel'] },
   orbital: { label: 'Orbitalblume', future: true, stages: ['Energieknospe', 'Erster Ring', 'Doppelring', 'Orbit in Blüte', 'Kleines System', 'Sternsystem', 'Galaxie'] },
   neonfarn: { label: 'Neonfarn', future: true, stages: ['Eingerollter Wedel', 'Junger Farn', 'Fraktalfarn', 'Leuchtender Farn', 'Farninsel', 'Farnwald', 'Urzeitwald'] },
+  qualle: { label: 'Luftqualle', future: true, stages: ['Schwebekeim', 'Junge Luftqualle', 'Schwebende Qualle', 'Leuchtende Qualle', 'Quallenschwarm', 'Himmelsriff', 'Sternenschwarm'] },
+  helix: { label: 'Helixranke', future: true, stages: ['Erste Windung', 'Junge Ranke', 'Doppelhelix', 'Leuchtende Helix', 'Helixgruppe', 'Helixgarten', 'Helixwald'] },
+  solar: { label: 'Solarbaum', future: true, stages: ['Erste Zelle', 'Junger Solarbaum', 'Solarbaum', 'Strahlender Solarbaum', 'Solarfeld', 'Solarhain', 'Energiewald'] },
+  koralle: { label: 'Glutkoralle', future: true, stages: ['Glutkeim', 'Junge Koralle', 'Glutkoralle', 'Glühende Koralle', 'Korallenstock', 'Glutriff', 'Lavariff'] },
+  mondlilie: { label: 'Mondlilie', future: true, stages: ['Mondknospe', 'Junge Mondlilie', 'Mondlilie', 'Vollmondlilie', 'Mondbeet', 'Mondgarten', 'Mondtal'] },
 }
 
 export const isFutureSpecies = (k: SpeciesKey) => SPECIES_INFO[k].future === true
