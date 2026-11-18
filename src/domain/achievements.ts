@@ -15,6 +15,8 @@ import { SPECIES_KEYS, isFutureSpecies, speciesOf } from './species'
 import type { HabitSummary } from './summary'
 import type { DoneSet, Habit, Routine } from './types'
 import { bouncedBack, longestRun } from './perfect'
+import { mutationOf } from './mutation'
+import { herbariumOf } from './herbarium'
 
 export type Tier = 'bronze' | 'silber' | 'gold' | 'legendaer'
 export type Category = 'wachstum' | 'serien' | 'fleiss' | 'quote' | 'schatten' | 'garten' | 'geheim'
@@ -182,6 +184,7 @@ export function computeAchievements(ctx: Context): Achievement[] {
   const plans = items.filter((i) => i.habit.plan).length
   const futureKinds = new Set(plants.map((i) => speciesOf(i.habit)).filter(isFutureSpecies)).size
   const futureTotal = SPECIES_KEYS.filter(isFutureSpecies).length
+  const herb = herbariumOf(items)
 
   // Keine Ausreden: 30 Tage ohne Ausnahme bei mind. 90 % Quote
   const last30 = addDays(today, -29)
@@ -269,6 +272,9 @@ export function computeAchievements(ctx: Context): Achievement[] {
   a('alle-arten', '🌐', 'Alle Arten', `Alle ${SPECIES_KEYS.length} Pflanzenarten im Garten.`, 'garten', 'legendaer', species, SPECIES_KEYS.length)
   a('bluetenmeer', '💐', 'Blütenmeer', 'Drei Pflanzen blühen gleichzeitig.', 'garten', 'silber', blooming, 3)
   a('wald', '🌲', 'Wald', 'Drei Haine gleichzeitig.', 'garten', 'gold', groves, 3)
+  a('herbarium-5', '🌿', 'Sammler', 'Fünf Arten zur Blüte gebracht.', 'garten', 'silber', herb.bloomed.size, 5)
+  a('herbarium-10', '📗', 'Botanischer Garten', 'Zehn Arten zur Blüte gebracht.', 'garten', 'gold', herb.bloomed.size, 10)
+  a('herbarium-alle', '🏛️', 'Vollständiges Herbarium', `Alle ${SPECIES_KEYS.length} Arten zur Blüte gebracht.`, 'garten', 'legendaer', herb.bloomed.size, SPECIES_KEYS.length)
   a('halbjahr', '🎂', 'Halbes Jahr', 'Eine Gewohnheit seit einem halben Jahr.', 'garten', 'silber', oldest, 182)
   a('jahrestag', '📆', 'Jahrestag', 'Eine Gewohnheit seit einem Jahr.', 'garten', 'gold', oldest, 365)
   a('tagebuch', '📝', 'Tagebuch', 'Sieben Tagesnotizen geschrieben.', 'garten', 'bronze', ctx.notes, 7)
@@ -281,6 +287,7 @@ export function computeAchievements(ctx: Context): Achievement[] {
   a('futurist', '🌌', 'Futurist', `Alle ${futureTotal} erfundenen Arten gleichzeitig im Garten.`, 'garten', 'legendaer', futureKinds, futureTotal)
 
   // Geheim
+  a('mutant', '✨', 'Seltene Mutation', 'Eine Pflanze mit seltener Laubfarbe im Garten.', 'geheim', 'gold', plants.some((i) => mutationOf(i.habit.seed) && i.summary.stage >= 3) ? 1 : 0, 1, true)
   a('geisterstunde', '🕛', 'Geisterstunde', 'Zwischen Mitternacht und 1 Uhr abgehakt.', 'geheim', 'gold', ctx.ticks.ghost ? 1 : 0, 1, true)
   a('weihnachten', '🎄', 'Fest der Disziplin', 'An Heiligabend oder Weihnachten drangeblieben.', 'geheim', 'gold', christmas ? 1 : 0, 1, true)
   a('neujahr', '🎆', 'Vorsatz gehalten', 'Am Neujahrstag drangeblieben.', 'geheim', 'gold', newYear ? 1 : 0, 1, true)

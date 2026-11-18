@@ -26,6 +26,7 @@ import { companions } from './grove'
 import { clamp, lerp } from './rng'
 import { DORMANT_BARK, treePalette, type TreePalette } from './palette'
 import { useDarkMode } from '../lib/useDarkMode'
+import { mutationOf } from '../domain/mutation'
 
 export interface TreeProps {
   seed: number
@@ -63,7 +64,8 @@ export const Tree = memo(function Tree({
   const dark = useDarkMode()
   const model = plantModel(species, seed)
   const wilt = wilted ? 1 : 0
-  const pal = useMemo(() => treePalette(color, wilt, dark), [color, wilt, dark])
+  const mutation = mutationOf(seed)
+  const pal = useMemo(() => treePalette(color, wilt, dark, mutation), [color, wilt, dark, mutation])
   const pop = usePopTracker(animated, fromG)
   const gm = Math.min(g, MAIN_MAX)
 

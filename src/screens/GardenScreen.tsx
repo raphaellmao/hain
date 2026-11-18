@@ -18,6 +18,7 @@ import { useAchievements } from '../app/achievements'
 import { DECOR, DecorArt } from '../garden/Decor'
 import { showToast } from '../lib/toast'
 import { dayStatus } from '../domain/perfect'
+import { mutationOf } from '../domain/mutation'
 import { openShareSheet } from '../lib/shareSheet'
 import { IconShare } from '../components/icons'
 
@@ -95,7 +96,11 @@ export function GardenScreen() {
               {items.map(({ habit, summary }, idx) => {
                 const wilted = summary.health.wilted && !isBare(summary)
                 const shadow = habit.metaphor === 'schatten'
-                const status = shadow ? TERRITORY_STATUS[summary.shadow.status].label : wilted ? 'welkt' : stageLabel(summary, habit.species)
+                const status = shadow
+                  ? TERRITORY_STATUS[summary.shadow.status].label
+                  : wilted
+                    ? 'welkt'
+                    : `${mutationOf(habit.seed) && summary.stage >= 3 ? '✨ ' : ''}${stageLabel(summary, habit.species)}`
                 const warn = shadow ? summary.shadow.status <= 1 : wilted
                 const seed = habit.seed % 997
                 return (

@@ -3,6 +3,7 @@ import { motion } from 'motion/react'
 import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, useToday } from '../db/hooks'
 import { combineMonthly, monthlyRates } from '../domain/stats'
 import { CATEGORIES, TIERS, type Achievement, type Category, type Tier } from '../domain/achievements'
+import { SPECIES_KEYS } from '../domain/species'
 import { useAchievements } from '../app/achievements'
 import { navigate, paths } from '../app/router'
 import { IconChevronRight } from '../components/icons'
@@ -28,6 +29,7 @@ export function AchievementsScreen() {
   }, [habits, doneMap, excuseMap, today])
 
   if (!list) return null
+  const herbCount = `${list.find((a) => a.id === 'herbarium-alle')?.value ?? 0}/${SPECIES_KEYS.length}`
   const achieved = list.filter((a) => a.achieved)
 
   // nach Kategorie gruppieren: erreichte zuerst (seltenste oben), dann offene nach Fortschritt
@@ -85,6 +87,18 @@ export function AchievementsScreen() {
             📊
           </span>
           <span className="flex-1">Wochenrückblick</span>
+          <IconChevronRight width={20} height={20} className="text-muted" />
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(paths.herbarium)}
+          className="-mt-3 flex min-h-14 w-full items-center gap-3 rounded-3xl bg-surface px-4 py-3 text-left text-[16px] font-semibold"
+        >
+          <span className="text-[24px] leading-none" aria-hidden>
+            🌿
+          </span>
+          <span className="flex-1">Herbarium</span>
+          <span className="text-[14px] font-medium text-muted tabular-nums">{herbCount}</span>
           <IconChevronRight width={20} height={20} className="text-muted" />
         </button>
 

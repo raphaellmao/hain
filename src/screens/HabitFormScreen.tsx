@@ -10,6 +10,7 @@ import type { GoalKind, Habit, HabitGoal, Metaphor } from '../domain/types'
 import { formatNumber, MINUTE_PRESETS, parseAmount, UNIT_SUGGESTIONS } from '../domain/goal'
 import { HABIT_TEMPLATES, templateById, templateHint, type HabitTemplate } from '../domain/templates'
 import { PLAN_MAX, PLAN_SUGGESTIONS } from '../domain/routine'
+import { MUTATIONS, mutationOf } from '../domain/mutation'
 import { ShadowDuel } from '../shadow/ShadowDuel'
 import { SPECIES_INFO, SPECIES_KEYS, isFutureSpecies, speciesOf, type SpeciesKey } from '../domain/species'
 import { goBack, navigate, paths } from '../app/router'
@@ -193,7 +194,9 @@ function Form({ habit, template, today }: { habit?: Habit; template?: HabitTempl
             <Tree seed={seed} color={color} species={species} g={6.7} className="size-full" />
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-[13px] text-muted">Deine Pflanze in voller Blüte</p>
+            <p className="text-[13px] text-muted">
+              {mutationOf(seed) ? <span className="font-semibold text-accent">✨ Seltene Mutation: {MUTATIONS[mutationOf(seed)!].label}!</span> : 'Deine Pflanze in voller Blüte'}
+            </p>
             <button
               type="button"
               onClick={() => setSeed(newSeed())}

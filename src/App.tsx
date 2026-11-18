@@ -5,6 +5,7 @@ import { BottomNav } from './components/BottomNav'
 import { ConfirmHost } from './components/ConfirmHost'
 import { ShareHost } from './components/ShareHost'
 import { RoutineFormScreen } from './screens/RoutineFormScreen'
+import { HerbariumScreen } from './screens/HerbariumScreen'
 import { CelebrationWatcher } from './components/Celebration'
 import { ExcuseHost } from './components/ExcuseHost'
 import { ReminderHost } from './components/ReminderHost'
@@ -62,6 +63,9 @@ export default function App() {
       break
     case 'edit':
       screen = <HabitFormScreen key={route.id} id={route.id} />
+      break
+    case 'herbarium':
+      screen = <HerbariumScreen />
       break
     case 'routine':
       screen = <RoutineFormScreen key={route.id ?? 'neu'} id={route.id} />

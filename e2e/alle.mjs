@@ -9,7 +9,7 @@ import { dirname, join } from 'node:path'
 const dir = dirname(fileURLToPath(import.meta.url))
 const SUITES = [
   'todos-e2e', 'overlay-e2e', 'repeat-e2e', 'goal-e2e', 'absence-e2e', 'archive-e2e', 'mood-e2e', 'share-e2e',
-  'routine-e2e', 'missed-e2e', 'plants-e2e', 'deko-e2e', 'smoke',
+  'routine-e2e', 'missed-e2e', 'plants-e2e', 'deko-e2e', 'herbarium-e2e', 'smoke',
 ]
 const BASE = process.env.BASE ?? 'http://localhost:5173'
 try {

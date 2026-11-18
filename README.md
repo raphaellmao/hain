@@ -15,7 +15,7 @@ Alles bleibt lokal im Browser (IndexedDB) – kein Konto, kein Server.
 | `npm run build` | Produktions-Build nach `dist/` (inkl. Typprüfung) |
 | `npm run preview` | den Build lokal ausliefern (mit Service Worker) |
 | `npm run icons` | PNG-Icons aus `public/icon.svg` neu erzeugen |
-| `npm run e2e` | alle 13 Oberflächen-Tests in headless Edge (Entwicklungsserver muss laufen) |
+| `npm run e2e` | alle 14 Oberflächen-Tests in headless Edge (Entwicklungsserver muss laufen) |
 | `npm run e2e:iphone` | iPhone-Test mit WebKit (Safaris Engine) gegen `npm run preview` |
 
 **Oberflächen-Tests (`e2e/`):** Jede Reihe startet Edge mit frischem Profil – eigene Daten
@@ -366,6 +366,18 @@ Auswertung in `domain/mood.ts`:
   Reihenfolge. Komplett → Karte leuchtet auf, Hinweis „… geschafft“. Eine Gewohnheit
   steckt in höchstens einer Routine. Tabelle `routines` (`version(6)`), Logik in
   `domain/routine.ts`, Backup-Format 10.
+
+## Seltene Mutationen und Herbarium
+
+Etwa jede 16. Pflanze trägt eine seltene Laubfarbe – Goldlaub, Silberlaub, Nachtlaub,
+Feuerlaub oder Regenbogenlaub. Welche, steht allein im Seed (`domain/mutation.ts`), gespeichert
+wird nichts. Zu sehen als ✨ im Garten, auf der Detailseite und schon in der Formular-Vorschau
+(„Andere Form“ würfelt neu). Dazu ein geheimer Erfolg.
+
+**Herbarium** (Erfolge → Herbarium): Sammelalbum aller 20 Arten und 5 Mutationen. Eine Art
+zählt, sobald eine Pflanze von ihr einmal geblüht hat (H ≥ 60, auch wenn sie später welkt oder
+im Archiv liegt), eine Mutation ab dem Busch. Unentdecktes als dunkler Umriss. Erfolge für 5, 10
+und alle Arten. Logik in `domain/herbarium.ts`.
 
 ## Gartendeko
 

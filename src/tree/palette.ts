@@ -5,6 +5,7 @@
  */
 import { type ColorKey, colorDef, colorHex, hexToHsl, hsl, mixHue } from '../domain/colors'
 import type { BlossomTone, BranchTone, CenterTone, LeafTone } from './model'
+import type { MutationKey } from '../domain/mutation'
 
 export interface TreePalette {
   leaf: (shade: number, tone?: LeafTone) => string
@@ -29,7 +30,23 @@ const LEAF_HUE = 104
  * @param wilt 0 = gesund … 1 = welk
  * @param dark Dunkelmodus (Grün etwas heller, damit es nicht absäuft)
  */
-export function treePalette(color: ColorKey, wilt: number, dark: boolean): TreePalette {
+/** Laubfarbe einer seltenen Mutation (domain/mutation.ts): Farbton, Sättigung, Helligkeit je nach Schattierung */
+function mutatedLeaf(m: MutationKey, shade: number, dark: boolean): [number, number, number] {
+  switch (m) {
+    case 'goldlaub':
+      return [46 + shade * 4, 80, (dark ? 58 : 50) + shade * 6]
+    case 'silberlaub':
+      return [205, 12, (dark ? 80 : 74) + shade * 5]
+    case 'nachtlaub':
+      return [262 + shade * 10, 48, (dark ? 44 : 32) + shade * 6]
+    case 'feuerlaub':
+      return [12 + shade * 14, 76, (dark ? 54 : 46) + shade * 5]
+    case 'regenbogenlaub':
+      return [((shade + 1) * 180 + 360) % 360, 68, (dark ? 56 : 48) + Math.abs(shade) * 4]
+  }
+}
+
+export function treePalette(color: ColorKey, wilt: number, dark: boolean, mutation: MutationKey | null = null): TreePalette {
   const accent = hexToHsl(colorHex(color))
   // Mehrfarbig (Regenbogen, Feuer, Polarlicht): Jede Blüte zieht ihren Ton aus ihrer Schattierung
   const hues = colorDef(color).hues
@@ -67,6 +84,11 @@ export function treePalette(color: ColorKey, wilt: number, dark: boolean): TreeP
   return {
     leaf: (shade, tone) => {
       if (tone === 'spine') return dark ? 'hsl(45 30% 80%)' : 'hsl(45 35% 88%)'
+      // Seltene Mutation: färbt alles Laub (nicht Stacheln und Solarzellen)
+      if (mutation && tone !== 'panel') {
+        const [h, s, l] = mutatedLeaf(mutation, shade, dark)
+        return tone === 'crystal' ? energy(h, s, l + 8, 0.85) : wiltGreen(h, s, l)
+      }
       if (tone === 'needle') return wiltGreen(152 + shade * 6, 34 + shade * 4, (dark ? 38 : 27) + shade * 5)
       if (tone === 'ember') return energy(hueOf(shade) + (hues ? 0 : shade * 8), 90, (dark ? 62 : 54) + shade * 5)
       if (tone === 'panel') return energy(mixHue(222, accent.h, 0.25) + shade * 6, 55, (dark ? 40 : 30) + shade * 7)

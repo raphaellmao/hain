@@ -10,6 +10,7 @@ import { colorHex } from '../domain/colors'
 import { type DateStr } from '../domain/dates'
 import { H_MAX, MAX_STAGE, nextStage } from '../domain/health'
 import { SPECIES_INFO, speciesOf, stageName } from '../domain/species'
+import { MUTATIONS, mutationOf } from '../domain/mutation'
 import { groveSize } from '../tree/grove'
 import { describeDays, daysAt, isDue } from '../domain/schedule'
 import { monthlyRates, successRate, totalDone } from '../domain/stats'
@@ -187,6 +188,11 @@ function Detail({
             {SPECIES_INFO[species].label} · Gesundheit {fmt1(h)} von {H_MAX}
             {plants > 1 && ` · ${plants} Pflanzen im Hain`}
           </p>
+          {mutationOf(habit.seed) && (
+            <p className="mt-2 rounded-2xl bg-surface-2 px-3 py-2 text-[14px] leading-snug">
+              ✨ <strong>Seltene Mutation: {MUTATIONS[mutationOf(habit.seed)!].label}</strong> – {MUTATIONS[mutationOf(habit.seed)!].description} Nur etwa jede 16. Pflanze hat so etwas.
+            </p>
+          )}
 
           {wilted && (
             <p className="mt-3 rounded-2xl bg-surface-2 p-3 text-[14px] leading-snug">
