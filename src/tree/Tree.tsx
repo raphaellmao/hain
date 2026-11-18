@@ -27,6 +27,8 @@ import { clamp, lerp } from './rng'
 import { DORMANT_BARK, treePalette, type TreePalette } from './palette'
 import { useDarkMode } from '../lib/useDarkMode'
 import { mutationOf } from '../domain/mutation'
+import { seasonalLook } from '../domain/species'
+import { currentSeason } from '../lib/sky'
 
 export interface TreeProps {
   seed: number
@@ -65,7 +67,10 @@ export const Tree = memo(function Tree({
   const model = plantModel(species, seed)
   const wilt = wilted ? 1 : 0
   const mutation = mutationOf(seed)
-  const pal = useMemo(() => treePalette(color, wilt, dark, mutation), [color, wilt, dark, mutation])
+  // Jahreszeit: erfundene Arten bleiben, wie sie sind
+  const look = seasonalLook(species)
+  const season = look === 'keine' ? null : currentSeason()
+  const pal = useMemo(() => treePalette(color, wilt, dark, mutation, season, look === 'laub'), [color, wilt, dark, mutation, season, look])
   const pop = usePopTracker(animated, fromG)
   const gm = Math.min(g, MAIN_MAX)
 
@@ -96,7 +101,7 @@ export const Tree = memo(function Tree({
   // Die Teile werden als normale Funktionen aufgerufen (nicht als <Komponente/>),
   // damit sie *jetzt* laufen – der Pop-Tracker muss vor pop.end() alles sehen.
   const isTree = gm >= 3
-  const content = plantContent({ model, g: gm, pal, wilt, dormant, dark, pop: pop.is })
+  const content = plantContent({ model, g: gm, pal, wilt, dormant, dark, pop: pop.is, snow: season === 'winter' })
   pop.end()
 
   // Begleitpflanzen des Hains (vereinfacht gezeichnet, ohne Einzel-Animationen)
@@ -195,11 +200,12 @@ function plantContent(o: {
   dark: boolean
   pop: PopFn
   lite?: boolean
+  snow?: boolean
 }): ReactNode {
   if (o.g < 1) return o.dormant ? Dormant({ model: o.model, pal: o.pal, dark: o.dark }) : PlantingHole({ pal: o.pal })
   if (o.g < 2) return Seed({ t: o.g - 1, pal: o.pal, pop: o.pop })
   if (o.g < 3) return Sprout({ t: o.g - 2, pal: o.pal, wilt: o.wilt, pop: o.pop })
-  return FullTree({ model: o.model, g: o.g, pal: o.pal, wilt: o.wilt, pop: o.pop, lite: o.lite })
+  return FullTree({ model: o.model, g: o.g, pal: o.pal, wilt: o.wilt, pop: o.pop, lite: o.lite, snow: o.snow })
 }
 
 function Soil({ pal, small = false }: { pal: TreePalette; small?: boolean }) {
@@ -290,8 +296,8 @@ const cotyledonPath = (s: number) =>
 
 /** Die Pflanze: Striche wachsen über die Strichlänge, Blätter und Blüten erscheinen nach `appear`. */
 function FullTree({
-  model, g, pal, wilt, pop, lite = false,
-}: { model: PlantModel; g: number; pal: TreePalette; wilt: number; pop: PopFn; lite?: boolean }) {
+  model, g, pal, wilt, pop, lite = false, snow = false,
+}: { model: PlantModel; g: number; pal: TreePalette; wilt: number; pop: PopFn; lite?: boolean; snow?: boolean }) {
   return (
     <>
       {model.flare && <path d={model.flare} fill={pal.branch(model.branches[0]?.tone)} />}
@@ -313,6 +319,28 @@ function FullTree({
           />
         )
       })}
+      {/* Winter: Schnee auf Stamm und starken Ästen */}
+      {snow &&
+        model.branches.map((b) => {
+          if (b.start >= g || b.depth > 2 || b.width < 2.4 || b.tone === 'mark' || b.tone === 'rib') return null
+          const p = Math.min(1, (g - b.start) / b.span)
+          return (
+            <path
+              key={`s${b.id}`}
+              d={b.d}
+              fill="none"
+              stroke="#f2f6fb"
+              strokeOpacity={0.9}
+              strokeWidth={Math.max(1.2, b.width * 0.42)}
+              strokeLinecap="round"
+              pathLength={1}
+              strokeDasharray="1 2"
+              strokeDashoffset={1 - p}
+              transform={`translate(0 ${(-b.width * 0.36).toFixed(1)})`}
+              data-snow
+            />
+          )
+        })}
       {model.leaves.map((l) =>
         !leafVisible(l, g) || (lite && l.id % 2 === 1 && l.tone !== 'needle') ? null : (
           <g key={l.id} className={lite ? undefined : 'leaf-g'} style={leafTransform(l.x, l.y, droop(l.angle, wilt * (l.droop ?? 1)))}>
@@ -321,6 +349,10 @@ function FullTree({
               d={l.d}
               fill={pal.leaf(l.shade, l.tone)}
             />
+            {/* Winter: Schneehaube auf den Tannen-Etagen (Spitze oben bei 0, 0) */}
+            {snow && l.tone === 'needle' && (l.droop ?? 1) <= 0.06 && (
+              <path d={l.d} fill="#f2f6fb" opacity={0.88} transform="scale(0.94 0.4)" data-snow />
+            )}
           </g>
         ),
       )}

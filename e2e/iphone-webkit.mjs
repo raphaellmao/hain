@@ -153,6 +153,22 @@ await go('#/erfolge')
 check('Erfolge laden', (await page.locator('text=Kettenreaktion').count()) >= 1)
 check('Erfolge nicht zu breit', (await overflow()) <= 0)
 await shot('10-erfolge')
+const shareBtn = page.locator('button[aria-label$="als Bild teilen"]').first()
+if (await shareBtn.count()) {
+  await shareBtn.click()
+  let achSize = null
+  for (let i = 0; i < 40 && !achSize; i++) {
+    await sleep(250)
+    achSize = await page.evaluate(() => {
+      const img = document.querySelector('[role=dialog] img')
+      return img?.complete && img.naturalWidth ? `${img.naturalWidth}×${img.naturalHeight}` : null
+    })
+  }
+  check('Erfolgsbild entsteht in WebKit', achSize === '1080×1350', String(achSize))
+  await shot('11-erfolgsbild')
+  await page.keyboard.press('Escape')
+  await sleep(400)
+} else check('Ein Erfolg zum Teilen vorhanden', false)
 await go('#/rueckblick')
 check('Wochenrückblick lädt', (await page.locator('h1', { hasText: 'Wochenrückblick' }).count()) === 1)
 

@@ -4,6 +4,7 @@ import { doneFor, excusedSet, excusesFor, useDoneMap, useExcuseMap, useHabits, u
 import { combineMonthly, monthlyRates } from '../domain/stats'
 import { CATEGORIES, TIERS, type Achievement, type Category, type Tier } from '../domain/achievements'
 import { SPECIES_KEYS } from '../domain/species'
+import { openAchievementShare } from '../lib/shareSheet'
 import { useAchievements } from '../app/achievements'
 import { navigate, paths } from '../app/router'
 import { IconChevronRight } from '../components/icons'
@@ -111,6 +112,8 @@ export function AchievementsScreen() {
           </section>
         )}
 
+        <p className="-mt-2 px-1 text-[13px] text-muted">Tippe einen freigeschalteten Erfolg an, um ihn als Bild zu teilen.</p>
+
         {groups.map((g) => (
           <section key={g.cat}>
             <h2 className="mb-2 flex items-baseline justify-between px-1 text-[13px] font-semibold tracking-wide text-muted uppercase">
@@ -131,6 +134,16 @@ export function AchievementsScreen() {
   )
 }
 
+/** Freigeschaltete Erfolge lassen sich antippen und als Bild teilen */
+function BadgeBody({ a, hidden, children }: { a: Achievement; hidden: boolean; children: React.ReactNode }) {
+  if (!a.achieved || hidden) return <div className="relative z-[1]">{children}</div>
+  return (
+    <button type="button" onClick={() => openAchievementShare(a.id)} className="relative z-[1] block w-full text-left" aria-label={`${a.title} – als Bild teilen`}>
+      {children}
+    </button>
+  )
+}
+
 function Badge({ a, index }: { a: Achievement; index: number }) {
   const hidden = a.secret && !a.achieved
   return (
@@ -141,7 +154,7 @@ function Badge({ a, index }: { a: Achievement; index: number }) {
       className={`badge tier-${a.tier} ${a.achieved ? 'badge-earned' : ''} relative overflow-hidden rounded-3xl bg-surface p-3`}
     >
       {a.achieved && <span className="badge-glow" aria-hidden />}
-      <div className="relative z-[1]">
+      <BadgeBody a={a} hidden={hidden}>
         <div className="flex items-start justify-between gap-1">
           <span
             className={`block text-[34px] leading-none ${a.achieved ? (a.tier === 'legendaer' ? 'badge-float' : '') : 'opacity-35 grayscale'}`}
@@ -169,7 +182,7 @@ function Badge({ a, index }: { a: Achievement; index: number }) {
             </p>
           </>
         )}
-      </div>
+      </BadgeBody>
     </motion.li>
   )
 }

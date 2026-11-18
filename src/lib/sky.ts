@@ -96,6 +96,9 @@ function devOverride(sky: Sky): Sky {
 }
 
 /** Aktueller Himmel, aktualisiert jede Minute (und beim Zurückkehren in die App). */
+/** Jahreszeit jetzt (für die Pflanzen; im Entwicklungsmodus per ?saison= änderbar) */
+export const currentSeason = (): Season => devOverride(skyAt(new Date())).season
+
 export function useSky(): Sky {
   const [sky, setSky] = useState(() => devOverride(skyAt(new Date())))
   useEffect(() => {

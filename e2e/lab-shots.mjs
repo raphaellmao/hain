@@ -18,9 +18,9 @@ page.on('pageerror', (e) => errors.push(e.message))
 await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
 await page.setViewport({ width: 1180, height: 400, deviceScaleFactor: 1 })
 for (const s of species) {
-  await page.goto(`http://localhost:5173/baumlabor.html?species=${s}&seeds=11,77&size=105&color=${process.env.COLOR ?? 'flieder'}`, { waitUntil: 'networkidle0' })
+  await page.goto(`http://localhost:5173/baumlabor.html?species=${s}&seeds=11,77&size=105&color=${process.env.COLOR ?? 'flieder'}${process.env.SAISON ? `&saison=${process.env.SAISON}` : ''}`, { waitUntil: 'networkidle0' })
   await sleep(700)
-  await page.screenshot({ path: join(OUT, `lab-${s}-${scheme}.png`), fullPage: true })
+  await page.screenshot({ path: join(OUT, `lab-${s}-${scheme}${process.env.SAISON ? `-${process.env.SAISON}` : ''}.png`), fullPage: true })
 }
 console.log(errors.length ? errors.join('\n') : 'ok')
 await browser.close()

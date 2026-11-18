@@ -41,6 +41,15 @@ export const SPECIES_INFO: Record<SpeciesKey, { label: string; stages: string[];
 
 export const isFutureSpecies = (k: SpeciesKey) => SPECIES_INFO[k].future === true
 
+/**
+ * Wie eine Art auf die Jahreszeit reagiert: Laubbäume färben sich im Herbst und tragen
+ * im Winter Schnee und Reif, Immergrüne nur Schnee und Reif, erfundene Arten gar nicht.
+ */
+export type SeasonalLook = 'laub' | 'immergruen' | 'keine'
+const DECIDUOUS: SpeciesKey[] = ['laubbaum', 'kirsche', 'apfel', 'birke', 'weide', 'ahorn']
+export const seasonalLook = (k: SpeciesKey | undefined): SeasonalLook =>
+  isFutureSpecies(k ?? DEFAULT_SPECIES) ? 'keine' : DECIDUOUS.includes(k ?? DEFAULT_SPECIES) ? 'laub' : 'immergruen'
+
 export function isSpecies(v: unknown): v is SpeciesKey {
   return typeof v === 'string' && (SPECIES_KEYS as readonly string[]).includes(v)
 }

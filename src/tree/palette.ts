@@ -6,6 +6,7 @@
 import { type ColorKey, colorDef, colorHex, hexToHsl, hsl, mixHue } from '../domain/colors'
 import type { BlossomTone, BranchTone, CenterTone, LeafTone } from './model'
 import type { MutationKey } from '../domain/mutation'
+import type { Season } from '../lib/sky'
 
 export interface TreePalette {
   leaf: (shade: number, tone?: LeafTone) => string
@@ -46,7 +47,18 @@ function mutatedLeaf(m: MutationKey, shade: number, dark: boolean): [number, num
   }
 }
 
-export function treePalette(color: ColorKey, wilt: number, dark: boolean, mutation: MutationKey | null = null): TreePalette {
+/**
+ * @param season Jahreszeit für das Laub (null = unverändert)
+ * @param deciduous Laubbaum: färbt sich im Herbst
+ */
+export function treePalette(
+  color: ColorKey,
+  wilt: number,
+  dark: boolean,
+  mutation: MutationKey | null = null,
+  season: Season | null = null,
+  deciduous = false,
+): TreePalette {
   const accent = hexToHsl(colorHex(color))
   // Mehrfarbig (Regenbogen, Feuer, Polarlicht): Jede Blüte zieht ihren Ton aus ihrer Schattierung
   const hues = colorDef(color).hues
@@ -60,6 +72,22 @@ export function treePalette(color: ColorKey, wilt: number, dark: boolean, mutati
   /** Grünton welken lassen: Richtung Gelbbraun, weniger Sättigung */
   const wiltGreen = (h: number, s: number, l: number) =>
     hsl({ h: mixHue(h, 40, 0.78 * wilt), s: s * (1 - 0.42 * wilt), l: l + 5 * wilt })
+
+  /**
+   * Laub in der Jahreszeit – nur bei gesunden Pflanzen, damit welk eindeutig bleibt:
+   * Herbst kräftig rot bis golden (Laubbäume), Winter bereift, Frühling frisches Hellgrün.
+   */
+  const seasonal = (h: number, s: number, l: number, shade: number): [number, number, number] => {
+    if (wilt > 0 || !season) return [h, s, l]
+    if (season === 'herbst' && deciduous) return [6 + ((shade + 1) / 2) * 46, 80, (dark ? 54 : 46) + shade * 3]
+    if (season === 'winter') return [h + 20, s * 0.42, l + (dark ? 16 : 20)]
+    if (season === 'fruehling') return [h + 8, s + 6, l + 4]
+    return [h, s, l]
+  }
+  const seasonGreen = (h: number, s: number, l: number, shade: number) => {
+    const [a, b, c] = seasonal(h, s, l, shade)
+    return wiltGreen(a, b, c)
+  }
 
   /** Leuchtfarbe: welk verliert sie Sättigung und Helligkeit wie ein schwacher Akku */
   const energy = (h: number, s: number, l: number, a = 1) =>
@@ -89,14 +117,14 @@ export function treePalette(color: ColorKey, wilt: number, dark: boolean, mutati
         const [h, s, l] = mutatedLeaf(mutation, shade, dark)
         return tone === 'crystal' ? energy(h, s, l + 8, 0.85) : wiltGreen(h, s, l)
       }
-      if (tone === 'needle') return wiltGreen(152 + shade * 6, 34 + shade * 4, (dark ? 38 : 27) + shade * 5)
+      if (tone === 'needle') return seasonGreen(152 + shade * 6, 34 + shade * 4, (dark ? 38 : 27) + shade * 5, shade)
       if (tone === 'ember') return energy(hueOf(shade) + (hues ? 0 : shade * 8), 90, (dark ? 62 : 54) + shade * 5)
       if (tone === 'panel') return energy(mixHue(222, accent.h, 0.25) + shade * 6, 55, (dark ? 40 : 30) + shade * 7)
-      if (tone === 'silver') return wiltGreen(88 + shade * 6, 16 + shade * 3, (dark ? 56 : 48) + shade * 5)
+      if (tone === 'silver') return seasonGreen(88 + shade * 6, 16 + shade * 3, (dark ? 56 : 48) + shade * 5, shade)
       if (tone === 'glow') return energy(mixHue(165, accent.h, 0.4) + shade * 8, 78, (dark ? 60 : 48) + shade * 6)
       if (tone === 'frond') return energy(mixHue(140, accent.h, 0.3) + shade * 8, 70, (dark ? 52 : 40) + shade * 6)
       if (tone === 'crystal') return energy(mixHue(192, accent.h, 0.35) + shade * 10, 60, (dark ? 76 : 66) + shade * 6, 0.8)
-      return wiltGreen(leafHue + shade * 7, baseS + shade * 5, baseL + shade * 6)
+      return seasonGreen(leafHue + shade * 7, baseS + shade * 5, baseL + shade * 6, shade)
     },
     branch: (tone) => branchColors[tone ?? 'bark'],
     blossom: (shade, tone) => {

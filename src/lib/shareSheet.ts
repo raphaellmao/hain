@@ -4,16 +4,27 @@
  */
 import { useSyncExternalStore } from 'react'
 
-export type ShareKind = 'app' | 'garten'
+export type ShareKind = 'app' | 'garten' | 'erfolg'
 
 let pending: ShareKind | null = null
+/** Welcher Erfolg geteilt wird (bei kind = 'erfolg') */
+let achievementId: string | null = null
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((l) => l())
 
-export function openShareSheet(kind: ShareKind) {
+export function openShareSheet(kind: 'app' | 'garten') {
   pending = kind
   emit()
 }
+
+/** Einen freigeschalteten Erfolg als Bild teilen */
+export function openAchievementShare(id: string) {
+  achievementId = id
+  pending = 'erfolg'
+  emit()
+}
+
+export const sharedAchievementId = () => achievementId
 
 export function closeShareSheet() {
   pending = null

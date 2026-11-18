@@ -15,7 +15,7 @@ Alles bleibt lokal im Browser (IndexedDB) – kein Konto, kein Server.
 | `npm run build` | Produktions-Build nach `dist/` (inkl. Typprüfung) |
 | `npm run preview` | den Build lokal ausliefern (mit Service Worker) |
 | `npm run icons` | PNG-Icons aus `public/icon.svg` neu erzeugen |
-| `npm run e2e` | alle 14 Oberflächen-Tests in headless Edge (Entwicklungsserver muss laufen) |
+| `npm run e2e` | alle 15 Oberflächen-Tests in headless Edge (Entwicklungsserver muss laufen) |
 | `npm run e2e:iphone` | iPhone-Test mit WebKit (Safaris Engine) gegen `npm run preview` |
 
 **Oberflächen-Tests (`e2e/`):** Jede Reihe startet Edge mit frischem Profil – eigene Daten
@@ -366,6 +366,23 @@ Auswertung in `domain/mood.ts`:
   Reihenfolge. Komplett → Karte leuchtet auf, Hinweis „… geschafft“. Eine Gewohnheit
   steckt in höchstens einer Routine. Tabelle `routines` (`version(6)`), Logik in
   `domain/routine.ts`, Backup-Format 10.
+
+## Jahreszeiten an den Pflanzen
+
+Die natürlichen Arten folgen der echten Jahreszeit (`seasonalLook` in `domain/species.ts`,
+`seasonal` in `tree/palette.ts`): Laubbäume (Laubbaum, Kirsche, Apfel, Birke, Weide, Ahorn)
+färben sich im Herbst rot bis golden; im Winter liegt Schnee auf Stamm und starken Ästen, das
+Laub ist bereift, Tannen tragen Schneehauben; im Frühling frisches Hellgrün. Immergrüne bekommen
+nur Schnee und Reif, erfundene Arten bleiben unverändert. Bewusst ohne kahle Winterbäume – kahl
+heißt in Hain „eingegangen“. Welke Pflanzen bleiben in jeder Jahreszeit eindeutig welk.
+Ausprobieren: `?saison=herbst` (nur Entwicklung).
+
+## Erfolge als Bild teilen
+
+Freigeschaltete Erfolge antippen: `lib/achievementImage.ts` malt eine Medaille in der Farbe der
+Seltenheit mit Strahlenkranz, Titel und Beschreibung (1080 × 1350, direkt auf die Leinwand –
+Safari-sicher). Geteilt und gesichert wie das Gartenbild (gemeinsames `ImageSheet` in
+`components/ShareHost.tsx`).
 
 ## Seltene Mutationen und Herbarium
 
