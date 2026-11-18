@@ -15,6 +15,16 @@ Alles bleibt lokal im Browser (IndexedDB) – kein Konto, kein Server.
 | `npm run build` | Produktions-Build nach `dist/` (inkl. Typprüfung) |
 | `npm run preview` | den Build lokal ausliefern (mit Service Worker) |
 | `npm run icons` | PNG-Icons aus `public/icon.svg` neu erzeugen |
+| `npm run e2e` | alle 13 Oberflächen-Tests in headless Edge (Entwicklungsserver muss laufen) |
+| `npm run e2e:iphone` | iPhone-Test mit WebKit (Safaris Engine) gegen `npm run preview` |
+
+**Oberflächen-Tests (`e2e/`):** Jede Reihe startet Edge mit frischem Profil – eigene Daten
+bleiben unberührt –, klickt sich durch die App und meldet „ALLES OK“ oder die fehlgeschlagenen
+Prüfungen; Bildschirmfotos landen in `e2e/bilder/`. Einzeln: `node e2e/mood-e2e.mjs`.
+Anpassbar per `BASE=…` (Adresse) und `EDGE=…` (Pfad zu msedge.exe). Unter Windows aus der
+PowerShell starten. `e2e:iphone` braucht einmalig `npx playwright install webkit` und prüft
+mit `APP=https://raphaellmao.github.io/hain/` auch die Live-Seite. Werkzeuge ohne Prüfung:
+`lab-shots.mjs` (alle Pflanzenstufen), `shadow-shots.mjs`, `feier-varianten.mjs`.
 
 Nur in der Entwicklung:
 

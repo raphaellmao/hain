@@ -25,3 +25,6 @@ npm-debug.log*
 # Betriebssystem
 .DS_Store
 Thumbs.db
+
+# Bildschirmfotos der Oberflächen-Tests
+e2e/bilder/
